@@ -159,6 +159,10 @@ GET /result/{job_id} → {"answer": "...", "sources": [...]}
 
 ## Padrões de Código
 
+### Documentação vs. comentários no código
+
+Comentários e docstrings em **inglês**, **só** onde o código não se explica sozinho (invariantes, edge cases, integrações não óbvias). Contratos HTTP, exemplos de payload e fluxos de integração pertencem aos `.md` em `docs/` (especialmente [MANUAL_INTEGRACAO.md](./MANUAL_INTEGRACAO.md)), não a blocos longos no meio dos handlers. Evita comentários genéricos ou “narrativas” que duplicam o que já está no manual.
+
 ### 1. Funções Async/Await
 
 Toda função que faz I/O (database, HTTP, Ollama) deve ser `async`:

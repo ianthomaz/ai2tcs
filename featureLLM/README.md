@@ -2,7 +2,7 @@
 
 API FastAPI para LLM local com RAG multi-projeto. Porta **28471**. Planejamento em `00_PLANEJAMENTO_LLM_LOCAL.md`.
 
-**Integração (outros projetos / clientes HTTP):** ver `docs/MANUAL_INTEGRACAO.md` e `docs/INDEX.md`. NF Extract (multipart `/nfExtract`): ficheiro na raiz do clone ai2tcs, `../docs/ManualNF_Extract`.
+**Integração (outros projetos / clientes HTTP):** ver `docs/MANUAL_INTEGRACAO.md` e `docs/INDEX.md`. NF Extract (multipart `/nfExtract`): ficheiro na raiz do clone ai2tcs, `../docs/ManualNF_Extract`. URLs e IPs reais da tua instalação: ver [`../docs/LOCAL_ONLY.md`](../docs/LOCAL_ONLY.md).
 
 **Deploy em produção:** só nesta máquina, via **Docker Compose**. Na raiz deste repositório (ai2tcs): `./scripts/deploy_llm.sh` — corre `docker compose up -d --build api` em `featureLLM/`. Não usar `run_api.sh` nem launchd para produção.
 
@@ -52,7 +52,7 @@ source .env && .venv/bin/python scripts/seed_bikeanjoall.py && .venv/bin/python 
 
 ## Rodar a API (produção: use Docker)
 
-Em produção, suba sempre com Docker (mesmo host = mini62):
+Em produção, suba sempre com Docker no host onde a API deve correr:
 
 ```bash
 cd featureLLM

@@ -2,7 +2,7 @@
 
 Como conectar seus projetos à API de LLM local rodando no Mac mini via Tailscale.
 
-**Repositório e pastas:** esta documentação de integração está no repositório GitHub **ai2tcs**, em `featureLLM/docs/`. O manual **NF Extract** (só `/nfExtract`) fica na **raiz** do mesmo clone: `docs/ManualNF_Extract`. Documentação de operações da empresa (infra, Cloudflare, credenciais) não está neste repo — ver `README.md` na raiz do ai2tcs e o workspace local `Documents/ITCS` se aplicável.
+**Repositório e pastas:** esta documentação está no repositório **ai2tcs**, em `featureLLM/docs/`. O manual **NF Extract** (só `/nfExtract`) fica na **raiz** do clone: `docs/ManualNF_Extract`. Infra sensível e mapas reais da tua rede: pasta local **`local-only/`** (ver [`docs/LOCAL_ONLY.md`](../../docs/LOCAL_ONLY.md)); não faz parte do histórico público.
 
 ---
 
@@ -28,24 +28,22 @@ Como conectar seus projetos à API de LLM local rodando no Mac mini via Tailscal
 
 ## 1. Visão geral
 
-A API roda no **Mac mini (mini62)**, porta **28471**. É a **mesma instância** em todos os caminhos abaixo; mudam só como o cliente **chega** até ela.
+A API corre no **host onde a instalas** (típico: um Mac ou Linux na tua rede), porta **28471**. É a **mesma instância** em todos os caminhos abaixo; mudam só como o cliente **chega** até ela.
 
 ### 1.1 Duas formas de URL base (`LLM_API_URL`)
 
 | Caminho | URL base típica | Quem usa |
 |--------|------------------|----------|
-| **A — Internet (HTTPS)** | `https://llm.webplace.cc` | Servidores **fora** da Tailscale, middleware na nuvem, integrações que precisam de TLS público. Fluxo: cliente → Cloudflare → **itcsLinode1** (Nginx :443) → Tailscale → mini62:28471. |
-| **B — Tailscale (direto na API)** | `http://<IP-do-Mac-na-tailnet>:28471` | Nós **na mesma tailnet** (menos latência, sem depender do Linode). Exemplo atual do mini62: `http://100.90.214.92:28471` (confirme com `tailscale ip -4` no Mac). |
+| **A — Internet (HTTPS)** | `https://<teu-host-público-llm>` | Clientes **fora** da Tailscale quando expões HTTPS no edge (reverse proxy, TLS). Fluxo típico: cliente → TLS no edge → rede privada até o host da API **:28471**. O valor exacto depende da tua infra — anota-o em `local-only/`. |
+| **B — Tailscale (direto na API)** | `http://<IP-ou-hostname-na-tailnet>:28471` | Máquinas **na mesma tailnet**. Obtéis o IP com `tailscale ip -4` **no host onde a API corre** (ou hostname no admin Tailscale). |
 
 **Auth e paths:** iguais nos dois casos — header `Authorization: Bearer` (§ 2) e os mesmos endpoints (`/ask`, `/nfExtract`, `/edu`, `/health`, etc.).
 
-**Nota:** não há API exposta na porta **28471** do Linode; o Linode só termina **HTTPS** no host `llm.webplace.cc` e faz **proxy** para o Mac. Quem quiser “direto no servidor Linode” na prática usa o **caminho A** (domínio apontando para o Linode).
+**Nota:** muitas instalações **não** expõem a porta 28471 diretamente à internet; o caminho A usa um proxy que termina TLS e encaminha para o host da API. O caminho B evita isso dentro da tailnet.
 
-**Como descobrir o IP do Mac na tailnet:** no Mac, `tailscale ip -4`; no admin Tailscale, lista de dispositivos.
+**Fallback (VM em cloud sem TCP estável para peers Tailscale):** padrão **túnel SSH reverso** a partir do host da API — script `featureLLM/scripts/llm-tunnel-mini62-to-itcsvm.sh` (raiz do clone ou `featureLLM/`). No lado da VM, `LLM_API_URL=http://127.0.0.1:28471`. Detalhes em [OPERACAO_TAILSCALE.md](./OPERACAO_TAILSCALE.md) (secção 6).
 
-**Fallback para itcsVM (timeout via Tailscale):** o itcsVM não consegue TCP para nenhum peer Tailscale. Use o **túnel SSH reverso** no mini62: rode `featureLLM/scripts/llm-tunnel-mini62-to-itcsvm.sh` (a partir da **raiz** do clone ai2tcs) ou, dentro de `featureLLM/`, `./scripts/llm-tunnel-mini62-to-itcsvm.sh`. No itcsVM use `LLM_API_URL=http://127.0.0.1:28471`. Detalhes em [OPERACAO_TAILSCALE.md](./OPERACAO_TAILSCALE.md) (seção 6).
-
-**Dashboard:** a API LLM expõe interface web em `/dashboard` (login com usuário/senha do `.env`, não o token da API). Permite listar projetos, jobs, estatísticas e health — útil para operação e debug. Endpoints REST também estão disponíveis para automação (ver § 3).
+**Dashboard:** interface web em `/dashboard` — login com **`DASHBOARD_USER` / `DASHBOARD_PASSWORD`** definidos no `.env` da API (não uses defaults fracos em produção; vê [`.env.example`](../.env.example)). O token Bearer da API **não** serve para o login HTML do dashboard.
 
 **Deploy da API:** corre **neste computador**, só com Docker. Na raiz do repositório ai2tcs: `./scripts/deploy_llm.sh` (rebuild + `docker compose up -d --build api` em `featureLLM/`). Não há deploy por SSH para outro host. Não usar `run_api.sh` nem launchd para produção.
 
@@ -102,7 +100,7 @@ Boas práticas: guarde o token em **variável de ambiente** no cliente — nunca
 | POST | `/users/conversation/maintenance` | Forçar resumo + limpeza mensal |
 | GET | `/health` | Checar se API, Ollama e Postgres estão vivos |
 | GET | `/metrics` | Métricas Prometheus — ver § 3.6 |
-| GET | `/dashboard` | Interface web (login com token) |
+| GET | `/dashboard` | Interface web (login com user/senha do `.env`) |
 | POST | `/edu/chat` | Tutor **síncrono**; resposta sempre com `reply_structured` (modelo ou segmento fixo se falhar schema após retry) — § 3.8 |
 | POST | `/edu/exercise` | Gerar exercícios a partir do nível ou de `vocab_ids` — § 3.8 |
 | GET | `/edu/vocabulary` | Listar vocabulário (`language`, `level`, `limit`, `offset`) — § 3.8 |
@@ -322,7 +320,7 @@ Response (200):
 
 ### 3.5 GET /dashboard — Interface web
 
-Interface HTML (HTMX + Jinja2) para operação: listar projetos, jobs, estatísticas e health. Login com **usuário e senha** (`DASHBOARD_USER` / `DASHBOARD_PASSWORD` no `.env`; default: ianthomaz / 2580). URL: `GET {LLM_API_URL}/dashboard`. Funciona com **caminho A** (`https://llm.webplace.cc/dashboard`) ou **caminho B** (tailnet); evite expor credenciais fracas se usar URL pública.
+Interface HTML (HTMX + Jinja2) para operação: listar projetos, jobs, estatísticas e health. Login com **usuário e senha** definidos no `.env` (`DASHBOARD_USER`, `DASHBOARD_PASSWORD`). URL: `GET {LLM_API_URL}/dashboard`. Com HTTPS público, usa credenciais fortes; valores reais não pertencem a este repositório (só em `local-only/` ou gestor de segredos).
 
 ### 3.6 GET /metrics — Métricas Prometheus
 
@@ -700,12 +698,13 @@ Response:
 ### 8.1 Python (httpx) — Recomendado
 
 ```python
-import httpx
+import os
 import time
+import httpx
 
-# LLM_API_URL: tailnet direto (B) ou https://llm.webplace.cc (A) — ver § 1.1
-LLM_BASE = "http://100.90.214.92:28471"
-LLM_TOKEN = "SEU_TOKEN"
+# LLM_API_URL: tailnet (B) ou HTTPS público (A) — ver § 1.1
+LLM_BASE = os.environ.get("LLM_API_URL", "http://127.0.0.1:28471")
+LLM_TOKEN = os.environ.get("LLM_API_TOKEN", "SEU_TOKEN")
 HEADERS = {"Authorization": f"Bearer {LLM_TOKEN}", "Content-Type": "application/json"}
 
 def ask_llm(project_id: str, question: str, user_id: str | None = None, timeout: int = 300) -> dict:
@@ -769,8 +768,8 @@ async def ask_llm_async(project_id: str, question: str, user_id: str | None = No
 ### 8.3 Node.js / TypeScript
 
 ```typescript
-// LLM_API_URL — § 1.1: tailnet ou https://llm.webplace.cc
-const LLM_BASE = "http://100.90.214.92:28471";
+// LLM_API_URL — § 1.1 (ex.: process.env.LLM_API_URL ou tailnet)
+const LLM_BASE = process.env.LLM_API_URL ?? "http://127.0.0.1:28471";
 const LLM_TOKEN = process.env.LLM_API_TOKEN;
 
 async function askLlm(projectId: string, question: string, userId?: string) {
@@ -805,8 +804,8 @@ async function askLlm(projectId: string, question: string, userId?: string) {
 ### 8.4 Bash / curl
 
 ```bash
-# LLM_API_URL — § 1.1
-LLM_BASE="http://100.90.214.92:28471"
+# LLM_API_URL — § 1.1 (exporta LLM_API_URL no ambiente)
+LLM_BASE="${LLM_API_URL:-http://127.0.0.1:28471}"
 
 # Perguntar
 RESP=$(curl -s -X POST "$LLM_BASE/ask" \
@@ -1072,7 +1071,7 @@ Para ajustes finos que nenhum parâmetro resolve:
 | "Quem é você?" / perguntas existenciais → resposta má ou fallback humano no Zap | RAG sem chunk relevante ou resposta vazia da API; ver **§ 4.5** — ficheiro `identidade-assistente.md` + regra em `instrucoes-llm.md` + reforço no `system_prompt` do cliente; reindexar |
 | Orquestrador mostra "assistente não conseguiu responder" com tag LLM ativa | `GET /result` sem `answer` ou string vazia; ver logs do job (`GET /jobs`), `/health` (Ollama), timeout; conferir se `question` chega corretamente e se histórico não confunde o modelo |
 | `connection refused` | Mac offline, API parada, ou Tailscale desconectado |
-| `timeout` (servidor → Mac) | Servidor na nuvem (itcsVM) via DERP; use proxy via pcvelho: `LLM_API_URL=http://100.89.195.56:28472` e rode `featureLLM/scripts/setup-llm-proxy-pcvelho.sh` (raiz do clone) ou `./scripts/setup-llm-proxy-pcvelho.sh` dentro de `featureLLM/` |
+| `timeout` (servidor → host da API) | VM em cloud atrás de DERP sem TCP estável: ver túnel em [OPERACAO_TAILSCALE.md](./OPERACAO_TAILSCALE.md) secção 6, ou proxy (`setup-llm-proxy-pcvelho.sh`) se a tua topologia permitir — IPs reais em `local-only/` |
 | `/extract` retorna sempre `null` | Step inválido ou resposta da LLM fora do formato; ver § 3.1. Confira se Ollama está no ar (`/health`) |
 
 ---

@@ -345,7 +345,7 @@ featureLLM/
 
 2. **Criar venv e dependências em `featureLLM/`**
    ```bash
-   cd /Users/ianthomaz/Documents/projects/ai2tcs/featureLLM
+   cd /caminho/para/ai2tcs/featureLLM
    python3 -m venv .venv
    source .venv/bin/activate
    pip install fastapi uvicorn ollama sqlite-vss chromadb httpx pydantic-settings

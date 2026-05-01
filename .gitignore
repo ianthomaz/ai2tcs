@@ -9,6 +9,9 @@ credentialsMap.json
 # Local context / generated
 .basicITCS_getAware
 
+# Private notes (hosts, IPs, exports) — see docs/LOCAL_ONLY.md
+local-only/
+
 # Keys and certs (if any at repo root)
 *.pem
 *.key
