@@ -38,6 +38,8 @@ Só precisam mudança se tiverem **nome de modelo Ollama fixo** no JSON (ex.: `q
 
 **Docker Compose:** o serviço `api` usa `env_file: .env` em `llm_api/docker-compose.yml` para o contentor herdar o **`llm_api/.env` completo**; as variáveis listadas em `environment:` (ex.: `DATABASE_URL` para o host `postgres`) **sobrepõem** o ficheiro. Sem `.env` no disco, `docker compose up` falha — copiar de `.env.example` primeiro.
 
+**Sincronizar `.env` com o exemplo (mantém tokens e OAuth):** a partir da pasta `llm_api/`, `python3 scripts/merge_env_from_example.py` — reescreve `.env` na ordem do `.env.example`, preserva valores já definidos e acrescenta chaves novas do exemplo (prefixos seguros como `OLLAMA_*` passam a linhas activas com default do exemplo se ainda não existirem).
+
 Não existe variável de ambiente única que substitua o **`embedding_model` por projecto** na BD; o fallback no código só aplica quando o campo **não** está no `config_json`.
 
 ---

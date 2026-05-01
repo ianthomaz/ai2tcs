@@ -16,5 +16,6 @@ fi
 cd "$FLM"
 echo "Deploy llm_api (local Docker Compose)"
 echo "========================================="
+# Optional: sync .env from .env.example while keeping secrets — python3 scripts/merge_env_from_example.py
 docker compose up -d --build api
 echo "Done. API: http://127.0.0.1:28471"
