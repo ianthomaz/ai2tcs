@@ -35,7 +35,7 @@
 | Conteúdo | Ficheiro |
 |----------|----------|
 | Tailscale, Serve, túnel, proxy | [refs/operacao-tailscale.md](./refs/operacao-tailscale.md) |
-| Cloudflare (edge, Access, rate limit) | [refs/cloudflare-edge.md](./refs/cloudflare-edge.md) |
+| Cloudflare (`llm.webplace.cc`, TLS / OAuth / WAF) | [refs/cloudflare-edge.md](./refs/cloudflare-edge.md) |
 | Exemplo nginx (tailnet) | [refs/nginx/bikeanjovm.conf](./refs/nginx/bikeanjovm.conf) |
 
 ---
