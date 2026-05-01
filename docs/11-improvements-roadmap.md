@@ -526,4 +526,4 @@ Ver `scripts/llm_docker_autostart.sh` como base — adaptar para launchctl.
 - [Model Context Protocol](https://modelcontextprotocol.io) — MCP spec
 - [Sentence Transformers](https://www.sbert.net) — cross-encoders para reranking
 
-**Seguinte:** [12-llm-fleet-rag-operations.md](./12-llm-fleet-rag-operations.md) — checklist operacional (servidor, BD, ingest).
+**Seguinte:** [12-llm-fleet-rag-operations.md](./12-llm-fleet-rag-operations.md)

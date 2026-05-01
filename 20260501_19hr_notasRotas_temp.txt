@@ -1,0 +1,59 @@
+# Notas temporárias — rotas API a preservar (compatibilidade com clientes já ligados)
+# 2026-05-01 ~19h — apagar ou arquivar quando já não for preciso.
+
+Critério: não quebrar URL, método HTTP, corpos e cabeçalhos que integradores já usam.
+Preferir extensões (campos opcionais, rotas novas) a breaking; breaking → /v2 ou janela acordada.
+
+--- Rotas principais (llm_api/app/main.py → routers) ---
+
+POST /ask
+GET  /status/{job_id}
+GET  /result/{job_id}
+
+POST /extract
+POST /extract-multi
+
+POST /nfExtract
+  (manual: docs/refs/ManualNF_Extract; header X-Project-Id onde documentado)
+
+POST /router
+
+POST /nabilvideomap/qualify-caption
+
+GET /health
+GET /metrics
+
+GET    /projects
+GET    /projects/{project_id}
+POST   /projects
+PUT    /projects/{project_id}
+DELETE /projects/{project_id}
+
+GET  /jobs
+GET  /jobs/stats
+POST /jobs/{job_id}/cancel
+
+POST /ingest
+POST /ingest/upload
+
+POST /audio/transcribe
+POST /audio/ask
+
+POST /edu/chat
+POST /edu/exercise
+GET  /edu/vocabulary
+POST /edu/vocabulary
+GET  /edu/grammar
+POST /edu/grammar
+POST /edu/progress
+
+Tudo sob /dashboard/... (HTMX; OAuth Google + allowlist DASHBOARD_ALLOWED_EMAILS)
+
+--- Contexto de projetos no repo (dados / seeds, não são rotas novas) ---
+
+llm_api/project_library/webplace/  (biblioteca / fluxos)
+llm_api/scripts/seed_webplacecc.py
+llm_api/scripts/seed_webplace.py
+llm_api/scripts/seed_bikeanjoall.py
+
+Ecosistema doc: itcs-webplace — ver docs/01-overview.md, docs/02-api-integration.md

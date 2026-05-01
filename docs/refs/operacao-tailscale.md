@@ -88,7 +88,7 @@ No **llm_server**, manténs um túnel para a VM: o script do repositório é `ll
 
 ### 6.2 Proxy nginx noutro nó da tailnet (opcional)
 
-Se precisares de um nó intermédio (ex.: VM sem TCP estável até o **llm_server**), podes subir nginx na tailnet que escuta numa porta (ex. 28472) e faz `proxy_pass` para o **llm_server** `:28471`. Modelo genérico: `docs/refs/nginx/bikeanjovm.conf` e script `llm_api/scripts/setup-llm-proxy-bikeanjovm.sh` (adaptar host, IP e paths). O cliente usa então `http://<IP-tailnet-do-proxy>:<porta>`. Detalhes reais: `local-only/`.
+Se precisares de um nó intermédio (ex.: VM sem TCP estável até o **llm_server**), podes subir nginx na tailnet que escuta numa porta (ex. 28472) e faz `proxy_pass` para o **llm_server** `:28471`. Modelo genérico: [`docs/refs/nginx/bikeanjovm.conf`](./nginx/bikeanjovm.conf) (adaptar host, IP e paths à mão). O cliente usa então `http://<IP-tailnet-do-proxy>:<porta>`. Detalhes reais: `local-only/`.
 
 ---
 
