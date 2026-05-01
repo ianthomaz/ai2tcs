@@ -10,7 +10,7 @@ Checklist e pontos que **não** cabem noutros docs. Defaults de modelos e `OLLAM
 
 Na raiz do repo: `./scripts/deploy_llm.sh` (rebuild + `docker compose up` em `llm_api/`).
 
-O serviço `api` usa `env_file: .env`; o bloco `environment:` do compose **sobrepõe** chaves como `DATABASE_URL` (Postgres interno). Precisas de `llm_api/.env` no disco.
+O serviço `api` usa `env_file: .env`; o bloco `environment:` do compose **sobrepõe** chaves como `DATABASE_URL` (Postgres interno) e **`OLLAMA_HOST`** (`http://host.docker.internal:11434`) — o `.env` com `127.0.0.1` é para correr a API no host, não dentro do contentor. Precisas de `llm_api/.env` no disco.
 
 **Alinhar `.env` com o exemplo** (mantém tokens e chaves extra): em `llm_api/`, `python3 scripts/merge_env_from_example.py`.
 
