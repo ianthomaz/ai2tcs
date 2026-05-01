@@ -109,6 +109,16 @@ class Settings(BaseSettings):
         t = float(self.nabil_qualify_temperature)
         return max(0.1, min(0.85, t))
 
+    # External LLM providers — disabled by default (leave empty to keep Ollama-only).
+    # Set in .env to activate. See app/llm/external_provider.py for full documentation.
+    openai_api_key: str = ""
+    openai_base_url: str = "https://api.openai.com/v1"
+    openai_default_model: str = "gpt-4o-mini"
+    anthropic_api_key: str = ""
+    anthropic_default_model: str = "claude-haiku-4-5-20251001"
+    gemini_api_key: str = ""
+    gemini_default_model: str = "gemini-2.0-flash"
+
     def dashboard_google_oauth_configured(self) -> bool:
         return bool(
             self.dashboard_google_client_id.strip()

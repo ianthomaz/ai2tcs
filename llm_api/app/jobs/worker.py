@@ -7,12 +7,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-import ollama
-
 from app import db as db_module
 from app.config import settings
+from app.llm import get_provider
 from app.registry import (
     get_project,
+    get_rag_mode,
     get_rag_policies,
     get_llm_config,
     get_behavior_instruction_inline,
@@ -192,38 +192,37 @@ async def run_rag_job(
             await db_module.job_update_status(job_id, "failed", error_message="project not found")
             return
         policies = get_rag_policies(project)
+        rag_mode = get_rag_mode(project)
         top_k = policies.get("max_chunks_to_retrieve", 5)
         embed_model = "nomic-embed-text"
         if isinstance(project.get("config_json"), dict):
             embed_model = (project["config_json"] or {}).get("embedding_model") or embed_model
 
-        # Retrieve RAG context
-        await db_module.job_update_status(job_id, "working", progress="retrieving_context")
-        chunks = await retrieve(project_id, question, top_k=top_k, embedding_model=embed_model)
-        max_dist = policies.get("max_chunk_distance", MAX_CHUNK_DISTANCE)
-        chunks = _filter_chunks_by_distance(chunks, max_distance=max_dist)
+        # RAG retrieval (skipped when rag_mode == "disabled")
+        chunks: list[dict] = []
+        if rag_mode != "disabled":
+            await db_module.job_update_status(job_id, "working", progress="retrieving_context")
+            chunks = await retrieve(project_id, question, top_k=top_k, embedding_model=embed_model)
+            max_dist = policies.get("max_chunk_distance", MAX_CHUNK_DISTANCE)
+            chunks = _filter_chunks_by_distance(chunks, max_distance=max_dist)
 
-        # Deep Search Logic: if configured or if we found too little, search again with wider criteria
-        depth = policies.get("search_depth", "standard")
-        if (depth == "deep" or not chunks) and top_k < 15:
-            logger.info("Deep search triggered for job %s (depth=%s, chunks_found=%d)", job_id, depth, len(chunks))
-            # Increase top_k and expand distance threshold for more reach
-            deep_top_k = 12
-            deep_max_dist = max_dist * 1.3  # 30% more permissive
-            more_chunks = await retrieve(project_id, question, top_k=deep_top_k, embedding_model=embed_model)
-            more_chunks = _filter_chunks_by_distance(more_chunks, max_distance=deep_max_dist)
+            # Deep Search Logic: if configured or if we found too little, search again with wider criteria
+            depth = policies.get("search_depth", "standard")
+            if (depth == "deep" or not chunks) and top_k < 15:
+                logger.info("Deep search triggered for job %s (depth=%s, chunks_found=%d)", job_id, depth, len(chunks))
+                deep_top_k = 12
+                deep_max_dist = max_dist * 1.3  # 30% more permissive
+                more_chunks = await retrieve(project_id, question, top_k=deep_top_k, embedding_model=embed_model)
+                more_chunks = _filter_chunks_by_distance(more_chunks, max_distance=deep_max_dist)
 
-            # Merge and deduplicate
-            existing_ids = {c.get("id") for c in chunks if c.get("id")}
-            for c in more_chunks:
-                if c.get("id") not in existing_ids:
-                    chunks.append(c)
-            # Re-sort by distance (ascending)
-            chunks.sort(key=lambda x: x.get("distance", 2.0))
-            # Limit to a reasonable max for context window
-            chunks = chunks[:10]
+                existing_ids = {c.get("id") for c in chunks if c.get("id")}
+                for c in more_chunks:
+                    if c.get("id") not in existing_ids:
+                        chunks.append(c)
+                chunks.sort(key=lambda x: x.get("distance", 2.0))
+                chunks = chunks[:10]
 
-        chunks = _rerank_for_diversity(chunks)
+            chunks = _rerank_for_diversity(chunks)
 
         # Load user context (if identified)
         conversation_history: list[dict] = []
@@ -279,8 +278,8 @@ async def run_rag_job(
         await db_module.job_update_status(job_id, "working", progress="generating")
 
         model_name = settings.get_model_name(model_alias, default_alias="smart")
-        response = await asyncio.to_thread(
-            ollama.chat,
+        provider = get_provider(project)
+        answer = await provider.chat(
             model=model_name,
             messages=[
                 {"role": "system", "content": system_msg},
@@ -288,7 +287,6 @@ async def run_rag_job(
             ],
             options=llm_config,
         )
-        answer = (response.get("message") or {}).get("content") or ""
 
         # Post-processing: fix known LLM generation errors (meta-phrases, typos, filler)
         answer = _sanitize_answer(answer)
@@ -307,7 +305,7 @@ async def run_rag_job(
             for c in chunks
         ]
         confidence = "high" if chunks else "low"
-        if not chunks:
+        if not chunks and rag_mode == "required":
             status = policies.get("when_no_answer", "no_answer")
         else:
             status = "done"
@@ -459,16 +457,16 @@ async def _maybe_run_maintenance() -> None:
 
 
 async def speculative_warmup(model_alias: str) -> None:
-    """Trigger a speculative warm-up for a model alias."""
+    """Trigger a speculative warm-up for a model alias (Ollama only)."""
+    import ollama as _ollama
     try:
         model_name = settings.get_model_name(model_alias)
         logger.info("Speculative warm-up for %s (%s)", model_alias, model_name)
-        # Use keep_alive to keep it in memory
         await asyncio.to_thread(
-            ollama.generate,
+            _ollama.generate,
             model=model_name,
             prompt="",
-            keep_alive="5m"
+            keep_alive="5m",
         )
     except Exception as e:
         logger.warning("Warm-up failed for %s: %s", model_alias, e)

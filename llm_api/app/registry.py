@@ -67,6 +67,21 @@ def get_rag_policies(project: dict) -> dict:
     }
 
 
+def get_rag_mode(project: dict) -> str:
+    """RAG retrieval mode for this project.
+
+    'required' (default): answer only when RAG context is found; no chunks → no_answer.
+    'optional': run RAG but answer regardless (good for mixed knowledge + open chat).
+    'disabled': skip retrieval entirely — pure LLM, no vector lookup.
+    """
+    cfg = project.get("config_json") or {}
+    if isinstance(cfg, dict):
+        mode = (cfg.get("policies") or {}).get("rag_mode", "required")
+        if mode in ("required", "optional", "disabled"):
+            return mode
+    return "required"
+
+
 def get_behavior_instruction_path(project: dict) -> str | None:
     """Relative path to behavior instruction file (e.g. instrucoes-llm.md) under first source dir.
     Resolved at runtime by the worker from project sources.
