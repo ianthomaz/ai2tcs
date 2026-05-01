@@ -30,3 +30,4 @@ temp_nginx/
 node_modules/
 .venv/
 __pycache__/
+*_temp.txt
