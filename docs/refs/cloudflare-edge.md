@@ -11,11 +11,13 @@ Contrato HTTP da API: [../02-api-integration.md](../02-api-integration.md). Topo
 | **Tailscale Funnel** | Expor serviço **Tailscale** à Internet pública. Caminho alternativo ao domínio na Cloudflare. |
 | **Cloudflare Tunnel** (`cloudflared`) | Tráfego Internet → edge Cloudflare → túnel → processo `cloudflared` no teu lado → `127.0.0.1` / nginx. |
 
-O DNS público (`llm.webplace.cc`) resolve na **edge Cloudflare**. O destino interno da API continua no **llm_server**.
+O DNS público (`llm.webplace.cc`) resolve na **edge Cloudflare** (registo **proxied**). Com **Cloudflare Tunnel**, o pedido segue para `cloudflared` no host onde corre a API (**llm_server**, ex. mini62) e daí para **`http://127.0.0.1:28471`**. Acesso **só na tailnet** (sem domínio público): [operacao-tailscale.md](./operacao-tailscale.md).
 
 ---
 
 ## TLS em `llm.webplace.cc` (browser → Google OAuth)
+
+Checklist (ordem sugerida):
 
 1. **Cloudflare (zona do domínio)**  
    - Registo `llm` (ou CNAME) **proxied** (nuvem laranja).  
@@ -23,17 +25,22 @@ O DNS público (`llm.webplace.cc`) resolve na **edge Cloudflare**. O destino int
    - **Always Use HTTPS** na zona, se aplicável.
 
 2. **Google Cloud Console** (cliente OAuth **Aplicação Web**)  
-   - **Origens JavaScript autorizadas:** `https://llm.webplace.cc`  
-   - **URIs de redireccionamento autorizados:** `https://llm.webplace.cc/dashboard/auth/google/callback`  
-   - Opcional (dev): `http://127.0.0.1:28471` e `http://127.0.0.1:28471/dashboard/auth/google/callback`.
+   - **Origens JavaScript autorizadas:** exactamente o mesmo `scheme://host` que o browser usa (ex.: `https://llm.webplace.cc`). Para desenvolvimento local, acrescenta também `http://127.0.0.1:28471` se fores testar aí.  
+   - **URIs de redireccionamento autorizados:** uma linha por origem, **exactamente**  
+     `{DASHBOARD_OAUTH_REDIRECT_BASE}/dashboard/auth/google/callback`  
+     (ex.: `https://llm.webplace.cc/dashboard/auth/google/callback`).
 
-3. **`llm_api/.env`**  
-   - `DASHBOARD_OAUTH_REDIRECT_BASE=https://llm.webplace.cc` (sem `/` final).  
-   - Deve coincidir com o redirect registado no GCP (código: `app/dashboard/google_oauth.py` → `build_authorize_redirect_uri`).
+3. **`llm_api/.env`** (nunca versionar; ver [`llm_api/.env.example`](../../llm_api/.env.example))  
+   - `DASHBOARD_GOOGLE_CLIENT_ID`, `DASHBOARD_GOOGLE_CLIENT_SECRET`  
+   - `DASHBOARD_OAUTH_REDIRECT_BASE` = mesma origem que em (2), **sem barra final** (ex.: `https://llm.webplace.cc`).  
+   - **`DASHBOARD_ALLOWED_EMAILS` obrigatório** se usares Google: lista separada por vírgulas, **e-mails em minúsculas**. Se ficar **vazio**, ninguém passa no login Google (o dashboard mostra mensagem a pedir configuração).
 
-4. **`DASHBOARD_ALLOWED_EMAILS`** — allowlist em minúsculas.
+4. **Legado (opcional):** `DASHBOARD_USER` / `DASHBOARD_PASSWORD` — só se **não** tiveres os três campos OAuth preenchidos; ver [`02-api-integration.md`](../02-api-integration.md).
 
-Erro típico: `redirect_uri_mismatch` → comparar URI no GCP com `DASHBOARD_OAUTH_REDIRECT_BASE` + `/dashboard/auth/google/callback`.
+Erros típicos:
+
+- **`redirect_uri_mismatch`** — comparar byte a byte o redirect no GCP com `DASHBOARD_OAUTH_REDIRECT_BASE` + `/dashboard/auth/google/callback`.  
+- **“Allowlist vazia” / sem acesso** — preencher `DASHBOARD_ALLOWED_EMAILS` com pelo menos o teu e-mail Google (minúsculas).
 
 ---
 

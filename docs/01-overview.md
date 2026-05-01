@@ -8,6 +8,16 @@
 
 ---
 
+## Integração: escopo, itcs-webplace e customização
+
+Este repositório foi pensado para mostrar **estrutura**, **contratos HTTP** e **padrões** — para um novo produto **saber como se adaptar** (auth, `project_id`, ingest, jobs, exemplos de payloads), **não** para entregar um manual fechado ao **100%** para cada tipo de projecto que possa existir. Os exemplos concretos (bibliotecas, rotas como `/nabilvideomap/qualify-caption`, zapzap, NF, etc.) ilustram **encaixes reais**, não um catálogo exaustivo de domínios.
+
+A API LLM documentada aqui vive no ecossistema **itcs-webplace** (operada nesse contexto). Quem integrar de fora deve seguir os mesmos contratos públicos e tratar `project_id`, biblioteca e `config_json` como o **seu** espaço dentro da mesma instância.
+
+Se o teu projecto **precisa de padrões específicos** (prompts, campos extra, nova rota, formato de job, língua, limites), **é possível alinhar todo o fluxo** com quem mantém a API: na prática, quando o projecto **sabe pedir** — lista de **rotas** e **requests/responses** desejados, exemplos de legenda ou mensagem, restrições — pode-se devolver um desenho coerente (incluindo prompts ou notas que referenciem esses endpoints) em coordenação com a manutenção, sem obrigar esse detalhe a viver só em `local-only` para sempre.
+
+---
+
 ## Índice
 
 | Assunto | Ficheiro |
@@ -24,7 +34,7 @@
 
 **NF Extract:** [refs/ManualNF_Extract](./refs/ManualNF_Extract). **Variáveis (sem segredos):** [`llm_api/.env.example`](../llm_api/.env.example). **Roadmap código:** [`llm_api/UPGRADES.md`](../llm_api/UPGRADES.md).
 
-**Dashboard Google:** allowlist em `DASHBOARD_ALLOWED_EMAILS` (`llm_api/.env` ou env do container). Comparação com e-mail devolvido pelo Google; não usa Postgres. Defaults comentados: `llm_api/.env.example`.
+**Dashboard Google:** no repositório público **não** há e-mails em código; define `DASHBOARD_GOOGLE_*`, `DASHBOARD_OAUTH_REDIRECT_BASE` e **`DASHBOARD_ALLOWED_EMAILS`** no `llm_api/.env` (ou env do container). A allowlist é **obrigatória** para o login Google funcionar (minúsculas; vazio bloqueia todos). Ver `llm_api/.env.example` e [refs/cloudflare-edge.md](./refs/cloudflare-edge.md).
 
 ---
 
@@ -51,5 +61,7 @@ Directório na **raiz do clone**, no [`.gitignore`](../.gitignore).
 Em `docs/`: placeholders (`<tailnet-host>`, etc.) e contratos HTTP. **llm_server:** máquina onde corre a API nas secções de rede.
 
 ---
+
+**Autoria:** ITCS-Webplace — CNPJ 65.998.990/0001-44 — [email@webplace.cc](mailto:email@webplace.cc).
 
 **Anterior:** — · **Seguinte:** [02-api-integration.md](./02-api-integration.md)

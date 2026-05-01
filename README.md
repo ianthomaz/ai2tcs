@@ -15,6 +15,16 @@ Motor principal em **`llm_api/`**; documentação de contratos em **`docs/`**; s
 | Deploy local (Docker) | `./scripts/deploy_llm.sh` |
 | Smoke NF Extract | `./scripts/nf_extract_smoke.py` |
 
+## Desenvolvimento e autoria
+
+**ITCS-Webplace** — manutenção e desenvolvimento do produto LLM/API neste mono-repo.
+
+| | |
+|--|--|
+| **Razão social** | ITCS-Webplace |
+| **CNPJ** | 65.998.990/0001-44 |
+| **Contacto** | [email@webplace.cc](mailto:email@webplace.cc) |
+
 ## Operações internas
 
 Infra e credenciais da organização: repositórios privados ou `local-only/` no clone.
@@ -26,3 +36,9 @@ Infra e credenciais da organização: repositórios privados ou `local-only/` no
 - **Código e comentários técnicos:** inglês.
 - **Interface e mensagens ao utilizador:** português (público BR).
 - **Estado em listas em `.md`:** `[ x ]` resolvido, `[ ]` pendente (sem emojis nos `.md`).
+
+## Contribuir, segurança e licença
+
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — PRs, convenções, testes.
+- **[SECURITY.md](SECURITY.md)** — reporte responsável de vulnerabilidades.
+- **[LICENSE](LICENSE)** — MIT; titular dos direitos: **ITCS-Webplace** (CNPJ 65.998.990/0001-44). Para outra licença comercial, abre discussão antes de fork “fechado”.

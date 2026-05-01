@@ -63,6 +63,8 @@ curl -H "Authorization: Bearer $LLM_API_TOKEN" http://127.0.0.1:28471/health | j
 
 Esperado: `{"status":"ok","checks":{"ollama":...,"postgres":...}}`
 
+**Dashboard (Google OAuth):** credenciais só no `.env` (nunca no Git). Preenche `DASHBOARD_GOOGLE_*`, `DASHBOARD_OAUTH_REDIRECT_BASE` e **`DASHBOARD_ALLOWED_EMAILS`** (mínimo um e-mail em minúsculas); alinha URIs no GCP com [refs/cloudflare-edge.md](./refs/cloudflare-edge.md).
+
 ---
 
 ## Arquitetura

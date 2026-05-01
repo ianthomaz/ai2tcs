@@ -42,6 +42,10 @@ Autenticação:
 - Usa o mesmo token da API principal (`LLM_API_TOKEN`).
 - Header obrigatório em todas as chamadas: `Authorization: Bearer <token>`.
 
+Opcional (dashboard / jobs):
+
+- Header **`X-Project-Id`**: slug de projecto para agrupar o registo desta chamada na lista de **Jobs** do dashboard. Se omitires, o servidor usa o projecto interno de auditoria `itcs_sync_tools`. Usa **header** (não campo de form) para não interferir com o `multipart` e com a validação do Bearer por chave de projecto.
+
 ## 3.1) Formato correto da chamada (contrato com a API)
 
 O FastAPI expõe **três campos opcionais** no form; **exatamente um** deve vir preenchido por requisição. Os **nomes** abaixo são **case-sensitive** (devem bater com o parâmetro do servidor).

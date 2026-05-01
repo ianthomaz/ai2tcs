@@ -45,9 +45,19 @@ A API corre no **llm_server** (máquina onde a instalas; típico Mac ou Linux), 
 
 **Fallback (VM em cloud sem TCP estável para peers Tailscale):** padrão **túnel SSH reverso** a partir do **llm_server** — script `llm_api/scripts/llm-tunnel-api-host-to-itcsvm.sh` (raiz do clone ou `llm_api/`); variáveis `ITCSVM_*` / `SSH_KEY` em env (`local-only/docs/`). No lado da VM, `LLM_API_URL=http://127.0.0.1:28471`. Detalhes em [refs/operacao-tailscale.md](./refs/operacao-tailscale.md) (secção 6).
 
-**Dashboard:** interface web em `/dashboard`. **Preferência:** login **Google OAuth** (`DASHBOARD_GOOGLE_CLIENT_ID`, `DASHBOARD_GOOGLE_CLIENT_SECRET`, `DASHBOARD_OAUTH_REDIRECT_BASE`, `DASHBOARD_ALLOWED_EMAILS` — ver [`.env.example`](../llm_api/.env.example)); o redirect canónico é `{DASHBOARD_OAUTH_REDIRECT_BASE}/dashboard/auth/google/callback`. **Alternativa:** user/senha no `.env` (`DASHBOARD_USER`, `DASHBOARD_PASSWORD`) só se OAuth **não** estiver configurado (ou ambos, se quiseres fallback). O token Bearer da API **não** serve para o login HTML do dashboard.
+**Dashboard:** interface web em `/dashboard`. **Preferência:** login **Google OAuth** — no `.env`: `DASHBOARD_GOOGLE_CLIENT_ID`, `DASHBOARD_GOOGLE_CLIENT_SECRET`, `DASHBOARD_OAUTH_REDIRECT_BASE` (sem `/` final; igual à origem no browser), e **`DASHBOARD_ALLOWED_EMAILS`** (obrigatório: pelo menos um e-mail em **minúsculas**; lista vazia impede qualquer login Google). Redirect canónico no GCP: `{DASHBOARD_OAUTH_REDIRECT_BASE}/dashboard/auth/google/callback`. Checklist: [refs/cloudflare-edge.md](./refs/cloudflare-edge.md); variáveis: [`.env.example`](../llm_api/.env.example). **Alternativa:** `DASHBOARD_USER` / `DASHBOARD_PASSWORD` só se OAuth **não** estiver completo (ou ambos, se quiseres fallback). O Bearer da API **não** serve para o HTML do dashboard.
 
 **Deploy da API:** corre **neste computador**, só com Docker. Na raiz do repositório ai2tcs: `./scripts/deploy_llm.sh` (rebuild + `docker compose up -d --build api` em `llm_api/`). Não há deploy por SSH para outro host. Não usar `run_api.sh` nem launchd para produção.
+
+### 1.2 Integração por projecto (estrutura, itcs-webplace, extensão)
+
+Os contratos deste ficheiro são **partilhados** por todos os clientes (`Authorization`, `LLM_API_URL`, mesmos paths). O objectivo do mono-repo é expor **como pedir** e **como mapear** respostas — para cada novo produto **adaptar** o seu lado (SQLite, workers, UI), não listar aqui cada detalhe de negócio possível.
+
+A instância e exemplos de produção alinhados com **itcs-webplace**; integradores noutro contexto usam os mesmos endpoints e tratam o **seu** `project_id` + biblioteca como isolamento lógico.
+
+Quando um projecto precisa de **comportamento dedicado** (prompts, JSON adicional, rota nova, semântica de job), isso **negocia-se com a manutenção da API**: convém chegar com **pedido explícito** (rotas, exemplos de request/response, limites, idioma). A partir daí ajusta-se o fluxo (código + prompts + documentação) de forma coerente — ver também [01-overview.md](./01-overview.md) (secção *Integração: escopo, itcs-webplace e customização*).
+
+**Exemplo — `POST /nabilvideomap/qualify-caption`:** corpo JSON mínimo `project_id`, `text` (legenda UTF-8), opcionais `use_rag`, `model` (aliases `fast`, `compact`, `smart`, `reasoner` ou nome Ollama). Resposta JSON com chaves fixas: `location_accuracy`, `location_granularity`, `location_primary_label`, `llm_location_candidates` (lista de `{label, kind, confidence}`), `location_ambiguity_notes`, `location_confidence`, `theme_primary`, `theme_secondary`, `theme_tags`, `llm_theme_notes`, `summary_140`. Enumerações exactas e semântica fina: **OpenAPI em `{LLM_API_URL}/docs`** no ambiente onde a API corre; variantes por produto combinam-se com a manutenção.
 
 ---
 
@@ -84,7 +94,7 @@ Boas práticas: guarde o token em **variável de ambiente** no cliente — nunca
 | **POST** | **`/extract`** | **Extração síncrona (zapzap onboarding)** — um campo por chamada; ver § 3.1 |
 | **POST** | **`/extract-multi`** | **Extração multi-campo (zapzap)** — vários campos numa mensagem; ver § 3.1 |
 | **POST** | **`/nfExtract`** | **Extração de nota fiscal (itcsNFextract)** — corpo **somente** `multipart/form-data`; exatamente **um** campo: `file` (upload) **ou** `server_file_path` **ou** `document_url` (nomes fixos). Manual: [ManualNF_Extract](./refs/ManualNF_Extract) §3.1. |
-| **POST** | **`/nabilvideomap/qualify-caption`** | **Qualificação síncrona de legenda** (pipeline nabilVideoMap) — JSON; auth § 2. Schema, RAG e env: `local-only/docs/NABIL_QUALIFY_CAPTION_API.md`. |
+| **POST** | **`/nabilvideomap/qualify-caption`** | **Qualificação síncrona de legenda** (ex.: catálogo de conteúdo / nabilVideoMap) — JSON; auth § 2. Corpo e chaves de resposta: **§ 1.2**. Detalhe de prompts/RAG por ambiente: acordar com manutenção ou notas no clone privado. |
 | **POST** | **`/router`** | **Roteador de mensagem** — ver § 3.2 (orienta: biblioteca vs fluxo; decisão é do orquestrador) |
 | POST | `/ingest` | Indexar/reindexar biblioteca; cria projeto se não existir (com sources no body ou env) |
 | **POST** | **`/ingest/upload`** | **Upload multipart** de um ficheiro para o disco do projeto (ou biblioteca partilhada) + fila de ingest incremental — ver [`03-api-reintegration.md`](03-api-reintegration.md) §4 |
@@ -323,7 +333,7 @@ Response (200):
 
 ### 3.5 GET /dashboard — Interface web
 
-Interface HTML (HTMX + Jinja2) para operação: listar projetos, jobs, estatísticas e health. Login: **Google** (botão em `/dashboard/login` → `/dashboard/auth/google`) com e-mails em `DASHBOARD_ALLOWED_EMAILS`, ou **usuário/senha** legado se configurado. URL: `GET {LLM_API_URL}/dashboard`. No GCP, regista **Authorized redirect URI** exatamente `{DASHBOARD_OAUTH_REDIRECT_BASE}/dashboard/auth/google/callback` para cada origem pública (ex.: `http://127.0.0.1:28471/...` e a URL Tailscale/HTTPS que usares no browser).
+Interface HTML (HTMX + Jinja2) para operação: listar projetos, jobs, estatísticas e health. Login: **Google** (`/dashboard/login` → `/dashboard/auth/google`) com **`DASHBOARD_ALLOWED_EMAILS` obrigatório** (allowlist não vazia, minúsculas), ou **usuário/senha** legado se OAuth não estiver completo. URL: `GET {LLM_API_URL}/dashboard`. GCP: **Authorized redirect URI** = `{DASHBOARD_OAUTH_REDIRECT_BASE}/dashboard/auth/google/callback` por origem (ex.: `http://127.0.0.1:28471/...`, `https://llm.webplace.cc/...`). Detalhe: [refs/cloudflare-edge.md](./refs/cloudflare-edge.md).
 
 ### 3.6 GET /metrics — Métricas Prometheus
 
