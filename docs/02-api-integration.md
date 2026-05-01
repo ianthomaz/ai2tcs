@@ -43,7 +43,7 @@ A API corre no **host onde a instalas** (típico: um Mac ou Linux na tua rede), 
 
 **Fallback (VM em cloud sem TCP estável para peers Tailscale):** padrão **túnel SSH reverso** a partir do host da API — script `llm_api/scripts/llm-tunnel-mini62-to-itcsvm.sh` (raiz do clone ou `llm_api/`). No lado da VM, `LLM_API_URL=http://127.0.0.1:28471`. Detalhes em [refs/operacao-tailscale.md](./refs/operacao-tailscale.md) (secção 6).
 
-**Dashboard:** interface web em `/dashboard` — login com **`DASHBOARD_USER` / `DASHBOARD_PASSWORD`** definidos no `.env` da API (não uses defaults fracos em produção; vê [`.env.example`](../llm_api/.env.example)). O token Bearer da API **não** serve para o login HTML do dashboard.
+**Dashboard:** interface web em `/dashboard`. **Preferência:** login **Google OAuth** (`DASHBOARD_GOOGLE_CLIENT_ID`, `DASHBOARD_GOOGLE_CLIENT_SECRET`, `DASHBOARD_OAUTH_REDIRECT_BASE`, `DASHBOARD_ALLOWED_EMAILS` — ver [`.env.example`](../llm_api/.env.example)); o redirect canónico é `{DASHBOARD_OAUTH_REDIRECT_BASE}/dashboard/auth/google/callback`. **Alternativa:** user/senha no `.env` (`DASHBOARD_USER`, `DASHBOARD_PASSWORD`) só se OAuth **não** estiver configurado (ou ambos, se quiseres fallback). O token Bearer da API **não** serve para o login HTML do dashboard.
 
 **Deploy da API:** corre **neste computador**, só com Docker. Na raiz do repositório ai2tcs: `./scripts/deploy_llm.sh` (rebuild + `docker compose up -d --build api` em `llm_api/`). Não há deploy por SSH para outro host. Não usar `run_api.sh` nem launchd para produção.
 
@@ -101,7 +101,7 @@ Boas práticas: guarde o token em **variável de ambiente** no cliente — nunca
 | POST | `/users/conversation/maintenance` | Forçar resumo + limpeza mensal |
 | GET | `/health` | Checar se API, Ollama e Postgres estão vivos |
 | GET | `/metrics` | Métricas Prometheus — ver § 3.6 |
-| GET | `/dashboard` | Interface web (login com user/senha do `.env`) |
+| GET | `/dashboard` | Interface web (login Google OAuth e/ou user/senha do `.env`) |
 | POST | `/edu/chat` | Tutor **síncrono**; resposta sempre com `reply_structured` (modelo ou segmento fixo se falhar schema após retry) — § 3.8 |
 | POST | `/edu/exercise` | Gerar exercícios a partir do nível ou de `vocab_ids` — § 3.8 |
 | GET | `/edu/vocabulary` | Listar vocabulário (`language`, `level`, `limit`, `offset`) — § 3.8 |
@@ -321,7 +321,7 @@ Response (200):
 
 ### 3.5 GET /dashboard — Interface web
 
-Interface HTML (HTMX + Jinja2) para operação: listar projetos, jobs, estatísticas e health. Login com **usuário e senha** definidos no `.env` (`DASHBOARD_USER`, `DASHBOARD_PASSWORD`). URL: `GET {LLM_API_URL}/dashboard`. Com HTTPS público, usa credenciais fortes; valores reais não pertencem a este repositório (só em `local-only/` ou gestor de segredos).
+Interface HTML (HTMX + Jinja2) para operação: listar projetos, jobs, estatísticas e health. Login: **Google** (botão em `/dashboard/login` → `/dashboard/auth/google`) com e-mails em `DASHBOARD_ALLOWED_EMAILS`, ou **usuário/senha** legado se configurado. URL: `GET {LLM_API_URL}/dashboard`. No GCP, regista **Authorized redirect URI** exatamente `{DASHBOARD_OAUTH_REDIRECT_BASE}/dashboard/auth/google/callback` para cada origem pública (ex.: `http://127.0.0.1:28471/...` e a URL Tailscale/HTTPS que usares no browser).
 
 ### 3.6 GET /metrics — Métricas Prometheus
 
@@ -1074,7 +1074,7 @@ Para ajustes finos que nenhum parâmetro resolve:
 | "Quem é você?" / perguntas existenciais → resposta má ou fallback humano no Zap | RAG sem chunk relevante ou resposta vazia da API; ver **§ 4.5** — ficheiro `identidade-assistente.md` + regra em `instrucoes-llm.md` + reforço no `system_prompt` do cliente; reindexar |
 | Orquestrador mostra "assistente não conseguiu responder" com tag LLM ativa | `GET /result` sem `answer` ou string vazia; ver logs do job (`GET /jobs`), `/health` (Ollama), timeout; conferir se `question` chega corretamente e se histórico não confunde o modelo |
 | `connection refused` | Mac offline, API parada, ou Tailscale desconectado |
-| `timeout` (servidor → host da API) | VM em cloud atrás de DERP sem TCP estável: ver túnel em [refs/operacao-tailscale.md](./refs/operacao-tailscale.md) secção 6, ou proxy (`setup-llm-proxy-pcvelho.sh`) se a tua topologia permitir — IPs reais em `local-only/` |
+| `timeout` (servidor → host da API) | VM em cloud atrás de DERP sem TCP estável: ver túnel em [refs/operacao-tailscale.md](./refs/operacao-tailscale.md) secção 6, ou proxy nginx opcional (secção 6.2) — IPs reais em `local-only/` |
 | `/extract` retorna sempre `null` | Step inválido ou resposta da LLM fora do formato; ver § 3.1. Confira se Ollama está no ar (`/health`) |
 
 ---

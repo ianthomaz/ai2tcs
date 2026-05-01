@@ -11,6 +11,7 @@ Repositório **ai2tcs**: produto **LLM/API**. Código em **`llm_api/`**; satéli
 | Se queres… | Começa em |
 |-------------|-----------|
 | Chamar a API (auth, URLs, exemplos) | [02-api-integration.md](./02-api-integration.md) |
+| Dashboard web (`/dashboard`, login Google OAuth ou user/senha) | [02-api-integration.md](./02-api-integration.md) (novidades no topo + § 3.5); variáveis em [`llm_api/.env.example`](../llm_api/.env.example) |
 | Migrar chaves, fleet, `/router`, checklist | [03-api-reintegration.md](./03-api-reintegration.md) |
 | Contribuir / correr testes / estrutura de código | [04-developer-guide.md](./04-developer-guide.md) |
 | Visão de componentes (API, worker, dados, rede) | [05-architecture.md](./05-architecture.md) |
@@ -22,6 +23,8 @@ Repositório **ai2tcs**: produto **LLM/API**. Código em **`llm_api/`**; satéli
 
 **NF Extract** (`POST /nfExtract`): [refs/ManualNF_Extract](./refs/ManualNF_Extract). **Variáveis sem segredos:** [`llm_api/.env.example`](../llm_api/.env.example). **Roadmap de código:** [`llm_api/UPGRADES.md`](../llm_api/UPGRADES.md).
 
+**Quem pode entrar no dashboard com Google:** lista em **`DASHBOARD_ALLOWED_EMAILS`** no `.env` da API (`llm_api/.env` no clone, ou env do Docker). Não fica no Postgres; o código compara o e-mail devolvido pelo Google com essa lista (ver também default comentado em `llm_api/.env.example`).
+
 ---
 
 ## Referências (anexos)
@@ -31,7 +34,7 @@ Repositório **ai2tcs**: produto **LLM/API**. Código em **`llm_api/`**; satéli
 | Conteúdo | Onde |
 |----------|------|
 | Tailscale, Serve, túnel, proxy | [refs/operacao-tailscale.md](./refs/operacao-tailscale.md) |
-| Exemplos nginx (nomes genéricos) | [refs/nginx/pcvelho.conf](./refs/nginx/pcvelho.conf), [refs/nginx/bikeanjovm.conf](./refs/nginx/bikeanjovm.conf) |
+| Exemplo nginx (proxy opcional na tailnet) | [refs/nginx/bikeanjovm.conf](./refs/nginx/bikeanjovm.conf) |
 
 ---
 

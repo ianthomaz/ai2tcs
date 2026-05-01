@@ -84,9 +84,9 @@ No **host onde a API corre**, manténs um túnel para a VM: o script do reposit�
 
 **Persistência:** no macOS, `LaunchAgent` a invocar o script (ver comentários no script / notas em `local-only/`).
 
-### 6.2 Proxy noutro nó da tailnet
+### 6.2 Proxy nginx noutro nó da tailnet (opcional)
 
-Se um nó intermédio na tailnet consegue falar com o host da API e com o cliente, podes usar `llm_api/scripts/setup-llm-proxy-pcvelho.sh` (ajusta hostname — script é exemplo). O cliente aponta para **`http://<IP-do-proxy-na-tailnet>:28472`** (ou a porta que configurares). Valores reais: `local-only/`.
+Se precisares de um nó intermédio (ex.: VM sem TCP estável até o Mac), podes subir nginx na tailnet que escuta numa porta (ex. 28472) e faz `proxy_pass` para o host da API `:28471`. Modelo genérico: `docs/refs/nginx/bikeanjovm.conf` e script `llm_api/scripts/setup-llm-proxy-bikeanjovm.sh` (adaptar host, IP e paths). O cliente usa então `http://<IP-tailnet-do-proxy>:<porta>`. Detalhes reais: `local-only/`.
 
 ---
 
