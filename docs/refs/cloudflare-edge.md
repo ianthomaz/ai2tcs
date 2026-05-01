@@ -74,9 +74,38 @@ Isto **reduz martelada** antes de tocar no **llm_server**.
 
 ---
 
+## Credenciais Cloudflare (onde estão; **não** commitar)
+
+| O quê | Onde obter / guardar |
+|--------|----------------------|
+| Login na conta / zona | Dashboard Cloudflare + (para Zero Trust) equipa em **Zero Trust** no menu da CF. |
+| **API Token** (automatizar DNS, etc.) | Perfil → **API Tokens** → criar com escopos mínimos. Guardar em gestor de secrets ou `local-only/`. |
+| **Token do túnel** (`cloudflared`) | Zero Trust → **Networks** → **Tunnels** → criar/editar túnel → comando com `--token`. **Um segredo**; no **llm_server** usa env ou ficheiro fora do Git (ex. `systemd` `EnvironmentFile`). |
+| **Zone ID / Account ID** | Overview da zona — úteis para API/Terraform; não vão para o repositório. |
+
+Este repositório **não** armazena tokens Cloudflare.
+
+---
+
+## Migrar: parar **Tailscale Funnel** e expor só pela CF
+
+Nome: é **Cloudflare Zero Trust** (equipa + túneis + Access). **“OneTrust”** é outro produto (cookies/consentimento).
+
+1. **Zero Trust → Tunnels → Create tunnel** (ou usar túnel existente). Instalar `cloudflared` no **llm_server** (ou no host onde o túnel deve terminar) com o **token** do wizard.
+2. **Public hostname** do túnel: `llm.webplace.cc` → serviço local da API (ex. `http://127.0.0.1:28471` se o TLS termina na CF; seguir a opção que o painel indicar para “no TLS verify” vs HTTPS local).
+3. **Testar** `https://llm.webplace.cc/health` e login do dashboard **antes** de desligar o caminho antigo.
+4. **Desligar Funnel** no nó Tailscale: ver [Tailscale Funnel](https://tailscale.com/kb/1311/tailscale-funnel/) e `tailscale funnel` na CLI da tua versão — em geral **`tailscale funnel reset`** limpa Funnel (confirmar se não afecta **Serve** que queiras manter só na tailnet; em dúvida, desliga Funnel pela **admin Tailscale** na máquina em vez de reset global).
+5. **DNS** `llm` na zona `webplace.cc`: CNAME/proxy para o túnel, **proxied** (laranja), como já alinhas com TLS + OAuth na secção acima.
+6. **Activar** rate limit / WAF na zona para esse hostname.
+
+**Tailscale entre os teus PCs** continua independente; só estás a mudar **quem leva o tráfego público da Internet** até ao host (Funnel CF da Tailscale → **Tunnel + domínio** na Cloudflare).
+
+---
+
 ## Resumo
 
 1. **Tunnel CF** = caminho edge → origem; **não** substitui política Access.  
 2. **Zero Trust Access** = activar **Application** + política no hostname/path desejado.  
 3. **Funnel (Tailscale)** = outro produto; não assumir que “passa por Zero Trust” da CF.  
-4. **Protecção imediata sem mudar código:** rate limit + WAF na CF neste hostname.
+4. **Protecção imediata sem mudar código:** rate limit + WAF na CF neste hostname.  
+5. **Migração Funnel → CF:** secção *Migrar* acima + credenciais só fora do Git.
