@@ -4,7 +4,7 @@
 
 Como consumir a API LLM a partir de outros dispositivos na **mesma tailnet**. Documento **ai2tcs** (`docs/`); contrato HTTP em [02-api-integration.md](../02-api-integration.md).
 
-**Nome de papel:** **llm_server** = máquina onde corre a API (porta **28471**). Usamos **llm_server** em caminhos Tailscale ↔ API para **não** versionar hostnames reais no Git.
+**llm_server:** máquina onde corre a API (porta **28471**).
 
 **Importante:** acesso **interno** na Tailscale. **Não usar Funnel** para expor a API à internet pública.
 
@@ -76,11 +76,11 @@ Timeouts sugeridos: 30s por pedido em `/ask`, até ~5 min no total para o job.
 
 ## 6. Fallbacks quando uma VM em cloud não alcança o **llm_server** via Tailscale
 
-Algumas VMs (especialmente atrás de DERP sem caminho TCP estável) **não abrem TCP** até certos peers — sintoma: timeout em `curl` para `100.x.x.x:28471`, enquanto ICMP pode funcionar. O padrão é **não documentar IPs reais neste repo**; guarda-os em `local-only/`.
+Algumas VMs (especialmente atrás de DERP sem caminho TCP estável) **não abrem TCP** até certos peers — sintoma: timeout em `curl` para `100.x.x.x:28471`, enquanto ICMP pode funcionar. IPs e hosts concretos: `local-only/`.
 
 ### 6.1 Túnel SSH reverso
 
-No **llm_server**, manténs um túnel para a VM: o script do repositório é `llm_api/scripts/llm-tunnel-api-host-to-itcsvm.sh` (a partir da raiz do clone ou de `llm_api/`); define `ITCSVM_IP`, `ITCSVM_USER`, `SSH_KEY` no ambiente (valores reais só em `local-only/docs/` / `.env` local). Na VM, após o túnel, usa `LLM_API_URL=http://127.0.0.1:28471`.
+No **llm_server**, manténs um túnel para a VM: o script do repositório é `llm_api/scripts/llm-tunnel-api-host-to-itcsvm.sh` (a partir da raiz do clone ou de `llm_api/`); define `ITCSVM_IP`, `ITCSVM_USER`, `SSH_KEY` no ambiente (env ou `local-only/docs/`). Na VM, após o túnel, usa `LLM_API_URL=http://127.0.0.1:28471`.
 
 **Pré-requisitos:** SSH (22) na VM acessível a partir do **llm_server**; chave SSH configurada; API a ouvir em `:28471` no **llm_server**.
 

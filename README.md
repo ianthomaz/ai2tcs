@@ -11,15 +11,15 @@ Motor principal em **`llm_api/`**; documentação de contratos em **`docs/`**; s
 | Features / serviços à parte | [`features/`](features/) — ver [`features/README.md`](features/README.md) |
 | Extração fiscal (app auxiliar no monorepo) | [`features/ExtratNFdata/`](features/ExtratNFdata/) |
 | Manual NF Extract (rotas, payloads) | [`docs/refs/ManualNF_Extract`](docs/refs/ManualNF_Extract) |
-| Notas **não** versionadas (IPs, hosts reais) | Criar [`local-only/`](docs/01-overview.md) — ver [`docs/01-overview.md`](docs/01-overview.md) |
+| Rede e valores locais | Pasta `local-only/` — [`docs/01-overview.md`](docs/01-overview.md) |
 | Deploy local (Docker) | `./scripts/deploy_llm.sh` |
 | Smoke NF Extract | `./scripts/nf_extract_smoke.py` |
 
-## Operações internas (fora deste repo)
+## Operações internas
 
-Documentação confidencial de infra da organização (máquinas, DNS, credenciais) fica noutros repositórios ou no teu workspace privado — não neste clone público.
+Infra e credenciais da organização: repositórios privados ou `local-only/` no clone.
 
-**Segredos:** não colocar credenciais neste repositório. O `.gitignore` ainda ignora `_credentials/` e `.basicITCS_getAware` por compatibilidade com clones antigos; podes apagar essas pastas/ficheiros do teu disco se já não usares.
+`.gitignore`: `_credentials/`, `.basicITCS_getAware` (legado).
 
 ## Convenções
 

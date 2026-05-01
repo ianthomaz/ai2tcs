@@ -38,17 +38,15 @@ Repositório **ai2tcs**: produto **LLM/API**. Código em **`llm_api/`**; satéli
 
 ---
 
-## Pasta `local-only/` (não versionada)
+## Pasta `local-only/`
 
-Cria **`local-only/`** na **raiz do clone** (ao lado de `README.md`). Está no [`.gitignore`](../.gitignore) e **não** deve ser commitada. Um `git clone` **não traz** esta pasta.
+Na raiz do clone, listada no [`.gitignore`](../.gitignore).
 
-**Uso típico:**
+- **`local-only/docs/`** — notas por projeto; ver `README.md` nessa pasta.
+- Mapa de rede: IPs Tailscale, hostnames, URLs públicas.
+- Snippets sensíveis, variáveis, proxy.
 
-- **`local-only/docs/`** — notas **por projeto** (ex. nabilVideoMap, chinese learning) que não entram no `docs/` público; ver `README.md` dentro dessa pasta.
-- Mapa da **tua** rede: IPs Tailscale, hostnames, URLs públicas.
-- Snippets sensíveis, variáveis reais, proxy.
-
-O repositório público mantém **placeholders** (`<tailnet-host>`, etc.) e contratos em **`docs/`**. Em caminhos **Tailscale ↔ API**, o papel da máquina onde corre a FastAPI chama-se **llm_server** (sem hostname real no Git). Assim o repo fica legível sem expor a topologia real.
+Em **`docs/`**, **placeholders** (`<tailnet-host>`, etc.) e contratos HTTP. **llm_server** = máquina onde corre a API nas secções de rede.
 
 ---
 

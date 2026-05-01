@@ -29,7 +29,7 @@ Observação: esta API **não usa Gemini**.
 | Rota | URL base | Uso |
 |------|-----------|-----|
 | **A — Pública (HTTPS)** | `https://<seu-host-publico-llm>` | Internet quando a API está atrás de TLS no edge (reverse proxy, etc.). O fluxo exacto depende da tua infra — anota em `local-only/`. |
-| **B — Tailscale (direto)** | `http://<ip-ou-hostname-na-tailnet>:28471` | Máquinas **na mesma tailnet**. Confirme no **llm_server** (nome de papel da máquina onde corre a API): `tailscale ip -4`. Ver [operacao-tailscale.md](./operacao-tailscale.md). |
+| **B — Tailscale (direto)** | `http://<ip-ou-hostname-na-tailnet>:28471` | Máquinas **na mesma tailnet**. Confirme no **llm_server**: `tailscale ip -4`. Ver [operacao-tailscale.md](./operacao-tailscale.md). |
 
 Também possível em desenvolvimento: `http://127.0.0.1:28471` no próprio **llm_server** (ou na máquina onde desenvolves).
 

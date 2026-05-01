@@ -2,7 +2,7 @@
 
 API FastAPI para LLM local com RAG multi-projeto. Porta **28471**. Planejamento em `00_PLANEJAMENTO_LLM_LOCAL.md`.
 
-**Integração (outros projetos / clientes HTTP):** ver [`../docs/01-overview.md`](../docs/01-overview.md) e [`../docs/02-api-integration.md`](../docs/02-api-integration.md) (toda a doc de contratos está em **`docs/`** na raiz do repo). NF Extract: [`../docs/refs/ManualNF_Extract`](../docs/refs/ManualNF_Extract). IPs/hosts reais: secção *local-only* em [`../docs/01-overview.md`](../docs/01-overview.md) + pasta `local-only/`.
+**Integração:** [`../docs/01-overview.md`](../docs/01-overview.md), [`../docs/02-api-integration.md`](../docs/02-api-integration.md). NF Extract: [`../docs/refs/ManualNF_Extract`](../docs/refs/ManualNF_Extract). Rede concreta: `local-only/` (ver [`../docs/01-overview.md`](../docs/01-overview.md)).
 
 **Deploy em produção:** só nesta máquina, via **Docker Compose**. Na raiz deste repositório (ai2tcs): `./scripts/deploy_llm.sh` — corre `docker compose up -d --build api` em `featureLLM/`. Não usar `run_api.sh` nem launchd para produção.
 

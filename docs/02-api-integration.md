@@ -28,20 +28,20 @@ Como conectar seus projetos à API de LLM (mesmo host ou rede privada, ex. Tails
 
 ## 1. Visão geral
 
-A API corre no **llm_server** — máquina onde a instalas (típico: Mac ou Linux na tua rede), porta **28471**. É a **mesma instância** em todos os caminhos abaixo; mudam só como o cliente **chega** até ela. O nome **llm_server** é só documentação (evita hostnames reais no Git); ver [refs/operacao-tailscale.md](./refs/operacao-tailscale.md).
+A API corre no **llm_server** (máquina onde a instalas; típico Mac ou Linux), porta **28471**. É a **mesma instância** em todos os caminhos abaixo; mudam só como o cliente **chega** até ela. Rede e Tailscale: [refs/operacao-tailscale.md](./refs/operacao-tailscale.md).
 
 ### 1.1 Duas formas de URL base (`LLM_API_URL`)
 
 | Caminho | URL base típica | Quem usa |
 |--------|------------------|----------|
 | **A — Internet (HTTPS)** | `https://<teu-host-público-llm>` | Clientes **fora** da Tailscale quando expões HTTPS no edge (reverse proxy, TLS). Fluxo típico: cliente → TLS no edge → rede privada até o **llm_server** **:28471**. O valor exacto depende da tua infra — anota-o em `local-only/`. |
-| **B — Tailscale (direto na API)** | `http://<IP-ou-hostname-na-tailnet>:28471` | Máquinas **na mesma tailnet**. Obtéis o IP com `tailscale ip -4` **no llm_server** (ou hostname no admin Tailscale). Ver [refs/operacao-tailscale.md](./refs/operacao-tailscale.md) para o nome de papel **llm_server**. |
+| **B — Tailscale (direto na API)** | `http://<IP-ou-hostname-na-tailnet>:28471` | Máquinas **na mesma tailnet**. Obtéis o IP com `tailscale ip -4` **no llm_server** (ou hostname no admin Tailscale). Ver [refs/operacao-tailscale.md](./refs/operacao-tailscale.md). |
 
 **Auth e paths:** iguais nos dois casos — header `Authorization: Bearer` (§ 2) e os mesmos endpoints (`/ask`, `/nfExtract`, `/edu`, `/health`, etc.).
 
 **Nota:** muitas instalações **não** expõem a porta 28471 diretamente à internet; o caminho A usa um proxy que termina TLS e encaminha para o **llm_server**. O caminho B evita isso dentro da tailnet.
 
-**Fallback (VM em cloud sem TCP estável para peers Tailscale):** padrão **túnel SSH reverso** a partir do **llm_server** — script `llm_api/scripts/llm-tunnel-api-host-to-itcsvm.sh` (raiz do clone ou `llm_api/`); variáveis `ITCSVM_*` / `SSH_KEY` em env (ver `local-only/docs/` no teu clone). No lado da VM, `LLM_API_URL=http://127.0.0.1:28471`. Detalhes em [refs/operacao-tailscale.md](./refs/operacao-tailscale.md) (secção 6).
+**Fallback (VM em cloud sem TCP estável para peers Tailscale):** padrão **túnel SSH reverso** a partir do **llm_server** — script `llm_api/scripts/llm-tunnel-api-host-to-itcsvm.sh` (raiz do clone ou `llm_api/`); variáveis `ITCSVM_*` / `SSH_KEY` em env (`local-only/docs/`). No lado da VM, `LLM_API_URL=http://127.0.0.1:28471`. Detalhes em [refs/operacao-tailscale.md](./refs/operacao-tailscale.md) (secção 6).
 
 **Dashboard:** interface web em `/dashboard`. **Preferência:** login **Google OAuth** (`DASHBOARD_GOOGLE_CLIENT_ID`, `DASHBOARD_GOOGLE_CLIENT_SECRET`, `DASHBOARD_OAUTH_REDIRECT_BASE`, `DASHBOARD_ALLOWED_EMAILS` — ver [`.env.example`](../llm_api/.env.example)); o redirect canónico é `{DASHBOARD_OAUTH_REDIRECT_BASE}/dashboard/auth/google/callback`. **Alternativa:** user/senha no `.env` (`DASHBOARD_USER`, `DASHBOARD_PASSWORD`) só se OAuth **não** estiver configurado (ou ambos, se quiseres fallback). O token Bearer da API **não** serve para o login HTML do dashboard.
 
@@ -82,7 +82,7 @@ Boas práticas: guarde o token em **variável de ambiente** no cliente — nunca
 | **POST** | **`/extract`** | **Extração síncrona (zapzap onboarding)** — um campo por chamada; ver § 3.1 |
 | **POST** | **`/extract-multi`** | **Extração multi-campo (zapzap)** — vários campos numa mensagem; ver § 3.1 |
 | **POST** | **`/nfExtract`** | **Extração de nota fiscal (itcsNFextract)** — corpo **somente** `multipart/form-data`; exatamente **um** campo: `file` (upload) **ou** `server_file_path` **ou** `document_url` (nomes fixos). Manual: [ManualNF_Extract](./refs/ManualNF_Extract) §3.1. |
-| **POST** | **`/nabilvideomap/qualify-caption`** | **Qualificação síncrona de legenda** (pipeline nabilVideoMap) — JSON; auth § 2. Detalhe de schema, RAG e env: copia `local-only/docs/NABIL_QUALIFY_CAPTION_API.md` no teu clone (não versionado). |
+| **POST** | **`/nabilvideomap/qualify-caption`** | **Qualificação síncrona de legenda** (pipeline nabilVideoMap) — JSON; auth § 2. Schema, RAG e env: `local-only/docs/NABIL_QUALIFY_CAPTION_API.md`. |
 | **POST** | **`/router`** | **Roteador de mensagem** — ver § 3.2 (orienta: biblioteca vs fluxo; decisão é do orquestrador) |
 | POST | `/ingest` | Indexar/reindexar biblioteca; cria projeto se não existir (com sources no body ou env) |
 | **POST** | **`/ingest/upload`** | **Upload multipart** de um ficheiro para o disco do projeto (ou biblioteca partilhada) + fila de ingest incremental — ver [`03-api-reintegration.md`](03-api-reintegration.md) §4 |
@@ -395,7 +395,7 @@ Rotas para **aprendizagem de idiomas** (desenho atual centrado em **chinês** `z
 
 **Contrato e exemplos JSON completos:** [06-edu-contract.md](./06-edu-contract.md).
 
-**Site / projeto chinês (Next.js, RAG, env):** notas operacionais em **`local-only/docs/CHINESE_LEARNING_PROJECT.md`** no clone local (não versionado).
+**Site / projeto chinês (Next.js, RAG, env):** **`local-only/docs/CHINESE_LEARNING_PROJECT.md`**.
 
 | Rota | Função resumida |
 |------|------------------|

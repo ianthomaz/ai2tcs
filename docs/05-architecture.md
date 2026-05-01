@@ -16,7 +16,7 @@ Este capítulo resume **como as peças encaixam**. Para árvore de pastas e flux
 
 ## Rede e exposição
 
-Cenários típicos: API só em **127.0.0.1** no **llm_server**, exposição na **tailnet** (Tailscale Serve), ou **proxy/nginx** / **túnel SSH** quando a topologia não permite TCP estável. **llm_server** = papel documental da máquina onde corre a API (sem hostname real no Git). Documentação de operação: [refs/operacao-tailscale.md](./refs/operacao-tailscale.md); exemplos de config: [refs/nginx/](./refs/nginx/).
+Cenários típicos: API só em **127.0.0.1** no **llm_server**, exposição na **tailnet** (Tailscale Serve), ou **proxy/nginx** / **túnel SSH** quando a topologia não permite TCP estável. Operação em rede: [refs/operacao-tailscale.md](./refs/operacao-tailscale.md); exemplos de config: [refs/nginx/](./refs/nginx/).
 
 ---
 
