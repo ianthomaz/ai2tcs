@@ -36,6 +36,8 @@ Só precisam mudança se tiverem **nome de modelo Ollama fixo** no JSON (ex.: `q
 2. **`llm_api/.env`** (ficheiro real, não versionado): `OLLAMA_SMART_MODEL`, `OLLAMA_REASONER_MODEL`, `OLLAMA_CHAT_MODEL` se quiseres override.
 3. **Reiniciar** o processo da API (Docker / systemd / script local).
 
+**Docker Compose:** o serviço `api` usa `env_file: .env` em `llm_api/docker-compose.yml` para o contentor herdar o **`llm_api/.env` completo**; as variáveis listadas em `environment:` (ex.: `DATABASE_URL` para o host `postgres`) **sobrepõem** o ficheiro. Sem `.env` no disco, `docker compose up` falha — copiar de `.env.example` primeiro.
+
 Não existe variável de ambiente única que substitua o **`embedding_model` por projecto** na BD; o fallback no código só aplica quando o campo **não** está no `config_json`.
 
 ---

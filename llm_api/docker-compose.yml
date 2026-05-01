@@ -22,6 +22,10 @@ services:
   api:
     build: .
     restart: unless-stopped
+    # Load llm_api/.env into the container (OLLAMA_*, tokens, etc.). Keys listed below in
+    # `environment:` override the same name from .env (e.g. DATABASE_URL must stay @postgres).
+    env_file:
+      - .env
     ports:
       - "28471:28471"
     environment:
