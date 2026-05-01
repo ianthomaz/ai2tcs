@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LLM Dashboard{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <link rel="stylesheet" href="/static/css/custom.css">
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col">
+    <div class="flex flex-1 min-h-0">
+        <!-- Sidebar -->
+        <nav class="w-56 bg-gray-800 border-r border-gray-700 p-4 flex flex-col">
+            <div class="mb-8">
+                <h1 class="text-lg font-bold text-blue-400">LLM API</h1>
+                <p class="text-xs text-gray-500">Dashboard</p>
+            </div>
+            <ul class="space-y-1 flex-1">
+                <li>
+                    <a href="/dashboard" class="block px-3 py-2 rounded hover:bg-gray-700 {% if active == 'home' %}bg-gray-700 text-white{% else %}text-gray-300{% endif %}">
+                        Overview
+                    </a>
+                </li>
+                <li>
+                    <a href="/dashboard/projects" class="block px-3 py-2 rounded hover:bg-gray-700 {% if active == 'projects' %}bg-gray-700 text-white{% else %}text-gray-300{% endif %}">
+                        Projetos
+                    </a>
+                </li>
+                <li>
+                    <a href="/dashboard/jobs" class="block px-3 py-2 rounded hover:bg-gray-700 {% if active == 'jobs' %}bg-gray-700 text-white{% else %}text-gray-300{% endif %}">
+                        Jobs
+                    </a>
+                </li>
+                <li>
+                    <a href="/dashboard/usage" class="block px-3 py-2 rounded hover:bg-gray-700 {% if active == 'usage' %}bg-gray-700 text-white{% else %}text-gray-300{% endif %}">
+                        Uso / métricas
+                    </a>
+                </li>
+            </ul>
+            <div class="mt-auto pt-4 border-t border-gray-700">
+                <a href="/dashboard/logout" class="text-sm text-gray-500 hover:text-gray-300">Sair</a>
+            </div>
+        </nav>
+
+        <!-- Main content -->
+        <main class="flex-1 p-6 overflow-auto">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

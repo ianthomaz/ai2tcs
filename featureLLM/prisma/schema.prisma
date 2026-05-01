@@ -1,0 +1,182 @@
+// Prisma schema for LLM API: projects, themes, jobs (queue + results)
+// Run: npx prisma migrate dev
+// Python app uses same DB via Prisma Client Python or asyncpg
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id              String                @id @default(cuid())
+  projectId       String                @unique @map("project_id")  // slug used in API (e.g. "itcs")
+  name            String?
+  sources         String[]              // paths to index (folders)
+  configJson      Json?                 @map("config_json")        // chunking, embedding_model, policies
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
+  themes          ProjectTheme[]
+  jobs            Job[]
+  conversations   ConversationHistory[]
+  userProfiles    UserProfile[]
+  convSummaries   ConversationSummary[]
+  apiKeys         ProjectApiKey[]
+}
+
+model ProjectApiKey {
+  id          String    @id @default(uuid())
+  projectId   String    @map("project_id")
+  keyHash     String    @unique @map("key_hash")
+  label       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  revokedAt   DateTime? @map("revoked_at")
+  lastUsedAt  DateTime? @map("last_used_at")
+  project     Project   @relation(fields: [projectId], references: [projectId], onDelete: Cascade)
+
+  @@map("project_api_keys")
+}
+
+model SharedLibrary {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  name        String
+  sources     String[]
+  configJson  Json?    @map("config_json")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("shared_libraries")
+}
+
+model ProjectTheme {
+  id        String   @id @default(cuid())
+  projectId String   @map("project_id")  // Project.projectId (slug)
+  theme     String   // tag/topic for auto-router e.g. "infra", "dns"
+  project   Project  @relation(fields: [projectId], references: [projectId], onDelete: Cascade)
+  @@unique([projectId, theme])
+  @@map("project_themes")
+}
+
+model Job {
+  id               String   @id @default(cuid())
+  projectId        String   @map("project_id")  // slug (e.g. "itcs")
+  userId           String?  @map("user_id")     // WhatsApp end-user identifier (phone or internal id)
+  question         String   @db.Text
+  questionHash     String?  @map("question_hash")  // for dedup
+  userContextJson  Json?    @map("user_context_json")  // optional snapshot from client: name, birth_date, cep, city, state, health
+  jobKind          String   @default("ask") @map("job_kind") // ask | audio_transcribe | audio_ask | nabil_qualify_caption (sync audit; never queued)
+  modelAlias       String   @default("smart") @map("model_alias")
+  audioPath        String?  @map("audio_path")   // temp path on API host until STT runs
+  transcript       String?  @db.Text
+  sttMetadataJson  Json?    @map("stt_metadata_json")
+  status           String   // queued | working | done | no_answer | need_more_info | failed | cancelled
+  progress         String?
+  answer           String?  @db.Text
+  sourcesJson      Json?    @map("sources_json")   // [{ id, path, snippet }]
+  confidence       String?
+  errorMessage     String?  @map("error_message") @db.Text
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  project          Project  @relation(fields: [projectId], references: [projectId], onDelete: Cascade)
+
+  @@index([projectId, status])
+  @@index([modelAlias, status])
+  @@index([questionHash, createdAt])
+  @@index([userId])
+  @@index([userId, projectId, createdAt(sort: Desc)])
+  @@map("jobs")
+}
+
+model ConversationHistory {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  projectId String   @map("project_id")
+  role      String   // 'user' or 'assistant'
+  content   String   @db.Text
+  jobId     String?  @map("job_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  project   Project  @relation(fields: [projectId], references: [projectId], onDelete: Cascade)
+
+  @@index([userId, projectId, createdAt(sort: Desc)])
+  @@map("conversation_history")
+}
+
+model UserProfile {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  projectId   String   @map("project_id")
+  displayName String?  @map("display_name")
+  birthDate   DateTime? @map("birth_date") @db.Date
+  notes       String?  @db.Text               // free-text notes about the user
+  metadata    Json?    @default("{}")          // arbitrary project-specific fields (health, preferences, etc.)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @map("updated_at")
+  project     Project  @relation(fields: [projectId], references: [projectId], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+  @@map("user_profile")
+}
+
+model ConversationSummary {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  projectId    String   @map("project_id")
+  period       String   // e.g. '2026-03' (year-month)
+  summary      String   @db.Text
+  messageCount Int      @default(0) @map("message_count")
+  createdAt    DateTime @default(now()) @map("created_at")
+  project      Project  @relation(fields: [projectId], references: [projectId], onDelete: Cascade)
+
+  @@unique([userId, projectId, period])
+  @@map("conversation_summary")
+}
+
+model EduVocabulary {
+  id                 String        @id @default(uuid()) @db.Uuid
+  language           String        @default("zh-CN") @db.VarChar(10)
+  hanzi              String
+  pinyin             String
+  translation        String
+  level              String        @db.VarChar(10)
+  category           String?       @db.VarChar(50)
+  exampleSentence    String?       @map("example_sentence")
+  examplePinyin      String?       @map("example_pinyin")
+  exampleTranslation String?       @map("example_translation")
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  progress           EduProgress[]
+
+  @@index([language, level])
+  @@map("edu_vocabulary")
+}
+
+model EduGrammar {
+  id          String   @id @default(uuid()) @db.Uuid
+  language    String   @default("zh-CN") @db.VarChar(10)
+  pattern     String
+  explanation String
+  level       String   @db.VarChar(10)
+  examples    Json     @default("[]")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([language, level])
+  @@map("edu_grammar")
+}
+
+model EduProgress {
+  id           String        @id @default(uuid()) @db.Uuid
+  userId       String        @map("user_id")
+  vocabId      String        @map("vocab_id") @db.Uuid
+  seenCount    Int           @default(1) @map("seen_count")
+  correctCount Int           @default(0) @map("correct_count")
+  lastSeen     DateTime      @default(now()) @map("last_seen") @db.Timestamptz
+  mastered     Boolean       @default(false)
+  vocabulary   EduVocabulary @relation(fields: [vocabId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, vocabId])
+  @@index([userId])
+  @@map("edu_progress")
+}

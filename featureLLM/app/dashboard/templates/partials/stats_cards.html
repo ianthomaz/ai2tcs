@@ -1,0 +1,20 @@
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+        <div class="text-2xl font-bold">{{ stats.total }}</div>
+        <div class="text-sm text-gray-500">Jobs Total</div>
+    </div>
+    <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+        <div class="text-2xl font-bold text-blue-400">{{ stats.last_24h }}</div>
+        <div class="text-sm text-gray-500">Ultimas 24h</div>
+    </div>
+    <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+        <div class="text-2xl font-bold text-red-400">{{ stats.by_status.get('failed', 0) }}</div>
+        <div class="text-sm text-gray-500">Falhados</div>
+    </div>
+    <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+        <div class="text-2xl font-bold text-green-400">
+            {% if stats.avg_duration_seconds %}{{ "%.1f"|format(stats.avg_duration_seconds) }}s{% else %}-{% endif %}
+        </div>
+        <div class="text-sm text-gray-500">Tempo Medio</div>
+    </div>
+</div>

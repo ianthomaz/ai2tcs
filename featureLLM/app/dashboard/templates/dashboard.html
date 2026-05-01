@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% set active = "home" %}
+{% block title %}Overview - LLM Dashboard{% endblock %}
+
+{% block content %}
+<h2 class="text-2xl font-bold mb-6">Overview</h2>
+
+<!-- Projects summary -->
+<div class="mb-8">
+    <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-semibold">Projetos ({{ projects|length }})</h3>
+        <a href="/dashboard/projects" class="text-blue-400 text-sm hover:underline">Ver todos</a>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {% for p in projects[:6] %}
+        <a href="/dashboard/projects/{{ p.project_id }}" class="bg-gray-800 rounded-lg p-4 hover:bg-gray-750 transition border border-gray-700">
+            <div class="font-medium">{{ p.name or p.project_id }}</div>
+            <div class="text-xs text-gray-500 mt-1">{{ p.project_id }}</div>
+            <div class="text-xs text-gray-500">{{ p.sources|length }} fonte(s)</div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Recent jobs (auto-refresh every 5s) -->
+<div>
+    <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-semibold">Jobs Recentes</h3>
+        <a href="/dashboard/jobs" class="text-blue-400 text-sm hover:underline">Ver todos</a>
+    </div>
+    <div hx-get="/dashboard/partials/recent-jobs" hx-trigger="load, every 5s" hx-swap="innerHTML">
+        <div class="bg-gray-800 rounded-lg p-4 animate-pulse h-32"></div>
+    </div>
+</div>
+{% endblock %}

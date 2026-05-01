@@ -1,0 +1,29 @@
+# Credentials and secrets (never commit)
+_credentials/
+credentialsMap.json
+*.env
+.env
+.env.*
+!.env.example
+
+# Local context / generated
+.basicITCS_getAware
+
+# Keys and certs (if any at repo root)
+*.pem
+*.key
+
+# OS and editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Temp / one-off
+temp_nginx/
+
+# Optional
+node_modules/
+.venv/
+__pycache__/

@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+httpx
+pydantic
+pypdf
+pillow
+pytesseract
+python-multipart

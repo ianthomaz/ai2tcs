@@ -1,0 +1,14 @@
+<div class="flex gap-3 items-center">
+    <div class="flex items-center gap-1.5 text-sm">
+        <span class="w-2 h-2 rounded-full {% if checks.postgres == 'ok' %}bg-green-400{% else %}bg-red-400{% endif %}"></span>
+        <span class="text-gray-400">PostgreSQL</span>
+    </div>
+    <div class="flex items-center gap-1.5 text-sm">
+        <span class="w-2 h-2 rounded-full {% if checks.ollama == 'ok' %}bg-green-400{% else %}bg-red-400{% endif %}"></span>
+        <span class="text-gray-400">Ollama</span>
+    </div>
+    <div class="flex items-center gap-1.5 text-sm">
+        <span class="w-2 h-2 rounded-full {% if checks.disk == 'ok' %}bg-green-400{% elif checks.disk == 'low' %}bg-yellow-400{% else %}bg-gray-400{% endif %}"></span>
+        <span class="text-gray-400">Disco{% if checks.disk_free_gb %} ({{ checks.disk_free_gb }}GB){% endif %}</span>
+    </div>
+</div>

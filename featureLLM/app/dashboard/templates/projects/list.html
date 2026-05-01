@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% set active = "projects" %}
+{% block title %}Projetos - LLM Dashboard{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h2 class="text-2xl font-bold">Projetos</h2>
+    <a href="/dashboard/projects/new"
+       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition">
+        + Novo Projeto
+    </a>
+</div>
+
+{% if projects %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for p in projects %}
+    <a href="/dashboard/projects/{{ p.project_id }}" class="bg-gray-800 rounded-lg p-5 hover:border-blue-500 border border-gray-700 transition">
+        <div class="font-semibold text-lg">{{ p.name or p.project_id }}</div>
+        <div class="text-sm text-gray-500 mb-2 font-mono">{{ p.project_id }}</div>
+        <div class="text-sm text-gray-400">{{ p.sources|length }} fonte(s)</div>
+        {% if p.themes %}
+        <div class="mt-2 flex flex-wrap gap-1">
+            {% for t in p.themes %}
+            <span class="text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded">{{ t }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+        <div class="text-xs text-gray-600 mt-3">
+            Criado: {{ p.created_at.strftime('%d/%m/%Y %H:%M') if p.created_at else '-' }}
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="bg-gray-800 rounded-lg p-8 text-center text-gray-500">
+    Nenhum projeto cadastrado.
+    <a href="/dashboard/projects/new" class="text-blue-400 hover:underline ml-1">Criar primeiro projeto</a>
+</div>
+{% endif %}
+{% endblock %}

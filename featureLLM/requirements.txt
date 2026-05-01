@@ -1,0 +1,16 @@
+psutil>=5.9.0
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic-settings>=2.0.0
+asyncpg>=0.29.0
+httpx>=0.26.0
+# Pin so host ingest and Docker worker use the same on-disk index (avoid HNSW "Nothing found on disk").
+chromadb==1.5.7
+ollama>=0.1.6
+jinja2>=3.1.0
+python-multipart>=0.0.6
+pypdf>=6.0.0
+pymupdf>=1.24.0
+pillow>=10.0.0
+pytesseract>=0.3.10
+faster-whisper>=1.0.0

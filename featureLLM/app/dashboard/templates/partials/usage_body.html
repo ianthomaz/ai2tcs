@@ -1,0 +1,154 @@
+<div class="space-y-10">
+    <!-- Jobs -->
+    <section>
+        <h3 class="text-lg font-semibold text-gray-200 mb-4">Jobs (Postgres)</h3>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div class="bg-gray-800 rounded-xl p-4 border border-gray-700 text-center">
+                <div class="text-3xl font-bold text-white">{{ stats.total }}</div>
+                <div class="text-xs text-gray-500 mt-1">Total</div>
+            </div>
+            <div class="bg-gray-800 rounded-xl p-4 border border-gray-700 text-center">
+                <div class="text-3xl font-bold text-blue-400">{{ stats.last_24h }}</div>
+                <div class="text-xs text-gray-500 mt-1">Últimas 24h</div>
+            </div>
+            <div class="bg-gray-800 rounded-xl p-4 border border-gray-700 text-center">
+                <div class="text-3xl font-bold text-red-400">{{ stats.by_status.get('failed', 0) }}</div>
+                <div class="text-xs text-gray-500 mt-1">Falhados</div>
+            </div>
+            <div class="bg-gray-800 rounded-xl p-4 border border-gray-700 text-center">
+                <div class="text-3xl font-bold text-amber-400">{{ working_jobs }}</div>
+                <div class="text-xs text-gray-500 mt-1">Em processamento</div>
+            </div>
+            <div class="bg-gray-800 rounded-xl p-4 border border-gray-700 text-center col-span-2 md:col-span-1">
+                <div class="text-3xl font-bold text-green-400">
+                    {% if stats.avg_duration_seconds %}{{ "%.1f"|format(stats.avg_duration_seconds) }}s{% else %}—{% endif %}
+                </div>
+                <div class="text-xs text-gray-500 mt-1">Tempo médio (jobs RAG)</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gauges row -->
+    <section>
+        <h3 class="text-lg font-semibold text-gray-200 mb-4">CPU e RAM (vista deste processo)</h3>
+        <p class="text-xs text-gray-500 mb-4">No Docker isto reflecte sobretudo o <strong>cgroup</strong> do container — pode não coincidir com os 32&nbsp;GB físicos do Mac.</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- CPU -->
+            <div class="bg-gray-800/80 rounded-2xl p-6 border border-gray-700">
+                <div class="text-center text-sm text-gray-400 mb-2">CPU</div>
+                {% if host.ok %}
+                <svg width="220" height="130" viewBox="0 0 220 130" class="mx-auto block">
+                    <defs>
+                        <linearGradient id="gradCpuDash" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#2563eb"/>
+                            <stop offset="100%" style="stop-color:#38bdf8"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M 30 110 A 80 80 0 0 1 190 110" fill="none" stroke="#27272a" stroke-width="16" stroke-linecap="round"/>
+                    <path d="M 30 110 A 80 80 0 0 1 190 110" fill="none" stroke="url(#gradCpuDash)" stroke-width="16" stroke-linecap="round"
+                          stroke-dasharray="{{ '%.2f'|format(arc_len) }}"
+                          stroke-dashoffset="{{ '%.2f'|format(arc_len * cpu_arc.dash_offset_fraction) }}"/>
+                    <text x="110" y="100" text-anchor="middle" class="fill-gray-100" style="font-size: 2rem; font-weight: 700; font-family: ui-monospace, monospace;">{{ cpu_arc.label_pct }}%</text>
+                </svg>
+                {% else %}
+                <p class="text-red-400 text-sm text-center">{{ host.error or "Indisponível" }}</p>
+                {% endif %}
+            </div>
+            <!-- RAM -->
+            <div class="bg-gray-800/80 rounded-2xl p-6 border border-gray-700">
+                <div class="text-center text-sm text-gray-400 mb-2">RAM usada</div>
+                {% if host.ok %}
+                <svg width="220" height="130" viewBox="0 0 220 130" class="mx-auto block">
+                    <defs>
+                        <linearGradient id="gradRamDash" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#7c3aed"/>
+                            <stop offset="100%" style="stop-color:#c084fc"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M 30 110 A 80 80 0 0 1 190 110" fill="none" stroke="#27272a" stroke-width="16" stroke-linecap="round"/>
+                    <path d="M 30 110 A 80 80 0 0 1 190 110" fill="none" stroke="url(#gradRamDash)" stroke-width="16" stroke-linecap="round"
+                          stroke-dasharray="{{ '%.2f'|format(arc_len) }}"
+                          stroke-dashoffset="{{ '%.2f'|format(arc_len * ram_arc.dash_offset_fraction) }}"/>
+                    <text x="110" y="100" text-anchor="middle" class="fill-gray-100" style="font-size: 2rem; font-weight: 700; font-family: ui-monospace, monospace;">{{ ram_arc.label_pct }}%</text>
+                </svg>
+                <p class="text-center text-xs text-gray-500 mt-2">{{ host_ram_used_gib }} / {{ host_ram_total_gib }} GiB</p>
+                {% else %}
+                <p class="text-red-400 text-sm text-center">{{ host.error or "Indisponível" }}</p>
+                {% endif %}
+            </div>
+            <!-- Ollama memory vs reference -->
+            <div class="bg-gray-800/80 rounded-2xl p-6 border border-gray-700">
+                <div class="text-center text-sm text-gray-400 mb-2">Memória dos modelos Ollama</div>
+                <p class="text-center text-xs text-gray-500 mb-2">vs referência {{ ref_gib|round(1) }} GiB (env <code class="text-gray-400">DASHBOARD_OLLAMA_MEMORY_REFERENCE_GIB</code>)</p>
+                {% if ollama.ok %}
+                <svg width="220" height="130" viewBox="0 0 220 130" class="mx-auto block">
+                    <defs>
+                        <linearGradient id="gradOllDash" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#059669"/>
+                            <stop offset="100%" style="stop-color:#34d399"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M 30 110 A 80 80 0 0 1 190 110" fill="none" stroke="#27272a" stroke-width="16" stroke-linecap="round"/>
+                    <path d="M 30 110 A 80 80 0 0 1 190 110" fill="none" stroke="url(#gradOllDash)" stroke-width="16" stroke-linecap="round"
+                          stroke-dasharray="{{ '%.2f'|format(arc_len) }}"
+                          stroke-dashoffset="{{ '%.2f'|format(arc_len * ollama.total_dash_offset_fraction) }}"/>
+                    <text x="110" y="100" text-anchor="middle" class="fill-gray-100" style="font-size: 2rem; font-weight: 700; font-family: ui-monospace, monospace;">{{ ollama.total_vs_ref_percent }}%</text>
+                </svg>
+                <p class="text-center text-xs text-gray-500 mt-2">{{ ollama.total_footprint_gib }} GiB carregados (máx por modelo: VRAM ou residente)</p>
+                {% else %}
+                <p class="text-amber-400 text-sm text-center">{{ ollama.error or "Sem dados /api/ps" }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Ollama per-model bars -->
+    {% if ollama.ok and ollama.models %}
+    <section>
+        <h3 class="text-lg font-semibold text-gray-200 mb-4">Modelos em memória (detalhe)</h3>
+        <div class="space-y-4">
+            {% for m in ollama.models %}
+            <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                <div class="flex justify-between text-sm mb-2">
+                    <span class="font-mono text-gray-200 truncate pr-2">{{ m.name }}</span>
+                    <span class="text-gray-500 shrink-0">{{ m.footprint_gib }} GiB · {{ m.bar_percent }}% da ref.</span>
+                </div>
+                <div class="h-3 bg-gray-900 rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-emerald-700 to-emerald-400 rounded-full transition-all duration-300" style="width: {% if m.bar_percent > 100 %}100{% else %}{{ m.bar_percent }}{% endif %}%;"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Services -->
+    <section>
+        <h3 class="text-lg font-semibold text-gray-200 mb-3">Serviços</h3>
+        <div class="flex flex-wrap gap-4 text-sm">
+            <div class="flex items-center gap-2 bg-gray-800 px-4 py-2 rounded-lg border border-gray-700">
+                <span class="w-2 h-2 rounded-full {% if checks.postgres == 'ok' %}bg-green-400{% else %}bg-red-400{% endif %}"></span>
+                <span class="text-gray-300">PostgreSQL</span>
+            </div>
+            <div class="flex items-center gap-2 bg-gray-800 px-4 py-2 rounded-lg border border-gray-700">
+                <span class="w-2 h-2 rounded-full {% if checks.ollama == 'ok' %}bg-green-400{% else %}bg-red-400{% endif %}"></span>
+                <span class="text-gray-300">Ollama (reachability)</span>
+            </div>
+            <div class="flex items-center gap-2 bg-gray-800 px-4 py-2 rounded-lg border border-gray-700">
+                <span class="w-2 h-2 rounded-full {% if checks.disk == 'ok' %}bg-green-400{% elif checks.disk == 'low' %}bg-yellow-400{% else %}bg-gray-400{% endif %}"></span>
+                <span class="text-gray-300">Disco dados{% if checks.disk_free_gb is defined %} · {{ checks.disk_free_gb }} GB livre{% endif %}</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Explainer -->
+    <section class="bg-slate-900/80 border border-slate-700 rounded-2xl p-6">
+        <h3 class="text-md font-semibold text-slate-200 mb-3">O que dá para medir daqui?</h3>
+        <ul class="list-disc pl-5 space-y-2 text-sm text-slate-300 leading-relaxed">
+            <li><strong class="text-white">CPU e RAM em %</strong> vêm do <code class="text-slate-400">psutil</code> neste processo Python. No Docker, isso é a visão do <strong>container</strong> (limites de cgroup), não um mapa 1:1 da RAM total do Mac.</li>
+            <li><strong>“Memória Ollama”</strong> usa o endpoint <code class="text-slate-400">GET /api/ps</code> do Ollama: modelos carregados e bytes que <em>ele</em> declara (VRAM em GPUs NVIDIA; em Apple Silicon o campo VRAM pode ser <strong>0</strong> mesmo com inferência a usar o chip — é limitação do relatório do Ollama, não um bug nosso).</li>
+            <li><strong>Não existe</strong> na API HTTP pública do Ollama um número fiável de <strong>“% GPU Apple (Metal)”</strong> para desenhar um ponteiro como o Activity Monitor. Para isso seria preciso um agente no <strong>host</strong> (Mac) a exportar métricas, ou um servidor Linux com <code class="text-slate-400">nvidia-smi</code>.</li>
+            <li>O arco verde compara a soma da “pegada” dos modelos (VRAM ou residente, o que for maior) com a <strong>referência em GiB</strong> que configuraste — serve como <strong>indicador relativo</strong>, não como medida física certificada.</li>
+        </ul>
+    </section>
+</div>

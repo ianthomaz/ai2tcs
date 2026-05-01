@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% set active = "projects" %}
+{% block title %}Novo Projeto - LLM Dashboard{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+    <h2 class="text-2xl font-bold mb-6">Novo Projeto</h2>
+
+    {% if error %}
+    <div class="bg-red-900/50 border border-red-700 text-red-300 px-4 py-2 rounded mb-4 text-sm">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="post" action="/dashboard/projects/new" class="space-y-4">
+        <div>
+            <label class="block text-sm text-gray-400 mb-1">Project ID (slug)</label>
+            <input type="text" name="project_id" required pattern="[a-z0-9_]+"
+                   class="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                   placeholder="meu_projeto">
+            <p class="text-xs text-gray-600 mt-1">Apenas letras minusculas, numeros e underscore</p>
+        </div>
+
+        <div>
+            <label class="block text-sm text-gray-400 mb-1">Nome</label>
+            <input type="text" name="name"
+                   class="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                   placeholder="Meu Projeto">
+        </div>
+
+        <div>
+            <label class="block text-sm text-gray-400 mb-1">Sources (um caminho por linha)</label>
+            <textarea name="sources" rows="4"
+                      class="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500 font-mono text-sm"
+                      placeholder="/path/to/content&#10;/path/to/docs"></textarea>
+        </div>
+
+        <div>
+            <label class="block text-sm text-gray-400 mb-1">Temas (separados por virgula)</label>
+            <input type="text" name="themes"
+                   class="w-full bg-gray-800 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                   placeholder="saude, nutricao, fitness">
+        </div>
+
+        <div class="flex gap-3 pt-2">
+            <button type="submit"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded transition">
+                Criar Projeto
+            </button>
+            <a href="/dashboard/projects" class="text-gray-400 hover:text-gray-300 px-4 py-2">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

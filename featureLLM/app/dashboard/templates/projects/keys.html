@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% set active = "projects" %}
+{% block title %}Chaves API - {{ project_id }} - LLM Dashboard{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl">
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center space-x-3">
+            <a href="/dashboard/projects/{{ project_id }}" class="text-gray-400 hover:text-white transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </a>
+            <h2 class="text-2xl font-bold">Chaves API do Projeto <span class="text-blue-400 font-mono">{{ project_id }}</span></h2>
+        </div>
+    </div>
+
+    {% if new_key %}
+    <div class="bg-green-900/30 border border-green-500/50 rounded-lg p-5 mb-6 text-green-400">
+        <h3 class="font-bold mb-2">Chave Gerada com Sucesso!</h3>
+        <p class="text-sm mb-3">Copie esta chave agora. Por segurança, você não poderá vê-la novamente.</p>
+        <div class="flex items-center space-x-2 bg-black/40 p-3 rounded font-mono text-lg break-all">
+            <span>{{ new_key }}</span>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="bg-gray-800 rounded-lg p-5 mb-6 border border-gray-700">
+        <h3 class="text-lg font-semibold mb-4">Gerar Nova Chave</h3>
+        <form method="post" action="/dashboard/projects/{{ project_id }}/keys" class="flex items-end space-x-4">
+            <div class="flex-grow">
+                <label class="block text-sm text-gray-400 mb-1">Rótulo (opcional)</label>
+                <input type="text" name="label" placeholder="ex: ZapZap Produção"
+                       class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500">
+            </div>
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded transition whitespace-nowrap">
+                Gerar Chave
+            </button>
+        </form>
+    </div>
+
+    <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
+        <h3 class="text-lg font-semibold mb-4">Chaves Existentes</h3>
+        {% if keys %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="text-gray-500 border-b border-gray-700">
+                    <tr>
+                        <th class="text-left py-2 pr-4">Rótulo</th>
+                        <th class="text-left py-2 pr-4">Hash</th>
+                        <th class="text-left py-2 pr-4">Criada em</th>
+                        <th class="text-left py-2 pr-4">Último uso</th>
+                        <th class="text-right py-2">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for key in keys %}
+                    <tr class="border-b border-gray-700/50 hover:bg-gray-700/30 {% if key.revoked_at %}opacity-40{% endif %}">
+                        <td class="py-3 pr-4 font-medium">{{ key.label or '-' }}</td>
+                        <td class="py-3 pr-4 font-mono text-gray-500">{{ key.key_hash[:8] }}...</td>
+                        <td class="py-3 pr-4 text-gray-400">{{ key.created_at.strftime('%d/%m/%y %H:%M') if key.created_at else '-' }}</td>
+                        <td class="py-3 pr-4 text-gray-400">{{ key.last_used_at.strftime('%d/%m/%y %H:%M') if key.last_used_at else 'Nunca' }}</td>
+                        <td class="py-3 text-right">
+                            {% if key.revoked_at %}
+                            <span class="text-red-500 text-xs font-bold uppercase">Revogada em {{ key.revoked_at.strftime('%d/%m/%y') }}</span>
+                            {% else %}
+                            <form method="post" action="/dashboard/projects/{{ project_id }}/keys/{{ key.id }}/revoke"
+                                  onsubmit="return confirm('Tem certeza que deseja revogar esta chave? O cliente que a utiliza perderá acesso imediatamente.')"
+                                  class="inline">
+                                <button type="submit" class="text-red-400 hover:text-red-300 transition text-xs font-bold uppercase underline">
+                                    Revogar
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-gray-500 text-sm">Este projeto ainda não possui chaves API próprias. Use o token global ou gere uma acima.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
