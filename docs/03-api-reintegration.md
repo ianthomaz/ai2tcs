@@ -1,8 +1,8 @@
 # 03 — Reintegração (fleet, chaves por projeto, router)
 
-Este documento orienta a migração para a nova arquitetura de autenticação, roteamento e gestão de modelos da API LLM (Abril 2026). Faz parte do repositório **ai2tcs** (`docs/`).
+Migração (2026-04): autenticação dual, aliases de modelo, `POST /router`, ingest partilhado.
 
-**Atenção:** o **`POST /router`** passou a responder com **JSON estruturado** (`action`, `confidence` numérico, `escalate_to`, etc.). O contrato antigo (três linhas / `confidence` string) deixou de ser o oficial — actualiza o orquestrador **na mesma janela em que actualizares a API**. Detalhe completo em [02-api-integration.md](./02-api-integration.md) § 3.2.
+**`POST /router`:** resposta **só** em JSON estruturado (`action`, `confidence` numérico, `escalate_to`, …). Contrato antigo (texto / `confidence` string) removido. Actualizar orquestrador **junto** com a API. Payload e exemplos: [02-api-integration.md](./02-api-integration.md) § 3.2.
 
 ## 1. Nova Autenticação Dual
 
@@ -11,10 +11,11 @@ A partir de agora, a API suporta dois métodos de autenticação:
 1.  **Token Global (Legado/Admin):** Continua funcionando via `Authorization: Bearer <LLM_API_TOKEN>`. Requer que `project_id` seja enviado no corpo da requisição.
 2.  **Chave por Projeto (Novo/Recomendado):** Chaves no formato `itcs_<slug>_<hash>`. Quando usada, o `project_id` é inferido da chave. Se houver conflito entre a chave e o `project_id` no corpo, a API retornará 403.
 
-### Como migrar um cliente:
-1. Vá ao Dashboard em **Projetos > [Seu Projeto] > Chaves API**.
-2. Gere uma nova chave e copie-a imediatamente.
-3. No cliente, substitua o token global pela nova chave.
+### Migrar um cliente
+
+1. Dashboard → **Projetos** → projeto → **Chaves API**.
+2. Gerar chave; copiar (só mostrada uma vez).
+3. Cliente: `Authorization: Bearer <chave>` em vez do token global.
 
 ## 2. Fleet de Modelos (Aliases)
 

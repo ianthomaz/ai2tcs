@@ -1,16 +1,12 @@
-# 09 — Upgrade de modelo (Ollama / variáveis)
+# 09 — Modelos Ollama e variáveis
 
-**Data:** Março 2026  
-**Contexto:** Mac mini M4, 32GB RAM unificada.
+**2026-03:** modelo de chat por defeito `qwen2.5:14b-instruct` (`OLLAMA_CHAT_MODEL` no `.env`). Embeddings (`nomic-embed-text`) / Chroma **não** exigem re-ingest por mudança só do modelo de chat.
 
-**Decisão (Mar/2026):** Migrado para `qwen2.5:14b-instruct`. Configurável via `OLLAMA_CHAT_MODEL` no `.env`. Indexação permanece — embeddings são independentes do modelo de chat.
+**No llm_server:**
 
-### O que fazer agora (no mini)
-1. `ollama pull qwen2.5:14b-instruct` — baixar o modelo
-2. Reiniciar a API (`./scripts/run_api.sh` ou launchd)
-3. (Opcional) Se quiser outro modelo: `OLLAMA_CHAT_MODEL=outro-modelo` no `.env`
-
-**Indexação:** Não precisa re-indexar. Os embeddings (nomic-embed-text) e o Chroma permanecem; só o modelo que gera a resposta mudou.
+1. `ollama pull qwen2.5:14b-instruct`
+2. Reiniciar stack da API (Docker ou script local conforme o teu deploy).
+3. Opcional: `OLLAMA_CHAT_MODEL=<outro>` no `.env`.
 
 ---
 

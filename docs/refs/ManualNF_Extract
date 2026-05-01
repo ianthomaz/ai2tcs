@@ -1,14 +1,8 @@
 # ManualNF_Extract
 
-Guia oficial para integrar com a API `NF Extract`.
+`POST /nfExtract`. Feature: **`itcsNFextract`**.
 
-**Onde está este ficheiro:** no repositório **ai2tcs**, em `docs/refs/ManualNF_Extract` (mesma pasta que os restantes manuais da API).
-
-Nome oficial da feature: `itcsNFextract`.
-
-Manual geral da mesma API (LLM, `/ask`, auth, etc.): [`02-api-integration.md`](../02-api-integration.md) — **§ 1.1** descreve as mesmas duas rotas de URL base (HTTPS público vs Tailscale).
-
-**Parametrização avançada:** Você pode customizar o tom de voz, tamanho da mensagem e profundidade de busca no `config_json` do projeto. Veja a seção **§ 10** do [02-api-integration.md](../02-api-integration.md) para detalhes.
+URL base e auth: [02-api-integration.md](../02-api-integration.md) § 1.1 e § 2. `config_json` (tom, tamanho, retrieval): [02-api-integration.md](../02-api-integration.md) § 10.
 
 ## 1) Objetivo
 

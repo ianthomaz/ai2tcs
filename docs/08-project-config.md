@@ -1,10 +1,10 @@
-# 08 — Exemplos de configuração por projeto
+# 08 — Configuração por projeto (`config_json`)
 
-Como configurar diferentes tipos de projetos com parâmetros otimizados.
+Exemplos de `config_json` por tipo de uso.
 
 ---
 
-## 📋 Índice
+## Índice
 
 1. [Projeto de Comunidade (Bike Anjo)](#bike-anjo)
 2. [Projeto Técnico/Legal](#técnico)

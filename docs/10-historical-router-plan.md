@@ -1,22 +1,21 @@
 # 10 — Plano histórico (fleet, router, chaves, ingest)
 
-**Data:** abril/2026 (reescrita)
-**Status:** [ ] Planejamento — decisões de produto **actualizadas** (ver § 10)
-**Âmbito:** uso **estritamente local / pessoal** — sem cobrança, sem pressão comercial; migração lenta e manual, em passos independentes.
-**Relacionado:** [refs/operacao-tailscale.md](./refs/operacao-tailscale.md), [02-api-integration.md](./02-api-integration.md), [09-model-upgrade.md](./09-model-upgrade.md), [UPGRADES.md](../llm_api/UPGRADES.md), `app/api/message_router.py`, `app/config.py`, `prisma/schema.prisma`.
+**2026-04** (reescrita). **Estado:** planeamento; decisões actuais em § 10. **Âmbito:** deploy local / pessoal; migração manual por passos.
+
+**Refs:** [refs/operacao-tailscale.md](./refs/operacao-tailscale.md), [02-api-integration.md](./02-api-integration.md), [09-model-upgrade.md](./09-model-upgrade.md), [`llm_api/UPGRADES.md`](../llm_api/UPGRADES.md), `app/api/message_router.py`, `app/config.py`, `prisma/schema.prisma`.
 
 ---
 
-## 1. Objetivo e âmbito
+## 1. Objectivo
 
-Evoluir a API em quatro frentes complementares:
+Quatro frentes:
 
 1. **Fleet de 4 LLMs** — integrar os dois modelos novos (`deepseek-r1:8b`, `qwen2.5:7b-instruct`) ao lado dos dois já configurados (`llama3:8b`, `qwen2.5:14b-instruct`).
 2. **Router "triage-first"** — o modelo rápido recebe sempre primeiro, tenta responder, e quando não faz sentido deixa uma observação interna que o router usa para escalar ao especialista certo. Inclui heurísticas de auto-selecção quando o cliente não indica modelo.
 3. **Ingest partilhado + upload multipart** — biblioteca referenciável por slug entre projetos e endpoint para enviar ficheiros via HTTP.
 4. **ADM** — chaves API por projeto no painel + atribuição de LLMs preferidas por projeto.
 
-Mantém-se tudo o que já foi decidido: transição suave (token global e chaves por projeto coexistem), chamada directa ao Ollama em `127.0.0.1` continua permitida para dev, sem SLA comercial.
+**Decisões fixas:** token global e chaves por projeto em paralelo; Ollama em `127.0.0.1` permitido em dev.
 
 ---
 

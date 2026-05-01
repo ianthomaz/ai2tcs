@@ -1,25 +1,21 @@
-# 06 — Contrato educacional (/edu/*)
+# 06 — Contrato `/edu/*`
 
-O eixo educacional da LLM é focado em fornecer suporte didático para aprendizado de idiomas (inicialmente Mandarim), permitindo conversas tutoradas, geração de exercícios e acompanhamento de progresso.
+Rotas síncronas: chat tutor, exercícios, vocabulário, gramática, progresso (Postgres). Idioma por defeito: mandarim / HSK.
 
-Este ficheiro faz parte do repositório **ai2tcs**, em `docs/`.
+Base URL e Bearer: [02-api-integration.md](./02-api-integration.md) § 2 e § 3.8.
 
-**Integração:** URL base, autenticação Bearer e visão geral dos endpoints na mesma API que o resto do serviço — ver [02-api-integration.md](./02-api-integration.md) § 3.8 e § 2.
+## Dados e modelo
 
-## Visão Geral
-
-- **Base de Conhecimento:** Vocabulário e gramática estruturados no PostgreSQL.
-- **Modelos de IA:** O corpo pode incluir `"model": "fast" | "compact" | "smart" | "reasoner"` (alias da fleet). **`reasoner`** usa o modelo configurado em `OLLAMA_REASONER_MODEL` (ex. DeepSeek R1) — útil para explicações mais densas em mandarim; **`smart`** continua a boa escolha por defeito para qualidade pedagógica equilibrada.
-- **Sincronismo:** Todas as rotas são síncronas, otimizadas para respostas rápidas.
+- Postgres: vocabulário, gramática, progresso.
+- Body opcional: `"model": "fast" | "compact" | "smart" | "reasoner"`. `reasoner` → `OLLAMA_REASONER_MODEL`. Por defeito em EDU: alias em `EDU_CHAT_DEFAULT_MODEL_ALIAS` (ver `.env.example`).
+- Rotas **síncronas**.
 
 ## Endpoints
 
 ### 1. Chat Didático
 `POST /edu/chat`
 
-Conversa guiada por um tutor de IA que conhece o nível do aluno e vocabulário relevante.
-
-**Latência:** por defeito o servidor usa o alias em **`EDU_CHAT_DEFAULT_MODEL_ALIAS`** (por omissão `fast`, ex. `llama3:8b`) e limite ~512 tokens. O cliente pode enviar **`"model": "smart"`**, **`"compact"`** ou **`"reasoner"`** (DeepSeek R1) por pedido. Variáveis: `EDU_CHAT_DEFAULT_MODEL_ALIAS`, `EDU_CHAT_NUM_PREDICT`, `EDU_CHAT_TEMPERATURE`, etc. — ver `.env.example`.
+**Latência / modelo:** `EDU_CHAT_DEFAULT_MODEL_ALIAS` (default `fast`), ~512 tokens; override por pedido com `"model"`. Env: `EDU_CHAT_*` em `.env.example`.
 
 **Request Body:**
 ```json

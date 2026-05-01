@@ -1,28 +1,30 @@
-# 02 — Integração HTTP (LLM API local, Tailscale)
+# 02 — Integração HTTP
 
-Como conectar seus projetos à API de LLM (mesmo host ou rede privada, ex. Tailscale).
-
-**Repositório e pastas:** repositório **ai2tcs** — documentação em **`docs/`** (raiz do clone). O manual **NF Extract** (só `/nfExtract`) está em [ManualNF_Extract](./refs/ManualNF_Extract). Mapas reais da tua rede: **`local-only/`** (ver [01-overview.md](./01-overview.md)).
+Contrato da API LLM (auth, URLs, payloads). **NF Extract** (`/nfExtract`): [ManualNF_Extract](./refs/ManualNF_Extract). **Rede:** [refs/operacao-tailscale.md](./refs/operacao-tailscale.md). **Valores locais:** `local-only/` — [01-overview.md](./01-overview.md).
 
 ---
 
-## Novidades (março 2026)
+## Registo 2026-03
 
-- **§ 4.5** — Perguntas meta / existenciais e limites do RAG (por que "Quem é você?" pode falhar ou soar mal).
-- **§ 12** — Troubleshooting ampliado: respostas vazias, `no_answer`, orquestrador com fallback humano.
-- **§ 14** — Operação: consultar últimas mensagens do Zap no Postgres (exemplo para produção).
-- **Router** (`POST /router`) e contrato com zapzap já documentados em § 3.2; reforço: enviar `last_messages` / `recent_messages` melhora desambiguação.
-- **Qualidade:** para WhatsApp, combine `tone_of_voice: friendly`, `message_size: short` e um ficheiro curto na biblioteca só para identidade da assistente (ver § 4.5).
-- **Áudio (STT local):** `POST /audio/transcribe` e `POST /audio/ask` — Whisper via `faster-whisper`, jobs assíncronos; ver § 3.7. Exige migração Postgres `20260323120000_job_audio_stt` e, no Docker, imagem com **ffmpeg**.
+| Item | Onde |
+|------|------|
+| Meta-perguntas / RAG | § 4.5 |
+| Troubleshooting (vazio, `no_answer`, orquestrador) | § 12 |
+| Postgres: últimas mensagens Zap | § 14 |
+| `POST /router`, zapzap: enviar `last_messages` / `recent_messages` | § 3.2 |
+| WhatsApp: `tone_of_voice`, `message_size`, identidade na biblioteca | § 4.5 |
+| Áudio: `POST /audio/transcribe`, `POST /audio/ask`; migração `20260323120000_job_audio_stt`; Docker com **ffmpeg** | § 3.7 |
 
-## Novidades (abril 2026)
+## Registo 2026-04
 
-- **Eixo educacional (`/edu/*`):** chat tutor síncrono (`/edu/chat` valida JSON, **1 retry** se o schema falhar, depois **fallback estruturado fixo** — `reply_structured` preenchido em HTTP 200), exercícios, vocabulário, gramática e progresso no Postgres (mandarim / HSK por defeito). Ver § 3.8 e [06-edu-contract.md](./06-edu-contract.md). Migração: `20260403000000_edu_tables`.
-- **Autenticação em dois modos:** token global `LLM_API_TOKEN` **ou** chave por projeto (`itcs_<project_id>_<hex>`), gerada no **Dashboard → projeto → Chaves API**. Migração e detalhes: [`03-api-reintegration.md`](03-api-reintegration.md). Migração DB: `20260408000000_api_keys_and_shared_libraries` (e job `model_alias` em `20260408010000_add_job_model_alias`).
-- **Fleet de modelos (aliases):** `fast`, `compact`, `smart`, `reasoner` — ver § 2 e `app/config.py` / `.env.example` (`OLLAMA_*_MODEL`).
-- **`POST /router` — contrato novo (JSON):** triagem `answer_now` vs `escalate`, `escalate_to`, `task_type`, `confidence` numérico, etc. O formato antigo (`confidence` string `high|medium|low` + só `suggested_route`) **deixou de ser a resposta oficial**; clientes zapzap/orquestradores precisam de atualização **na mesma altura em que subires esta versão da API** (ver § 3.2).
-- **`POST /ingest/upload`:** upload multipart de ficheiro para pasta do projeto (ou biblioteca partilhada); ver § 3 e [`03-api-reintegration.md`](03-api-reintegration.md) §4.
-- **`config_json.shared_libraries`:** índices partilhados entre projetos (RAG); ver manual de reintegração.
+| Item | Onde |
+|------|------|
+| `/edu/*` (chat, exercícios, Postgres); migração `20260403000000_edu_tables` | § 3.8, [06-edu-contract.md](./06-edu-contract.md) |
+| Auth: `LLM_API_TOKEN` ou chave `itcs_<slug>_<hash>` (Dashboard → Chaves API); DB `20260408000000_api_keys_and_shared_libraries`, `20260408010000_add_job_model_alias` | [03-api-reintegration.md](./03-api-reintegration.md) |
+| Aliases `fast`, `compact`, `smart`, `reasoner` | § 2, `app/config.py`, `.env.example` |
+| `POST /router`: JSON novo (`action`, `confidence` numérico, `escalate_to`, …). Formato antigo (`confidence` string + só `suggested_route`) removido — actualizar clientes na mesma subida da API | § 3.2 |
+| `POST /ingest/upload` | § 3, [03-api-reintegration.md](./03-api-reintegration.md) § 4 |
+| `config_json.shared_libraries` | [03-api-reintegration.md](./03-api-reintegration.md) |
 
 ---
 

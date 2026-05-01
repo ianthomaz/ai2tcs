@@ -1,12 +1,12 @@
-# Operação da API LLM via Tailscale (servidores e scripts)
+# Operação via Tailscale
 
-**Sítio na árvore:** `docs/refs/` — ver [README.md](./README.md). Mapa da documentação: [../01-overview.md](../01-overview.md).
+Índice `refs/`: [README.md](./README.md). Contrato HTTP: [02-api-integration.md](../02-api-integration.md).
 
-Como consumir a API LLM a partir de outros dispositivos na **mesma tailnet**. Documento **ai2tcs** (`docs/`); contrato HTTP em [02-api-integration.md](../02-api-integration.md).
+Consumo da API a partir de nós na **mesma tailnet**.
 
-**llm_server:** máquina onde corre a API (porta **28471**).
+**llm_server:** host da API, porta **28471**.
 
-**Importante:** acesso **interno** na Tailscale. **Não usar Funnel** para expor a API à internet pública.
+**Tailscale:** uso **interno** à tailnet. **Proibido Funnel** para expor esta API à Internet pública.
 
 ---
 

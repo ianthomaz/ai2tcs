@@ -1,5 +1,4 @@
-# Documentação da API (raiz do repo)
+# Documentação (`docs/`)
 
-**Entrada:** [01-overview.md](./01-overview.md)
-
-A documentação numerada vive nesta pasta; exemplos de rede e nginx em [`refs/`](./refs/).
+1. Abrir [01-overview.md](./01-overview.md).
+2. Ficheiros numerados `NN-*.md` nesta pasta; rede e exemplos em [`refs/`](./refs/).

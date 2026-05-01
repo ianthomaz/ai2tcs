@@ -1,52 +1,53 @@
-# 01 — Visão geral e mapa da documentação
+# 01 — Visão geral
 
-Repositório **ai2tcs**: produto **LLM/API**. Código em **`llm_api/`**; satélites em **`features/`**. Esta pasta **`docs/`** é a documentação **pública** de contratos e guias; segue uma **linha numerada** (01 → …) para ler em ordem ou saltar para o capítulo certo.
+**Repo:** `ai2tcs`. **Código:** `llm_api/`. **Satélites:** `features/`. **Contratos e guias:** `docs/`.
 
-**História sugerida:** visão geral (este ficheiro) → integração HTTP → reintegração/migração → desenvolvimento no repo → arquitetura → verticais (EDU, LLM, config) → anexos históricos. **Operação de rede** e **exemplos nginx** estão em **`docs/refs/`** (não são o contrato HTTP em si).
+**Regra de ficheiros:** manter `docs/NN-nome.md` com `NN` inteiro em **ordem crescente** (01 … 10). Ao acrescentar ou renumerar capítulo, actualizar este índice e os links **Anterior / Seguinte** nos próprios ficheiros.
+
+**Fora da sequência numérica:** `docs/refs/` (rede Tailscale, nginx, `ManualNF_Extract`).
 
 ---
 
-## Leitura por perfil
+## Índice
 
-| Se queres… | Começa em |
-|-------------|-----------|
-| Chamar a API (auth, URLs, exemplos) | [02-api-integration.md](./02-api-integration.md) |
-| Dashboard web (`/dashboard`, login Google OAuth ou user/senha) | [02-api-integration.md](./02-api-integration.md) (novidades no topo + § 3.5); variáveis em [`llm_api/.env.example`](../llm_api/.env.example) |
-| Migrar chaves, fleet, `/router`, checklist | [03-api-reintegration.md](./03-api-reintegration.md) |
-| Contribuir / correr testes / estrutura de código | [04-developer-guide.md](./04-developer-guide.md) |
-| Visão de componentes (API, worker, dados, rede) | [05-architecture.md](./05-architecture.md) |
+| Assunto | Ficheiro |
+|---------|----------|
+| API HTTP (auth, URLs, exemplos, dashboard) | [02-api-integration.md](./02-api-integration.md) |
+| Migração: chaves por projeto, fleet, `/router` | [03-api-reintegration.md](./03-api-reintegration.md) |
+| Código: setup, testes, estrutura | [04-developer-guide.md](./04-developer-guide.md) |
+| Componentes (API, worker, dados, rede) | [05-architecture.md](./05-architecture.md) |
 | Contrato `/edu/*` | [06-edu-contract.md](./06-edu-contract.md) |
-| Tom da LLM, mitigações, desvios | [07-llm-calibration.md](./07-llm-calibration.md) |
+| Calibração LLM, desvios, mitigação | [07-llm-calibration.md](./07-llm-calibration.md) |
 | `config_json`, chunking, políticas por projeto | [08-project-config.md](./08-project-config.md) |
-| Trocar modelo Ollama / variáveis | [09-model-upgrade.md](./09-model-upgrade.md) |
-| Plano longo (router, chaves) — contexto histórico | [10-historical-router-plan.md](./10-historical-router-plan.md) |
+| Ollama: modelos, variáveis `OLLAMA_*` | [09-model-upgrade.md](./09-model-upgrade.md) |
+| Contexto histórico (router, fleet, ingest) | [10-historical-router-plan.md](./10-historical-router-plan.md) |
 
-**NF Extract** (`POST /nfExtract`): [refs/ManualNF_Extract](./refs/ManualNF_Extract). **Variáveis sem segredos:** [`llm_api/.env.example`](../llm_api/.env.example). **Roadmap de código:** [`llm_api/UPGRADES.md`](../llm_api/UPGRADES.md).
+**NF Extract:** [refs/ManualNF_Extract](./refs/ManualNF_Extract). **Variáveis (sem segredos):** [`llm_api/.env.example`](../llm_api/.env.example). **Roadmap código:** [`llm_api/UPGRADES.md`](../llm_api/UPGRADES.md).
 
-**Quem pode entrar no dashboard com Google:** lista em **`DASHBOARD_ALLOWED_EMAILS`** no `.env` da API (`llm_api/.env` no clone, ou env do Docker). Não fica no Postgres; o código compara o e-mail devolvido pelo Google com essa lista (ver também default comentado em `llm_api/.env.example`).
+**Dashboard Google:** allowlist em `DASHBOARD_ALLOWED_EMAILS` (`llm_api/.env` ou env do container). Comparação com e-mail devolvido pelo Google; não usa Postgres. Defaults comentados: `llm_api/.env.example`.
 
 ---
 
-## Referências (anexos)
+## `docs/refs/`
 
-Índice da pasta **`refs/`:** [refs/README.md](./refs/README.md).
+Índice: [refs/README.md](./refs/README.md).
 
-| Conteúdo | Onde |
-|----------|------|
+| Conteúdo | Ficheiro |
+|----------|----------|
 | Tailscale, Serve, túnel, proxy | [refs/operacao-tailscale.md](./refs/operacao-tailscale.md) |
-| Exemplo nginx (proxy opcional na tailnet) | [refs/nginx/bikeanjovm.conf](./refs/nginx/bikeanjovm.conf) |
+| Exemplo nginx (tailnet) | [refs/nginx/bikeanjovm.conf](./refs/nginx/bikeanjovm.conf) |
 
 ---
 
-## Pasta `local-only/`
+## `local-only/`
 
-Na raiz do clone, listada no [`.gitignore`](../.gitignore).
+Directório na **raiz do clone**, no [`.gitignore`](../.gitignore).
 
-- **`local-only/docs/`** — notas por projeto; ver `README.md` nessa pasta.
-- Mapa de rede: IPs Tailscale, hostnames, URLs públicas.
-- Snippets sensíveis, variáveis, proxy.
+- `local-only/docs/` — notas por projeto; ver `README.md` dentro dessa pasta.
+- Mapa de rede (IPs Tailscale, hostnames, URLs).
+- Variáveis e snippets sensíveis.
 
-Em **`docs/`**, **placeholders** (`<tailnet-host>`, etc.) e contratos HTTP. **llm_server** = máquina onde corre a API nas secções de rede.
+Em `docs/`: placeholders (`<tailnet-host>`, etc.) e contratos HTTP. **llm_server:** máquina onde corre a API nas secções de rede.
 
 ---
 

@@ -1,6 +1,6 @@
-# 05 — Arquitetura (visão do sistema)
+# 05 — Arquitetura
 
-Este capítulo resume **como as peças encaixam**. Para árvore de pastas e fluxo de desenvolvimento, o detalhe operacional está no [04-developer-guide.md](./04-developer-guide.md).
+Camadas e fluxo de dados. Pastas e fluxo de dev: [04-developer-guide.md](./04-developer-guide.md).
 
 ---
 
@@ -16,13 +16,13 @@ Este capítulo resume **como as peças encaixam**. Para árvore de pastas e flux
 
 ## Rede e exposição
 
-Cenários típicos: API só em **127.0.0.1** no **llm_server**, exposição na **tailnet** (Tailscale Serve), ou **proxy/nginx** / **túnel SSH** quando a topologia não permite TCP estável. Operação em rede: [refs/operacao-tailscale.md](./refs/operacao-tailscale.md); exemplos de config: [refs/nginx/](./refs/nginx/).
+**127.0.0.1** no **llm_server**; **tailnet** (Tailscale Serve); ou **proxy/nginx** / **túnel SSH** se TCP entre peers for instável. [refs/operacao-tailscale.md](./refs/operacao-tailscale.md); [refs/nginx/](./refs/nginx/).
 
 ---
 
-## Evolução e contexto longo
+## Evolução
 
-Roadmap e melhorias planeadas no código: [`llm_api/UPGRADES.md`](../llm_api/UPGRADES.md). Plano histórico (fleet, router, chaves, ingest — muito detalhe): [10-historical-router-plan.md](./10-historical-router-plan.md).
+[`llm_api/UPGRADES.md`](../llm_api/UPGRADES.md). Plano histórico: [10-historical-router-plan.md](./10-historical-router-plan.md).
 
 ---
 

@@ -1,18 +1,20 @@
-# 07 — Calibração da LLM (desvios e mitigação)
+# 07 — Calibração LLM (desvios e mitigação)
 
-Documento de referência sobre os desvios que a LLM tende a cometer, o que fizemos para mitigar e como manter respostas úteis sem comprometer a API. Faz parte do repositório **ai2tcs** (`docs/`).
+Desvios comuns do modelo local + mitigação na API e por projeto.
 
 ---
 
-## 1. Por que calibrar?
+## 1. Contexto
 
-A API usa um **modelo local** (Ollama, ex.: llama3:8b) para RAG: recupera trechos da base e monta um prompt. Modelos 7B/8B não seguem instruções de forma tão estável quanto modelos maiores ou APIs gerenciadas. Eles tendem a:
+Modelo local (Ollama, ex. 7B/8B) + RAG: instruções menos estáveis que modelos grandes ou APIs geridas.
 
-- Repetir padrões de treinamento ("Com base no contexto fornecido...", "Não encontrei informação suficiente...").
-- Gerar alucinações pontuais (palavra errada, ex.: "falecimento" em vez de "fale conosco").
-- Misturar tom neutro ou autodesvalorizante com o tom desejado (venda, suporte).
+Comportamentos típicos:
 
-Por isso a **calibração** é contínua: prompt base + instruções por projeto +, quando necessário, correções mínimas no pós-processamento.
+- Frases-meta de treino ("Com base no contexto…", "Não encontrei informação…").
+- Alucinação lexical pontual.
+- Tom neutro / autodesvalorizante vs. tom de negócio.
+
+**Calibração:** prompt base + `instrucoes-llm` por projeto + pós-processamento mínimo quando aplicável.
 
 ---
 

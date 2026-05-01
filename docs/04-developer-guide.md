@@ -1,8 +1,6 @@
 # 04 — Guia do desenvolvedor
 
-Como **estender, contribuir e fazer manutenção** da API LLM local. Código e esta doc estão no repositório GitHub **ai2tcs** (`llm_api/`).
-
-**Para usar a API** (endpoints, exemplos, integração de projetos): use o [02-api-integration.md](./02-api-integration.md). Este guia é só para quem mexe no código da API.
+Código: `llm_api/`. Integração HTTP (clientes): [02-api-integration.md](./02-api-integration.md). Este ficheiro: setup, testes, extensão da API.
 
 ---
 
@@ -11,8 +9,8 @@ Como **estender, contribuir e fazer manutenção** da API LLM local. Código e e
 1. [Setup de desenvolvimento](#setup-desenvolvimento)
 2. [Arquitetura](#arquitetura)
 3. [Padrões de código](#padrões-código)
-4. [Como adicionar endpoints](#adicionar-endpoints)
-5. [Como estender RAG](#estender-rag)
+4. [Adicionar endpoints](#adicionar-endpoints)
+5. [Estender RAG](#estender-rag)
 6. [Calibração e desvios da LLM](#calibração-e-desvios-da-llm)
 7. [Testes](#testes)
 8. [Troubleshooting](#troubleshooting)
@@ -157,19 +155,19 @@ GET /result/{job_id} → {"answer": "...", "sources": [...]}
 
 ### Documentação vs. comentários no código
 
-Comentários e docstrings em **inglês**, **só** onde o código não se explica sozinho (invariantes, edge cases, integrações não óbvias). Contratos HTTP, exemplos de payload e fluxos de integração pertencem aos `.md` em `docs/` (especialmente [02-api-integration.md](./02-api-integration.md)), não a blocos longos no meio dos handlers. Evita comentários genéricos ou “narrativas” que duplicam o que já está no manual.
+Comentários e docstrings: **inglês**; só onde o código não for auto-explicativo (invariantes, edge cases, integrações não óbvias). Contratos HTTP e exemplos: `docs/` ([02-api-integration.md](./02-api-integration.md)), não blocos longos nos handlers.
 
 ### 1. Funções Async/Await
 
 Toda função que faz I/O (database, HTTP, Ollama) deve ser `async`:
 
 ```python
-# ❌ Evitar
+# Evitar
 def get_user(user_id: str) -> dict:
     cursor.execute("SELECT * FROM user_profile WHERE user_id = %s")
     return cursor.fetchone()
 
-# ✅ Correto
+# Preferir
 async def get_user(user_id: str) -> dict:
     query = "SELECT * FROM user_profile WHERE user_id = %s"
     result = await db.fetch_one(query, user_id)
@@ -258,7 +256,7 @@ logger.error("Falha ao conectar em Ollama", exc_info=True)
 ### 6. Type Hints (Obrigatório)
 
 ```python
-# ✅ Correto
+# Preferir
 async def build_messages(
     project: dict,
     question: str,
@@ -281,7 +279,7 @@ async def build_messages(
     user_msg = ...
     return system_msg, user_msg
 
-# ❌ Evitar
+# Evitar
 def build_messages(project, question, chunks, user_profile=None):
     ...
 ```
