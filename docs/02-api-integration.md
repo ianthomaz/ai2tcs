@@ -15,6 +15,12 @@ Contrato da API LLM (auth, URLs, payloads). **NF Extract** (`/nfExtract`): [Manu
 | WhatsApp: `tone_of_voice`, `message_size`, identidade na biblioteca | § 4.5 |
 | Áudio: `POST /audio/transcribe`, `POST /audio/ask`; migração `20260323120000_job_audio_stt`; Docker com **ffmpeg** | § 3.7 |
 
+## Registo 2026-05
+
+| Item | Onde |
+|------|------|
+| Onboarding: URL dev/prod, dashboard, gerar chave `itcs_…`, Bearer + `project_id` | § 1.3 |
+
 ## Registo 2026-04
 
 | Item | Onde |
@@ -58,6 +64,29 @@ A instância e exemplos de produção alinhados com **itcs-webplace**; integrado
 Quando um projecto precisa de **comportamento dedicado** (prompts, JSON adicional, rota nova, semântica de job), isso **negocia-se com a manutenção da API**: convém chegar com **pedido explícito** (rotas, exemplos de request/response, limites, idioma). A partir daí ajusta-se o fluxo (código + prompts + documentação) de forma coerente — ver também [01-overview.md](./01-overview.md) (secção *Integração: escopo, itcs-webplace e customização*).
 
 **Exemplo — `POST /nabilvideomap/qualify-caption`:** corpo JSON mínimo `project_id`, `text` (legenda UTF-8), opcionais `use_rag`, `model` (aliases `fast`, `compact`, `smart`, `reasoner` ou nome Ollama). Resposta JSON com chaves fixas: `location_accuracy`, `location_granularity`, `location_primary_label`, `llm_location_candidates` (lista de `{label, kind, confidence}`), `location_ambiguity_notes`, `location_confidence`, `theme_primary`, `theme_secondary`, `theme_tags`, `llm_theme_notes`, `summary_140`. Enumerações exactas e semântica fina: **OpenAPI em `{LLM_API_URL}/docs`** no ambiente onde a API corre; variantes por produto combinam-se com a manutenção.
+
+### 1.3 Onboarding e chave API por projecto
+
+Cada **app ou serviço** que chama esta API precisa de **um token no header** `Authorization: Bearer …`. Há dois modos (§ 2); para **projeto novo em produção** o caminho certo é quase sempre **chave por projecto**, não o token global do servidor.
+
+| O quê | Detalhe |
+|-------|---------|
+| **URL base (`LLM_API_URL`)** | **Dev (Docker no mesmo Mac):** `http://127.0.0.1:28471`. **Produção:** o URL público HTTPS (ou tailnet) que a operação te der — **os paths são os mesmos** (`/ask`, `/health`, …). |
+| **Quem cria o `project_id`** | Alguém com **login no dashboard** (`/dashboard`) — Google OAuth (e-mail na allowlist) ou user/senha do `.env` se existir. **Não** há fluxo self-service “sem credencial nenhuma” para o primeiro registo: o operador (ou seed/SQL) cria o projecto na instância. |
+| **Onde se gera a chave API** | Dashboard → **Projetos** → escolhe o **slug** (`project_id`) → **Chaves API** — URL `GET/POST` sob `/dashboard/projects/<project_id>/keys`. Clicas em gerar: aparece **uma vez** a chave no formato `itcs_<project_id>_<hex>`. **Copia e guarda** no cofre / CI do produto (não volta a aparecer). |
+| **O que o teu código faz** | Variáveis de ambiente, por exemplo `ITCS_LLM_API_URL`, `ITCS_LLM_API_KEY` (= chave `itcs_…`), `ITCS_LLM_PROJECT_ID` (= mesmo slug). Em **cada** `POST`/`GET` à API: `Authorization: Bearer <ITCS_LLM_API_KEY>` e, nos bodies que exigem `project_id`, **o mesmo valor** que está na chave. Se o `project_id` do JSON **não** for o da chave → **403** `API key not authorized for this project`. |
+| **Token global (`LLM_API_TOKEN`)** | Só no `.env` do **servidor** da API. Serve para **legado / admin** (e para `POST /projects` na primeira configuração). **Não** deves embutir o global na app de produção de um cliente — usa chave por projecto. |
+
+**Exemplo mínimo depois de teres chave** (substitui host e valores):
+
+```bash
+curl -sS -X POST "$ITCS_LLM_API_URL/ask" \
+  -H "Authorization: Bearer $ITCS_LLM_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{\"project_id\": \"$ITCS_LLM_PROJECT_ID\", \"question\": \"…\", \"model\": \"smart\"}"
+```
+
+**Checklist para o equipa do produto:** [ ] `LLM_API_URL` correcto (dev vs prod) · [ ] `project_id` criado na instância · [ ] Chave gerada no dashboard e guardada · [ ] Header `Bearer` = chave `itcs_…` · [ ] Corpo com o **mesmo** `project_id`.
 
 ---
 

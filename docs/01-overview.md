@@ -22,7 +22,7 @@ Se o teu projecto **precisa de padrões específicos** (prompts, campos extra, n
 
 | Assunto | Ficheiro |
 |---------|----------|
-| API HTTP (auth, URLs, exemplos, dashboard) | [02-api-integration.md](./02-api-integration.md) |
+| API HTTP (auth, URLs, exemplos, onboarding chave § 1.3) | [02-api-integration.md](./02-api-integration.md) |
 | Migração: chaves por projeto, fleet, `/router` | [03-api-reintegration.md](./03-api-reintegration.md) |
 | Código: setup, testes, estrutura | [04-developer-guide.md](./04-developer-guide.md) |
 | Componentes (API, worker, dados, rede) | [05-architecture.md](./05-architecture.md) |

@@ -1,6 +1,6 @@
 # 12 — Operações LLM / RAG (enxuto)
 
-Checklist e pontos que **não** cabem noutros docs. Defaults de modelos e `OLLAMA_*`: [09-model-upgrade.md](./09-model-upgrade.md). Melhorias futuras (reranker, hybrid, etc.): [11-improvements-roadmap.md](./11-improvements-roadmap.md).
+Checklist e pontos que **não** cabem noutros docs. **Novo cliente / chave API:** [02-api-integration.md § 1.3](./02-api-integration.md#13-onboarding-e-chave-api-por-projecto). Defaults de modelos e `OLLAMA_*`: [09-model-upgrade.md](./09-model-upgrade.md). Melhorias futuras: [11-improvements-roadmap.md](./11-improvements-roadmap.md).
 
 **Anterior:** [11-improvements-roadmap.md](./11-improvements-roadmap.md) · **Seguinte:** [01-overview.md](./01-overview.md)
 
