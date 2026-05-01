@@ -16,7 +16,7 @@
 # Press Ctrl+C to stop.
 
 set -e
-ITCSVM_IP="${ITCSVM_IP:?Set ITCSVM_IP (see local-only/docs/MINI62_URLS.md)}"
+ITCSVM_IP="${ITCSVM_IP:?Set ITCSVM_IP (see local-only/docs/LLM_SERVER_URLS.md)}"
 ITCSVM_USER="${ITCSVM_USER:-opc}"
 SSH_KEY="${SSH_KEY:-$HOME/.ssh/itcsvm_key}"
 

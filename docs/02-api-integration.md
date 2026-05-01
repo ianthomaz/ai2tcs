@@ -28,20 +28,20 @@ Como conectar seus projetos à API de LLM (mesmo host ou rede privada, ex. Tails
 
 ## 1. Visão geral
 
-A API corre no **host onde a instalas** (típico: um Mac ou Linux na tua rede), porta **28471**. É a **mesma instância** em todos os caminhos abaixo; mudam só como o cliente **chega** até ela.
+A API corre no **llm_server** — máquina onde a instalas (típico: Mac ou Linux na tua rede), porta **28471**. É a **mesma instância** em todos os caminhos abaixo; mudam só como o cliente **chega** até ela. O nome **llm_server** é só documentação (evita hostnames reais no Git); ver [refs/operacao-tailscale.md](./refs/operacao-tailscale.md).
 
 ### 1.1 Duas formas de URL base (`LLM_API_URL`)
 
 | Caminho | URL base típica | Quem usa |
 |--------|------------------|----------|
-| **A — Internet (HTTPS)** | `https://<teu-host-público-llm>` | Clientes **fora** da Tailscale quando expões HTTPS no edge (reverse proxy, TLS). Fluxo típico: cliente → TLS no edge → rede privada até o host da API **:28471**. O valor exacto depende da tua infra — anota-o em `local-only/`. |
-| **B — Tailscale (direto na API)** | `http://<IP-ou-hostname-na-tailnet>:28471` | Máquinas **na mesma tailnet**. Obtéis o IP com `tailscale ip -4` **no host onde a API corre** (ou hostname no admin Tailscale). |
+| **A — Internet (HTTPS)** | `https://<teu-host-público-llm>` | Clientes **fora** da Tailscale quando expões HTTPS no edge (reverse proxy, TLS). Fluxo típico: cliente → TLS no edge → rede privada até o **llm_server** **:28471**. O valor exacto depende da tua infra — anota-o em `local-only/`. |
+| **B — Tailscale (direto na API)** | `http://<IP-ou-hostname-na-tailnet>:28471` | Máquinas **na mesma tailnet**. Obtéis o IP com `tailscale ip -4` **no llm_server** (ou hostname no admin Tailscale). Ver [refs/operacao-tailscale.md](./refs/operacao-tailscale.md) para o nome de papel **llm_server**. |
 
 **Auth e paths:** iguais nos dois casos — header `Authorization: Bearer` (§ 2) e os mesmos endpoints (`/ask`, `/nfExtract`, `/edu`, `/health`, etc.).
 
-**Nota:** muitas instalações **não** expõem a porta 28471 diretamente à internet; o caminho A usa um proxy que termina TLS e encaminha para o host da API. O caminho B evita isso dentro da tailnet.
+**Nota:** muitas instalações **não** expõem a porta 28471 diretamente à internet; o caminho A usa um proxy que termina TLS e encaminha para o **llm_server**. O caminho B evita isso dentro da tailnet.
 
-**Fallback (VM em cloud sem TCP estável para peers Tailscale):** padrão **túnel SSH reverso** a partir do host da API — script `llm_api/scripts/llm-tunnel-api-host-to-itcsvm.sh` (raiz do clone ou `llm_api/`); variáveis `ITCSVM_*` / `SSH_KEY` em env (ver `local-only/docs/` no teu clone). No lado da VM, `LLM_API_URL=http://127.0.0.1:28471`. Detalhes em [refs/operacao-tailscale.md](./refs/operacao-tailscale.md) (secção 6).
+**Fallback (VM em cloud sem TCP estável para peers Tailscale):** padrão **túnel SSH reverso** a partir do **llm_server** — script `llm_api/scripts/llm-tunnel-api-host-to-itcsvm.sh` (raiz do clone ou `llm_api/`); variáveis `ITCSVM_*` / `SSH_KEY` em env (ver `local-only/docs/` no teu clone). No lado da VM, `LLM_API_URL=http://127.0.0.1:28471`. Detalhes em [refs/operacao-tailscale.md](./refs/operacao-tailscale.md) (secção 6).
 
 **Dashboard:** interface web em `/dashboard`. **Preferência:** login **Google OAuth** (`DASHBOARD_GOOGLE_CLIENT_ID`, `DASHBOARD_GOOGLE_CLIENT_SECRET`, `DASHBOARD_OAUTH_REDIRECT_BASE`, `DASHBOARD_ALLOWED_EMAILS` — ver [`.env.example`](../llm_api/.env.example)); o redirect canónico é `{DASHBOARD_OAUTH_REDIRECT_BASE}/dashboard/auth/google/callback`. **Alternativa:** user/senha no `.env` (`DASHBOARD_USER`, `DASHBOARD_PASSWORD`) só se OAuth **não** estiver configurado (ou ambos, se quiseres fallback). O token Bearer da API **não** serve para o login HTML do dashboard.
 
@@ -1073,8 +1073,8 @@ Para ajustes finos que nenhum parâmetro resolve:
 | Respostas com frases meta ou autodesvalorizantes ("Com base no contexto...", "não encontrei informação") | Ver [07-llm-calibration.md](./07-llm-calibration.md); reforçar instruções no projeto (`instrucoes-llm.md`) e conferir prompt base |
 | "Quem é você?" / perguntas existenciais → resposta má ou fallback humano no Zap | RAG sem chunk relevante ou resposta vazia da API; ver **§ 4.5** — ficheiro `identidade-assistente.md` + regra em `instrucoes-llm.md` + reforço no `system_prompt` do cliente; reindexar |
 | Orquestrador mostra "assistente não conseguiu responder" com tag LLM ativa | `GET /result` sem `answer` ou string vazia; ver logs do job (`GET /jobs`), `/health` (Ollama), timeout; conferir se `question` chega corretamente e se histórico não confunde o modelo |
-| `connection refused` | Mac offline, API parada, ou Tailscale desconectado |
-| `timeout` (servidor → host da API) | VM em cloud atrás de DERP sem TCP estável: ver túnel em [refs/operacao-tailscale.md](./refs/operacao-tailscale.md) secção 6, ou proxy nginx opcional (secção 6.2) — IPs reais em `local-only/` |
+| `connection refused` | **llm_server** offline, API parada, ou Tailscale desconectado |
+| `timeout` (servidor → **llm_server**) | VM em cloud atrás de DERP sem TCP estável: ver túnel em [refs/operacao-tailscale.md](./refs/operacao-tailscale.md) secção 6, ou proxy nginx opcional (secção 6.2) — IPs reais em `local-only/` |
 | `/extract` retorna sempre `null` | Step inválido ou resposta da LLM fora do formato; ver § 3.1. Confira se Ollama está no ar (`/health`) |
 
 ---

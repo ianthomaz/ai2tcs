@@ -52,7 +52,7 @@ source .env && .venv/bin/python scripts/seed_bikeanjoall.py && .venv/bin/python 
 
 ## Rodar a API (produção: use Docker)
 
-Em produção, suba sempre com Docker no host onde a API deve correr:
+Em produção, suba sempre com Docker no **llm_server** (máquina onde a API deve correr):
 
 ```bash
 cd featureLLM
@@ -65,13 +65,13 @@ A API escuta em `http://127.0.0.1:28471`. Health: `curl -H "Authorization: Beare
 
 ## Expor via Tailscale (rede interna, sem Funnel)
 
-No Mac onde a API roda:
+No **llm_server** (máquina onde a API roda):
 
 ```bash
 ./scripts/tailscale_serve.sh
 ```
 
-A API fica acessível **só na sua tailnet** (ex.: `https://<seu-mac>.ts.net/`). Não usar Funnel. Detalhes: [`../docs/refs/operacao-tailscale.md`](../docs/refs/operacao-tailscale.md).
+A API fica acessível **só na sua tailnet** (ex.: `https://<node>.<tailnet>.ts.net/` no **llm_server**). Não usar Funnel. Detalhes: [`../docs/refs/operacao-tailscale.md`](../docs/refs/operacao-tailscale.md).
 
 ## Rodar fora do container (só desenvolvimento/teste)
 

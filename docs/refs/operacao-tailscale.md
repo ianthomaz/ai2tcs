@@ -4,13 +4,15 @@
 
 Como consumir a API LLM a partir de outros dispositivos na **mesma tailnet**. Documento **ai2tcs** (`docs/`); contrato HTTP em [02-api-integration.md](../02-api-integration.md).
 
+**Nome de papel:** **llm_server** = máquina onde corre a API (porta **28471**). Usamos **llm_server** em caminhos Tailscale ↔ API para **não** versionar hostnames reais no Git.
+
 **Importante:** acesso **interno** na Tailscale. **Não usar Funnel** para expor a API à internet pública.
 
 ---
 
 ## 1. Visão geral
 
-- A API escuta em **127.0.0.1:28471** no host onde corre.
+- A API escuta em **127.0.0.1:28471** no **llm_server**.
 - Outros nós na tailnet acedem pelo **hostname Tailscale** ou IP **100.x.x.x** na porta **28471** (se ACL e firewall permitirem).
 
 **URL base (exemplos):**
@@ -26,7 +28,7 @@ Como consumir a API LLM a partir de outros dispositivos na **mesma tailnet**. Do
 Authorization: Bearer SEU_LLM_API_TOKEN
 ```
 
-- Token no `.env` do host da API (`LLM_API_TOKEN`).
+- Token no `.env` do **llm_server** (`LLM_API_TOKEN`).
 - Nos clientes: variável de ambiente ou ficheiro restrito — **nunca** no repositório.
 
 ---
@@ -49,7 +51,7 @@ Fluxo: `POST /ask` → poll `GET /status/{job_id}` → `GET /result/{job_id}`.
 ## 4. Exemplos a partir de um servidor (curl)
 
 ```bash
-LLM_HOST="<hostname-ou-100.x.x.x-no-host-da-api>"
+LLM_HOST="<hostname-ou-100.x.x.x-no-llm_server>"
 LLM_PORT="28471"
 LLM_BASE="http://${LLM_HOST}:${LLM_PORT}"
 LLM_API_TOKEN="${LLM_API_TOKEN}"
@@ -72,27 +74,27 @@ Timeouts sugeridos: 30s por pedido em `/ask`, até ~5 min no total para o job.
 
 ---
 
-## 6. Fallbacks quando uma VM em cloud não alcança o host da API via Tailscale
+## 6. Fallbacks quando uma VM em cloud não alcança o **llm_server** via Tailscale
 
 Algumas VMs (especialmente atrás de DERP sem caminho TCP estável) **não abrem TCP** até certos peers — sintoma: timeout em `curl` para `100.x.x.x:28471`, enquanto ICMP pode funcionar. O padrão é **não documentar IPs reais neste repo**; guarda-os em `local-only/`.
 
 ### 6.1 Túnel SSH reverso
 
-No **host onde a API corre**, manténs um túnel para a VM: o script do repositório é `llm_api/scripts/llm-tunnel-api-host-to-itcsvm.sh` (a partir da raiz do clone ou de `llm_api/`); define `ITCSVM_IP`, `ITCSVM_USER`, `SSH_KEY` no ambiente (valores reais só em `local-only/docs/` / `.env` local). Na VM, após o túnel, usa `LLM_API_URL=http://127.0.0.1:28471`.
+No **llm_server**, manténs um túnel para a VM: o script do repositório é `llm_api/scripts/llm-tunnel-api-host-to-itcsvm.sh` (a partir da raiz do clone ou de `llm_api/`); define `ITCSVM_IP`, `ITCSVM_USER`, `SSH_KEY` no ambiente (valores reais só em `local-only/docs/` / `.env` local). Na VM, após o túnel, usa `LLM_API_URL=http://127.0.0.1:28471`.
 
-**Pré-requisitos:** SSH (22) na VM acessível a partir do host da API; chave SSH configurada; API a ouvir em `:28471` no host de origem.
+**Pré-requisitos:** SSH (22) na VM acessível a partir do **llm_server**; chave SSH configurada; API a ouvir em `:28471` no **llm_server**.
 
 **Persistência:** no macOS, `LaunchAgent` a invocar o script (ver comentários no script / notas em `local-only/`).
 
 ### 6.2 Proxy nginx noutro nó da tailnet (opcional)
 
-Se precisares de um nó intermédio (ex.: VM sem TCP estável até o Mac), podes subir nginx na tailnet que escuta numa porta (ex. 28472) e faz `proxy_pass` para o host da API `:28471`. Modelo genérico: `docs/refs/nginx/bikeanjovm.conf` e script `llm_api/scripts/setup-llm-proxy-bikeanjovm.sh` (adaptar host, IP e paths). O cliente usa então `http://<IP-tailnet-do-proxy>:<porta>`. Detalhes reais: `local-only/`.
+Se precisares de um nó intermédio (ex.: VM sem TCP estável até o **llm_server**), podes subir nginx na tailnet que escuta numa porta (ex. 28472) e faz `proxy_pass` para o **llm_server** `:28471`. Modelo genérico: `docs/refs/nginx/bikeanjovm.conf` e script `llm_api/scripts/setup-llm-proxy-bikeanjovm.sh` (adaptar host, IP e paths). O cliente usa então `http://<IP-tailnet-do-proxy>:<porta>`. Detalhes reais: `local-only/`.
 
 ---
 
-## 7. Tailscale no host da API
+## 7. Tailscale no **llm_server**
 
-- `127.0.0.1:28471` com a API a correr.
+- `127.0.0.1:28471` com a API a correr no **llm_server**.
 - `./scripts/tailscale_serve.sh` ou `tailscale serve --bg http://127.0.0.1:28471`.
 - ACL: restringir quem acede à porta **28471**.
 

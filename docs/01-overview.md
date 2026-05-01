@@ -48,7 +48,7 @@ Cria **`local-only/`** na **raiz do clone** (ao lado de `README.md`). Está no [
 - Mapa da **tua** rede: IPs Tailscale, hostnames, URLs públicas.
 - Snippets sensíveis, variáveis reais, proxy.
 
-O repositório público mantém **placeholders** (`<tailnet-host>`, etc.) e contratos em **`docs/`**. Assim o repo fica legível sem expor a topologia real.
+O repositório público mantém **placeholders** (`<tailnet-host>`, etc.) e contratos em **`docs/`**. Em caminhos **Tailscale ↔ API**, o papel da máquina onde corre a FastAPI chama-se **llm_server** (sem hostname real no Git). Assim o repo fica legível sem expor a topologia real.
 
 ---
 
