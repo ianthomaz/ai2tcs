@@ -78,7 +78,7 @@ Algumas VMs (especialmente atrás de DERP sem caminho TCP estável) **não abrem
 
 ### 6.1 Túnel SSH reverso
 
-No **host onde a API corre**, manténs um túnel para a VM: o script do repositório é `llm_api/scripts/llm-tunnel-mini62-to-itcsvm.sh` (nome histórico; funciona a partir da raiz do clone ou de `llm_api/`). Na VM, após o túnel, usa `LLM_API_URL=http://127.0.0.1:28471`.
+No **host onde a API corre**, manténs um túnel para a VM: o script do repositório é `llm_api/scripts/llm-tunnel-api-host-to-itcsvm.sh` (a partir da raiz do clone ou de `llm_api/`); define `ITCSVM_IP`, `ITCSVM_USER`, `SSH_KEY` no ambiente (valores reais só em `local-only/docs/` / `.env` local). Na VM, após o túnel, usa `LLM_API_URL=http://127.0.0.1:28471`.
 
 **Pré-requisitos:** SSH (22) na VM acessível a partir do host da API; chave SSH configurada; API a ouvir em `:28471` no host de origem.
 

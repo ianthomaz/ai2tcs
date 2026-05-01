@@ -41,7 +41,7 @@ A API corre no **host onde a instalas** (típico: um Mac ou Linux na tua rede), 
 
 **Nota:** muitas instalações **não** expõem a porta 28471 diretamente à internet; o caminho A usa um proxy que termina TLS e encaminha para o host da API. O caminho B evita isso dentro da tailnet.
 
-**Fallback (VM em cloud sem TCP estável para peers Tailscale):** padrão **túnel SSH reverso** a partir do host da API — script `llm_api/scripts/llm-tunnel-mini62-to-itcsvm.sh` (raiz do clone ou `llm_api/`). No lado da VM, `LLM_API_URL=http://127.0.0.1:28471`. Detalhes em [refs/operacao-tailscale.md](./refs/operacao-tailscale.md) (secção 6).
+**Fallback (VM em cloud sem TCP estável para peers Tailscale):** padrão **túnel SSH reverso** a partir do host da API — script `llm_api/scripts/llm-tunnel-api-host-to-itcsvm.sh` (raiz do clone ou `llm_api/`); variáveis `ITCSVM_*` / `SSH_KEY` em env (ver `local-only/docs/` no teu clone). No lado da VM, `LLM_API_URL=http://127.0.0.1:28471`. Detalhes em [refs/operacao-tailscale.md](./refs/operacao-tailscale.md) (secção 6).
 
 **Dashboard:** interface web em `/dashboard`. **Preferência:** login **Google OAuth** (`DASHBOARD_GOOGLE_CLIENT_ID`, `DASHBOARD_GOOGLE_CLIENT_SECRET`, `DASHBOARD_OAUTH_REDIRECT_BASE`, `DASHBOARD_ALLOWED_EMAILS` — ver [`.env.example`](../llm_api/.env.example)); o redirect canónico é `{DASHBOARD_OAUTH_REDIRECT_BASE}/dashboard/auth/google/callback`. **Alternativa:** user/senha no `.env` (`DASHBOARD_USER`, `DASHBOARD_PASSWORD`) só se OAuth **não** estiver configurado (ou ambos, se quiseres fallback). O token Bearer da API **não** serve para o login HTML do dashboard.
 
