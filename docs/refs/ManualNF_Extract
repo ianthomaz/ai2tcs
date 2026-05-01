@@ -2,13 +2,13 @@
 
 Guia oficial para integrar com a API `NF Extract`.
 
-**Onde está este ficheiro:** na **raiz** do repositório GitHub **ai2tcs** (`docs/ManualNF_Extract`), ao lado da pasta `featureLLM/`.
+**Onde está este ficheiro:** no repositório **ai2tcs**, em `docs/refs/ManualNF_Extract` (mesma pasta que os restantes manuais da API).
 
 Nome oficial da feature: `itcsNFextract`.
 
-Manual geral da mesma API (LLM, `/ask`, auth, etc.): [`featureLLM/docs/MANUAL_INTEGRACAO.md`](../featureLLM/docs/MANUAL_INTEGRACAO.md) — **§ 1.1** descreve as mesmas duas rotas de URL base (HTTPS público vs Tailscale).
+Manual geral da mesma API (LLM, `/ask`, auth, etc.): [`02-api-integration.md`](../02-api-integration.md) — **§ 1.1** descreve as mesmas duas rotas de URL base (HTTPS público vs Tailscale).
 
-**Parametrização avançada:** Você pode customizar o tom de voz, tamanho da mensagem e profundidade de busca no `config_json` do projeto. Veja a seção **§ 10** do [MANUAL_INTEGRACAO.md](../featureLLM/docs/MANUAL_INTEGRACAO.md) para detalhes.
+**Parametrização avançada:** Você pode customizar o tom de voz, tamanho da mensagem e profundidade de busca no `config_json` do projeto. Veja a seção **§ 10** do [02-api-integration.md](../02-api-integration.md) para detalhes.
 
 ## 1) Objetivo
 
@@ -24,16 +24,16 @@ Observação: esta API **não usa Gemini**.
 
 ## 2) Base URL — duas rotas para a **mesma** API
 
-É a mesma instância `featureLLM` (porta 28471 no Mac). Escolha conforme onde o cliente roda:
+É a mesma instância da API (código em `llm_api/`, porta **28471** por defeito no host). Escolha conforme onde o cliente roda:
 
 | Rota | URL base | Uso |
 |------|-----------|-----|
-| **A — Pública (HTTPS)** | `https://llm.webplace.cc` | Internet, middleware **sem** Tailscale. Tráfego: Cloudflare → **itcsLinode1** (Nginx) → Tailscale → Mac mini62. |
-| **B — Tailscale (direto)** | `http://<ip-tailnet-do-mac>:28471` | Máquinas **na mesma tailnet**; não passa pelo Linode. Exemplo de referência do mini62: `100.90.214.92` — confirme no Mac com `tailscale ip -4`. |
+| **A — Pública (HTTPS)** | `https://<seu-host-publico-llm>` | Internet quando a API está atrás de TLS no edge (reverse proxy, etc.). O fluxo exacto depende da tua infra — anota em `local-only/`. |
+| **B — Tailscale (direto)** | `http://<ip-ou-hostname-na-tailnet>:28471` | Máquinas **na mesma tailnet**. Confirme no host da API: `tailscale ip -4`. |
 
 Também possível em desenvolvimento: `http://127.0.0.1:28471` no próprio Mac.
 
-**Importante:** no Linode **não** há serviço na porta 28471; quem usa “o caminho pelo servidor” usa o **domínio** (rota A), não IP do Linode com :28471.
+**Importante:** em muitas instalações o edge (rota A) termina TLS e encaminha para o host da API; a porta **28471** costuma ser só no host interno, não exposta directamente na internet.
 
 **SSL (rota A):** na Cloudflare, o modo **Full** (ou **Full strict**) na zona evita loop de redirect com o Nginx da origem; **Flexible** costuma quebrar HTTPS até à API. Ver ajuste de SSL na zona do domínio se `curl` ficar em `301` infinito.
 
@@ -55,7 +55,7 @@ O FastAPI expõe **três campos opcionais** no form; **exatamente um** deve vir 
 | Nome do campo (form) | O que enviar | Observação |
 |----------------------|--------------|------------|
 | `file` | Parte **arquivo** (binário) | Ex.: `curl -F "file=@/caminho/nota.pdf"`. O `curl` define o boundary de `multipart/form-data` automaticamente. |
-| `server_file_path` | Texto (string) | Caminho **absoluto** de um ficheiro que já existe **no host onde corre a API** (Mac com `featureLLM`). Ex.: `-F "server_file_path=/Users/.../nota.pdf"`. |
+| `server_file_path` | Texto (string) | Caminho **absoluto** de um ficheiro que já existe **no host onde corre a API** (Mac com `llm_api`). Ex.: `-F "server_file_path=/Users/.../nota.pdf"`. |
 | `document_url` | Texto (string) | URL `http` ou `https` para a API fazer o download. Ex.: `-F "document_url=https://..."`. |
 
 Checklist rápido:
@@ -63,7 +63,7 @@ Checklist rápido:
 - [ ] Header `Authorization: Bearer <token>` em **todas** as chamadas.
 - [ ] **Um** e **só um** entre: `file`, `server_file_path`, `document_url`.
 - [ ] Não misturar JSON no body; upload é **multipart**.
-- [ ] Para `POST /ask` e outros JSON, o formato é outro (ver [MANUAL_INTEGRACAO.md](../featureLLM/docs/MANUAL_INTEGRACAO.md)); **`/nfExtract` é só multipart**.
+- [ ] Para `POST /ask` e outros JSON, o formato é outro (ver [02-api-integration.md](../02-api-integration.md)); **`/nfExtract` é só multipart**.
 
 ## 4) Regra de entrada (importante)
 
@@ -92,61 +92,57 @@ Integradores (Next.js, zapzap, etc.) devem manter `ITCS_NF_EXTRACT_TIMEOUT_MS` *
 
 ## 6) Exemplos de chamada
 
-Substitua `<token>` pelo `LLM_API_TOKEN`. Troque só a **URL base** entre rota A (HTTPS) ou B (tailnet).
+Defina `PUBLIC_BASE`, `TAILNET_BASE` e `TOKEN` no § **6.0** (ou exporte equivalentes). O `<token>` é o `LLM_API_TOKEN` global ou chave de projeto, como no [02-api-integration.md](../02-api-integration.md) § 2.
 
 **Padrão de `curl`:** `-F` para multipart; **não** acrescente `-H "Content-Type: application/json"` nestas chamadas.
 
-### 6.0 Upload rota A — ficheiro de teste `testeNF3.pdf` (validado)
-
-Exemplo usado em teste público (`https://llm.webplace.cc`): upload do PDF local; resposta `status: ok` com emitente Imprint / NF 7354 (valores reais dependem do ficheiro).
+### 6.0 Variáveis de exemplo (ajusta à tua instalação)
 
 ```bash
-curl -sS -m 120 "https://llm.webplace.cc/nfExtract" \
-  -H "Authorization: Bearer <token>" \
-  -F "file=@/Users/ianthomaz/Downloads/testeNF3.pdf"
+# Rota A — HTTPS público (ou exporta LLM_API_URL se for só tailnet/local)
+PUBLIC_BASE="${LLM_PUBLIC_BASE:-https://<seu-host-publico-llm>}"
+# Rota B — tailnet
+TAILNET_BASE="${LLM_TAILNET_BASE:-http://<ip-ou-hostname-tailnet>:28471}"
+TOKEN="<token>"   # LLM_API_TOKEN ou chave de projeto
 ```
 
-(Ajuste o caminho se o PDF estiver doutro sítio; `-m 120` dá margem para OCR/LLM.)
-
-### 6.1 Upload direto — rota A (produção pública)
+### 6.1 Upload — rota A (HTTPS)
 
 ```bash
-curl -X POST "https://llm.webplace.cc/nfExtract" \
-  -H "Authorization: Bearer <token>" \
+curl -sS -m 180 "${PUBLIC_BASE}/nfExtract" \
+  -H "Authorization: Bearer ${TOKEN}" \
   -F "file=@/caminho/para/nota.pdf"
 ```
 
-### 6.2 Upload direto — rota B (Tailscale, direto no Mac)
+### 6.2 Upload — rota B (Tailscale)
 
 ```bash
-curl -X POST "http://100.90.214.92:28471/nfExtract" \
-  -H "Authorization: Bearer <token>" \
+curl -sS -m 180 "${TAILNET_BASE}/nfExtract" \
+  -H "Authorization: Bearer ${TOKEN}" \
   -F "file=@/caminho/para/nota.pdf"
 ```
 
-(Ajuste o IP se o tailnet do mini62 mudar.)
-
-### 6.3 Local (desenvolvimento no Mac)
+### 6.3 Local (desenvolvimento no host da API)
 
 ```bash
-curl -X POST "http://127.0.0.1:28471/nfExtract" \
-  -H "Authorization: Bearer <token>" \
-  -F "file=@/Users/ianthomaz/Downloads/testeNF2.pdf"
+curl -sS -m 180 "http://127.0.0.1:28471/nfExtract" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -F "file=@/caminho/para/nota.pdf"
 ```
 
-### 6.4 Arquivo já salvo no servidor (só onde a API enxerga o path)
+### 6.4 Arquivo já salvo no servidor (path visível pela API)
 
 ```bash
-curl -X POST "https://llm.webplace.cc/nfExtract" \
-  -H "Authorization: Bearer <token>" \
+curl -sS -m 180 "${PUBLIC_BASE}/nfExtract" \
+  -H "Authorization: Bearer ${TOKEN}" \
   -F "server_file_path=/caminho/absoluto/no/host-da-api/nota.pdf"
 ```
 
 ### 6.5 Documento por URL
 
 ```bash
-curl -X POST "https://llm.webplace.cc/nfExtract" \
-  -H "Authorization: Bearer <token>" \
+curl -sS -m 180 "${PUBLIC_BASE}/nfExtract" \
+  -H "Authorization: Bearer ${TOKEN}" \
   -F "document_url=https://exemplo.com/nota.xml"
 ```
 
@@ -299,7 +295,7 @@ Embora o `/nfExtract` seja focado em extração de dados, a parametrização do 
 
 Quando a origem é `file` (upload binário), a API:
 
-1. salva o arquivo recebido em `featureLLM/data/nf_extract/incoming`
+1. salva o arquivo recebido em `llm_api/data/nf_extract/incoming`
 2. roda purge automático na mesma pasta
 3. remove arquivos com mais de 24 horas
 
@@ -308,18 +304,18 @@ Isso mantém histórico curto para debug sem acumular disco.
 ## 13) Execução local
 
 ```bash
-cd /Users/ianthomaz/Documents/projects/ai2tcs/featureLLM
+cd /caminho/para/ai2tcs/llm_api
 ./scripts/run_api.sh
 ```
 
 ## 14) Endpoint de saúde
 
 ```bash
-curl -sS "https://llm.webplace.cc/health" -H "Authorization: Bearer <token>"
+curl -sS "${PUBLIC_BASE:-https://<seu-host-publico-llm>}/health" -H "Authorization: Bearer <token>"
 ```
 
-Ou na tailnet: `curl "http://<ip-tailnet-mac>:28471/health"` (com Bearer se o token estiver ativo). Local: `http://127.0.0.1:28471/health`.
+Ou na tailnet / local: mesma URL base que usas para `/nfExtract` + `/health` (com Bearer se aplicável). Ex.: `http://127.0.0.1:28471/health`.
 
 Resposta esperada:
 
-O corpo pode incluir `checks` (Ollama, Postgres, disco) além de `status` — ver `GET /health` em [MANUAL_INTEGRACAO.md](../featureLLM/docs/MANUAL_INTEGRACAO.md).
+O corpo pode incluir `checks` (Ollama, Postgres, disco) além de `status` — ver `GET /health` em [02-api-integration.md](../02-api-integration.md).
