@@ -2,7 +2,7 @@
 
 API FastAPI para LLM local com RAG multi-projeto. Porta **28471**. Planejamento em `00_PLANEJAMENTO_LLM_LOCAL.md`.
 
-**Integração (outros projetos / clientes HTTP):** ver `docs/MANUAL_INTEGRACAO.md` e `docs/INDEX.md`. NF Extract (multipart `/nfExtract`): ficheiro na raiz do clone ai2tcs, `../docs/ManualNF_Extract`. URLs e IPs reais da tua instalação: ver [`../docs/LOCAL_ONLY.md`](../docs/LOCAL_ONLY.md).
+**Integração (outros projetos / clientes HTTP):** ver [`../docs/01-overview.md`](../docs/01-overview.md) e [`../docs/02-api-integration.md`](../docs/02-api-integration.md) (toda a doc de contratos está em **`docs/`** na raiz do repo). NF Extract: [`../docs/refs/ManualNF_Extract`](../docs/refs/ManualNF_Extract). IPs/hosts reais: secção *local-only* em [`../docs/01-overview.md`](../docs/01-overview.md) + pasta `local-only/`.
 
 **Deploy em produção:** só nesta máquina, via **Docker Compose**. Na raiz deste repositório (ai2tcs): `./scripts/deploy_llm.sh` — corre `docker compose up -d --build api` em `featureLLM/`. Não usar `run_api.sh` nem launchd para produção.
 
@@ -71,7 +71,7 @@ No Mac onde a API roda:
 ./scripts/tailscale_serve.sh
 ```
 
-A API fica acessível **só na sua tailnet** (ex.: `https://<seu-mac>.ts.net/`). Não usar Funnel. Detalhes: `docs/OPERACAO_TAILSCALE.md`.
+A API fica acessível **só na sua tailnet** (ex.: `https://<seu-mac>.ts.net/`). Não usar Funnel. Detalhes: [`../docs/refs/operacao-tailscale.md`](../docs/refs/operacao-tailscale.md).
 
 ## Rodar fora do container (só desenvolvimento/teste)
 
@@ -79,8 +79,8 @@ Para testes locais sem Docker: `source .venv/bin/activate && ./scripts/run_api.s
 
 ## Estrutura
 
-- `app/` – FastAPI, registry, ingest, RAG, jobs (worker), STT (`app/stt/` — `/audio/*`), EDU (`app/edu/` — `/edu/*`; contrato em `docs/EDU_API_CONTRACT.md`)
+- `app/` – FastAPI, registry, ingest, RAG, jobs (worker), STT (`app/stt/` — `/audio/*`), EDU (`app/edu/` — `/edu/*`; contrato em [`../docs/06-edu-contract.md`](../docs/06-edu-contract.md))
 - `prisma/` – schema e migrações Postgres
 - `scripts/` – setup (implementação única), run_api, seed, tailscale_serve
-- `docs/` – **Manual de uso da API:** [docs/MANUAL_INTEGRACAO.md](docs/MANUAL_INTEGRACAO.md) (§ 3.8: `/edu/chat` e resposta estruturada para toggles Pinyin/Tradução). Índice: [docs/INDEX.md](docs/INDEX.md). Contrato EDU: [docs/EDU_API_CONTRACT.md](docs/EDU_API_CONTRACT.md). Operação Tailscale: docs/OPERACAO_TAILSCALE.md
+- **Documentação** – pasta [`../docs/`](../docs/) na raiz: [01-overview.md](../docs/01-overview.md), [02-api-integration.md](../docs/02-api-integration.md), etc. Entrada: [`../docs/README.md`](../docs/README.md)
 - `data/<project_id>/chroma` – índices vetoriais (não versionado)
