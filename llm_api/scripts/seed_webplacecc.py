@@ -53,7 +53,7 @@ async def main():
             sources,
             json.dumps({
                 "chunking": {"chunk_size": 512, "chunk_overlap": 64, "separator": "\n\n"},
-                "embedding_model": "nomic-embed-text",
+                "embedding_model": "mxbai-embed-large",
                 "policies": {"prefer_cite_sources": True, "when_no_answer": "no_answer", "max_chunks_to_retrieve": 8},
             }),
         )

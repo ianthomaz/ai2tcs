@@ -25,8 +25,8 @@
 ```
 fast      → llama3:8b
 compact   → qwen2.5:7b-instruct
-smart     → qwen2.5:14b-instruct
-reasoner  → deepseek-r1:8b
+smart     → gemma3:12b
+reasoner  → deepseek-r1:14b
 ```
 
 ### O que 32 GB suporta bem (Apple Silicon = UMA = CPU+GPU compartilhada)
@@ -39,13 +39,10 @@ reasoner  → deepseek-r1:8b
 | `deepseek-r1:14b` | ~9 GB | reasoning + CoT, melhor que :8b | moderado |
 | `phi4:14b` | ~9 GB | Microsoft, bom em código e PT | rápido |
 | `mistral-small:22b-q4` | ~13 GB | alternativa equilibrada | moderado |
-| `nomic-embed-text:latest` | ~0.3 GB | já em uso — manter | muito rápido |
-| `mxbai-embed-large` | ~0.7 GB | embedding melhor que nomic para PT-BR | rápido |
+| `nomic-embed-text:latest` | ~0.3 GB | legado / compat | muito rápido |
+| `mxbai-embed-large` | ~0.7 GB | **default** de embedding no código (PT-BR / técnico) | rápido |
 
-**Recomendação imediata:**
-1. Adicionar `gemma3:12b` como alias `smart` (melhor custo/benefício hoje)
-2. Adicionar `deepseek-r1:14b` como alias `reasoner` (melhor que :8b)
-3. Testar `mxbai-embed-large` como embedding model (melhor recall em português)
+**Estado (mai/2026):** defaults no repo — `smart` = `gemma3:12b`, `reasoner` = `deepseek-r1:14b`, embedding fallback = `mxbai-embed-large` (re-ingest ao migrar de `nomic`).
 
 ```bash
 ollama pull gemma3:12b

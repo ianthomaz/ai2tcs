@@ -12,7 +12,7 @@ API FastAPI para LLM local com RAG multi-projeto. Porta **28471**. Planejamento 
 
 - **Python 3.12 ou 3.11** (recomendado 3.12; ChromaDB tem problemas com 3.14)
 - PostgreSQL (local ou Docker)
-- Ollama (modelos: `qwen2.5:14b-instruct`, `nomic-embed-text`)
+- Ollama (modelos: `gemma3:12b` / `deepseek-r1:14b` para aliases smart/reasoner, `mxbai-embed-large` para embeddings)
 - **Áudio / STT:** dependência Python `faster-whisper`; no host ou container da API é necessário **ffmpeg** (já instalado na imagem Docker). Modelos Whisper ficam em `data/whisper_models` por defeito.
 - Tailscale (para acesso remoto)
 

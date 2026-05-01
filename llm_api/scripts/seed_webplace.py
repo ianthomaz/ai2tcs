@@ -56,7 +56,7 @@ async def main() -> None:
                 {
                     "behavior_instruction_path": "instrucoes-llm.md",
                     "chunking": {"chunk_size": 512, "chunk_overlap": 64, "separator": "\n\n"},
-                    "embedding_model": "nomic-embed-text",
+                    "embedding_model": "mxbai-embed-large",
                     "policies": {
                         "prefer_cite_sources": False,
                         "when_no_answer": "no_answer",

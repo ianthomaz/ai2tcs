@@ -8,7 +8,7 @@
 
 1. **Motor:** Ollama (inferência local, boa integração Apple Silicon, modelos quantizados).
 2. **API:** FastAPI em localhost em **porta atípica 28471** (evita conflito com outros projetos); só Tailscale publica o serviço; sem bind em 0.0.0.0.
-3. **RAG:** Embeddings via modelo leve (e.g. nomic-embed ou similar); índice vetorial em Chroma/sqlite-vss em arquivo por projeto; chunking configurável por projeto.
+3. **RAG:** Embeddings via modelo Ollama (e.g. mxbai-embed-large); índice vetorial em Chroma/sqlite-vss em arquivo por projeto; chunking configurável por projeto.
 4. **Armazenamento:** **PostgreSQL** (schema e migrações via **Prisma**) para registry de projetos, jobs, fila de chamados e temáticas de bibliotecas; pastas em disco para documentos fonte; índices vetoriais por projeto em `data/<project_id>/`.
 5. **Fila:** Fila de jobs persistida no PostgreSQL (status queued/working/done/…); workers (1–2 concorrentes) consomem da fila; polling em `/status` e `/result`.
 6. **Multi-projeto:** Project Registry no Postgres (Prisma) com `project_id`, paths, chunking, embedding model, políticas e **temáticas** (tags/tópicos da biblioteca); roteamento por `project_id` obrigatório na API; auto-router opcional por temáticas/palavras-chave quando `project_id` ausente.
@@ -58,7 +58,7 @@ Cada projeto é um registro com:
 - **name** (opcional): nome legível.
 - **sources**: lista de caminhos locais (pastas) para indexar; em geral as bibliotecas ficam **dentro das pastas de cada projeto** (ex.: `.../bikeanjoall_2026/content`).
 - **chunking**: `chunk_size`, `chunk_overlap`, `separator` (ex.: `\n\n`).
-- **embedding_model**: nome do modelo de embeddings (ex.: `nomic-embed-text`).
+- **embedding_model**: nome do modelo de embeddings (ex.: `mxbai-embed-large`).
 - **index_backend**: ex. `sqlite_vss` ou `chroma` (path do índice em `data/<project_id>/`).
 - **policies**:
   - `prefer_cite_sources`: boolean (sempre que possível citar trechos).
@@ -205,7 +205,7 @@ Para `no_answer` ou `need_more_info`, `answer` pode ser uma mensagem padrão e `
   - Opção 1: `llama3.2:8b-instruct-q4_0` (Ollama) — boa qualidade e desempenho.
   - Opção 2: `mistral:7b-instruct-q4_0` — alternativa estável.
 - **Embeddings (leve):** 
-  - `nomic-embed-text` (Ollama) ou `all-minilm` se usar sentence-transformers; priorizar um só para simplicidade.
+  - `mxbai-embed-large` (Ollama) ou `all-minilm` se usar sentence-transformers; priorizar um só para simplicidade.
 
 ### 5.2 Parâmetros padrão (estabilidade, anti-alucinação)
 
@@ -316,7 +316,7 @@ ai2tcs/
    brew install ollama
    ollama serve   # ou rodar como serviço
    ollama pull llama3.2:8b-instruct-q4_0
-   ollama pull nomic-embed-text
+   ollama pull mxbai-embed-large
    ```
 
 2. **Criar venv e dependências em `llm_api/`**

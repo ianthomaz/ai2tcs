@@ -158,7 +158,7 @@ fi
 echo "[8/8] Pronto."
 echo ""
 echo "Próximos passos:"
-echo "  1. Ollama: brew install ollama && ollama pull qwen2.5:14b-instruct && ollama pull qwen2.5:7b-instruct && ollama pull llama3:8b && ollama pull deepseek-r1:8b && ollama pull nomic-embed-text"
+echo "  1. Ollama: brew install ollama && ollama pull gemma3:12b && ollama pull qwen2.5:7b-instruct && ollama pull llama3:8b && ollama pull deepseek-r1:14b && ollama pull mxbai-embed-large"
 echo "  2. No .env: BIKEANJOALL_2026_SOURCES=/caminho/para/bibliotecaConteudoLLM (para seed + ingest com conteúdo real)"
 echo "  3. Subir API: ./scripts/run_api.sh"
 echo "  4. Expor via Tailscale: ./scripts/tailscale_serve.sh"

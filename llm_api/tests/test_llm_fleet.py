@@ -43,10 +43,10 @@ async def test_router_uses_explicit_model(client):
         r = await client.post("/router", json=body, headers=HEADERS)
         assert r.status_code == 200
 
-        # Should use qwen2.5:14b-instruct (smart)
+        # Should use gemma3:12b (smart)
         mock_ollama.assert_called_once()
         args, kwargs = mock_ollama.call_args
-        assert kwargs["model"] == "qwen2.5:14b-instruct"
+        assert kwargs["model"] == "gemma3:12b"
 
 @pytest.mark.asyncio
 async def test_router_uses_compact_model(client):
@@ -81,10 +81,10 @@ async def test_router_uses_reasoner_model(client):
         r = await client.post("/router", json=body, headers=HEADERS)
         assert r.status_code == 200
 
-        # Should use deepseek-r1:8b (reasoner)
+        # Should use deepseek-r1:14b (reasoner)
         mock_ollama.assert_called_once()
         args, kwargs = mock_ollama.call_args
-        assert kwargs["model"] == "deepseek-r1:8b"
+        assert kwargs["model"] == "deepseek-r1:14b"
 
 @pytest.mark.asyncio
 async def test_router_accepts_legacy_confidence_string_and_extra_keys(client):

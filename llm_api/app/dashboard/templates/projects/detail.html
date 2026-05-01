@@ -51,10 +51,10 @@
                 <div>
                     <label class="block text-sm text-gray-400 mb-1">Alias Preferido (RAG)</label>
                     <select name="rag_alias" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500">
-                        <option value="smart" {% if opts.rag_alias == 'smart' %}selected{% endif %}>smart (qwen 14B)</option>
+                        <option value="smart" {% if opts.rag_alias == 'smart' %}selected{% endif %}>smart (gemma3 12B)</option>
                         <option value="fast" {% if opts.rag_alias == 'fast' %}selected{% endif %}>fast (llama 8B)</option>
                         <option value="compact" {% if opts.rag_alias == 'compact' %}selected{% endif %}>compact (qwen 7B)</option>
-                        <option value="reasoner" {% if opts.rag_alias == 'reasoner' %}selected{% endif %}>reasoner (deepseek 8B)</option>
+                        <option value="reasoner" {% if opts.rag_alias == 'reasoner' %}selected{% endif %}>reasoner (deepseek 14B)</option>
                     </select>
                 </div>
                 <div>
@@ -62,8 +62,8 @@
                     <select name="edu_alias" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500">
                         <option value="fast" {% if opts.edu_alias == 'fast' %}selected{% endif %}>fast (llama 8B)</option>
                         <option value="compact" {% if opts.edu_alias == 'compact' %}selected{% endif %}>compact (qwen 7B)</option>
-                        <option value="smart" {% if opts.edu_alias == 'smart' %}selected{% endif %}>smart (qwen 14B)</option>
-                        <option value="reasoner" {% if opts.edu_alias == 'reasoner' %}selected{% endif %}>reasoner (deepseek 8B)</option>
+                        <option value="smart" {% if opts.edu_alias == 'smart' %}selected{% endif %}>smart (gemma3 12B)</option>
+                        <option value="reasoner" {% if opts.edu_alias == 'reasoner' %}selected{% endif %}>reasoner (deepseek 14B)</option>
                     </select>
                 </div>
             </div>

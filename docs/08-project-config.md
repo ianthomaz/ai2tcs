@@ -34,7 +34,7 @@ Exemplos de `config_json` por tipo de uso.
       "chunk_overlap": 64,
       "separator": "\n\n"
     },
-    "embedding_model": "nomic-embed-text",
+    "embedding_model": "mxbai-embed-large",
     "policies": {
       "prefer_cite_sources": true,
       "when_no_answer": "no_answer",
@@ -86,7 +86,7 @@ Exemplos de `config_json` por tipo de uso.
       "chunk_overlap": 128,
       "separator": "\n\n"
     },
-    "embedding_model": "nomic-embed-text",
+    "embedding_model": "mxbai-embed-large",
     "policies": {
       "prefer_cite_sources": true,
       "when_no_answer": "no_answer",
@@ -138,7 +138,7 @@ Exemplos de `config_json` por tipo de uso.
       "chunk_overlap": 32,
       "separator": "\n\n"
     },
-    "embedding_model": "nomic-embed-text",
+    "embedding_model": "mxbai-embed-large",
     "policies": {
       "prefer_cite_sources": true,
       "when_no_answer": "need_more_info",
@@ -189,7 +189,7 @@ Exemplos de `config_json` por tipo de uso.
       "chunk_overlap": 64,
       "separator": "\n\n"
     },
-    "embedding_model": "nomic-embed-text",
+    "embedding_model": "mxbai-embed-large",
     "policies": {
       "prefer_cite_sources": false,
       "when_no_answer": "need_more_info",
@@ -239,7 +239,7 @@ Use este template para criar seu próprio projeto:
       "chunk_overlap": 64,        # Sobreposição: 32 (pequeno), 64 (médio), 128 (grande)
       "separator": "\n\n"         # Separador de chunks
     },
-    "embedding_model": "nomic-embed-text",  # Mantém padrão
+    "embedding_model": "mxbai-embed-large",  # Mantém padrão
     "policies": {
       "prefer_cite_sources": true,           # Sempre citar sources?
       "when_no_answer": "no_answer",         # "no_answer" ou "need_more_info"
@@ -282,7 +282,7 @@ Use este template para criar seu próprio projeto:
       "chunk_overlap": 64,
       "separator": "\n\n"
     },
-    "embedding_model": "nomic-embed-text",
+    "embedding_model": "mxbai-embed-large",
     "policies": {
       "prefer_cite_sources": true,
       "when_no_answer": "no_answer",

@@ -1,12 +1,13 @@
 # 09 — Modelos Ollama e variáveis
 
-**2026-03:** modelo de chat por defeito `qwen2.5:14b-instruct` (`OLLAMA_CHAT_MODEL` no `.env`). Embeddings (`nomic-embed-text`) / Chroma **não** exigem re-ingest por mudança só do modelo de chat.
+**2026-05:** alias `smart` → `gemma3:12b`, `reasoner` → `deepseek-r1:14b` (defaults em `config.py` / `OLLAMA_*_MODEL` no `.env`). Embeddings por defeito → `mxbai-embed-large` (código + seeds). **Trocar `embedding_model` num projeto com índice já construído exige re-ingest** (dimensão do vector muda; Chroma não mistura).
 
 **No llm_server:**
 
-1. `ollama pull qwen2.5:14b-instruct`
+1. `ollama pull gemma3:12b && ollama pull deepseek-r1:14b && ollama pull mxbai-embed-large`
 2. Reiniciar stack da API (Docker ou script local conforme o teu deploy).
-3. Opcional: `OLLAMA_CHAT_MODEL=<outro>` no `.env`.
+3. Opcional: overrides `OLLAMA_SMART_MODEL`, `OLLAMA_REASONER_MODEL` no `.env`.
+4. Projetos existentes com `nomic-embed-text`: actualizar `config_json.embedding_model` **e** voltar a ingerir fontes.
 
 ---
 
@@ -19,17 +20,18 @@
 | Router (`/router`) | fast (llama3:8b) | `model: fast` ou `smart` no body |
 | Summary (maintenance) | fast (llama3:8b) | — |
 | Extract (onboarding) | fast (llama3:8b) | — |
-| RAG (`/ask`) | smart (qwen2.5:14b-instruct) | `model` em user_context |
-| NF extract | smart (qwen2.5:14b-instruct) | `model` em form |
+| RAG (`/ask`) | smart (gemma3:12b) | `model` em user_context |
+| NF extract | smart (gemma3:12b) | `model` em form |
 
-**Status:** [ x ] Implementado. Ver `settings.get_model_name()` e testes em `tests/test_dual_llm.py`.
+**Status:** [ x ] Implementado. Ver `settings.get_model_name()` e testes em `tests/test_llm_fleet.py`.
 
 ---
 
 ## 1. Situação Atual
 
 ### Modelo em uso
-- **Padrão:** `qwen2.5:14b-instruct` (config.py; override via `OLLAMA_CHAT_MODEL`)
+- **Padrão smart / legacy chat:** `gemma3:12b` (config.py; override via `OLLAMA_SMART_MODEL` / `OLLAMA_CHAT_MODEL`)
+- **Reasoner:** `deepseek-r1:14b` (`OLLAMA_REASONER_MODEL`)
 - **Fluxos que usam LLM:**
 
 | Fluxo | Arquivo | Uso |

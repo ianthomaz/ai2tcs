@@ -287,7 +287,7 @@ async def _build_rag_block(project_id: str, caption: str, project: dict) -> str:
     policies = get_rag_policies(project)
     top_k = int(policies.get("max_chunks_to_retrieve", 5))
     max_dist = float(policies.get("max_chunk_distance", 1.0))
-    embed_model = "nomic-embed-text"
+    embed_model = "mxbai-embed-large"
     if isinstance(project.get("config_json"), dict):
         embed_model = (project["config_json"] or {}).get("embedding_model") or embed_model
 

@@ -1,4 +1,4 @@
-"""Embeddings via Ollama (nomic-embed-text)."""
+"""Embeddings via Ollama (default: mxbai-embed-large; override per project config_json.embedding_model)."""
 import asyncio
 import logging
 
@@ -6,7 +6,7 @@ import httpx
 
 from app.config import settings
 
-DEFAULT_MODEL = "nomic-embed-text"
+DEFAULT_MODEL = "mxbai-embed-large"
 # Ollama embedding models have context limits; truncate to avoid 500
 MAX_PROMPT_CHARS = 4000
 RETRY_ATTEMPTS = 3

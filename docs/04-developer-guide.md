@@ -414,7 +414,7 @@ async def retrieve(
     project_id: str,
     question: str,
     top_k: int = 5,
-    embedding_model: str = "nomic-embed-text",
+    embedding_model: str = "mxbai-embed-large",
     tag_filter: str | None = None,  # ← Novo parâmetro
 ) -> list[dict]:
     """Retrieve chunks with optional tag filtering."""

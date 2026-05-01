@@ -23,8 +23,8 @@ O sistema agora reconhece 4 aliases principais:
 
 *   `fast` (llama3:8b): Triage, chat curto, classificações simples.
 *   `compact` (qwen2.5:7b-instruct): Extração JSON, tarefas estruturadas.
-*   `smart` (qwen2.5:14b-instruct): RAG profundo, respostas fundamentadas.
-*   `reasoner` (deepseek-r1:8b): Lógica complexa, cálculos, cadeias de raciocínio.
+*   `smart` (gemma3:12b): RAG profundo, respostas fundamentadas.
+*   `reasoner` (deepseek-r1:14b): Lógica complexa, cálculos, cadeias de raciocínio.
 
 Você pode forçar um modelo enviando `"model": "reasoner"` no corpo de requisições `/ask` ou `/router`.
 

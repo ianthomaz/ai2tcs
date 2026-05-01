@@ -63,7 +63,7 @@ async def retrieve(
     project_id: str,
     query: str,
     top_k: int = 5,
-    embedding_model: str = "nomic-embed-text",
+    embedding_model: str = "mxbai-embed-large",
 ) -> list[dict]:
     """
     Return list of { "id", "path", "snippet", "distance", "origin" } for top_k chunks.

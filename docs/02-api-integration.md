@@ -961,7 +961,7 @@ VALUES (
   'meu_projeto',
   'Meu Projeto',
   ARRAY['/caminho/para/biblioteca_conteudo', '/caminho/para/mapa_fluxos'],
-  '{"chunking":{"chunk_size":512,"chunk_overlap":64,"separator":"\\n\\n"},"embedding_model":"nomic-embed-text","policies":{"prefer_cite_sources":true,"when_no_answer":"no_answer","max_chunks_to_retrieve":5}}',
+  '{"chunking":{"chunk_size":512,"chunk_overlap":64,"separator":"\\n\\n"},"embedding_model":"mxbai-embed-large","policies":{"prefer_cite_sources":true,"when_no_answer":"no_answer","max_chunks_to_retrieve":5}}',
   NOW(), NOW()
 );
 ```

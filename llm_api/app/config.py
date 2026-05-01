@@ -12,11 +12,11 @@ class Settings(BaseSettings):
     api_port: int = 28471
     llm_api_token: str = ""
     ollama_host: str = "http://127.0.0.1:11434"  # use host.docker.internal in Docker
-    ollama_chat_model: str = "qwen2.5:14b-instruct"  # legacy/fallback
+    ollama_chat_model: str = "gemma3:12b"  # legacy/fallback (aligned with smart)
     ollama_fast_model: str = "llama3:8b"
     ollama_compact_model: str = "qwen2.5:7b-instruct"
-    ollama_smart_model: str = "qwen2.5:14b-instruct"
-    ollama_reasoner_model: str = "deepseek-r1:8b"
+    ollama_smart_model: str = "gemma3:12b"
+    ollama_reasoner_model: str = "deepseek-r1:14b"
     # NF Extract: Ollama /api/chat read budget (s). Clients (e.g. ITCS_NF_EXTRACT_TIMEOUT_MS) should exceed this + ~30s.
     nf_extract_ollama_timeout_s: float = 120.0
     # /edu/chat: default to fast model for lower latency on short structured replies; override per-request with body.model or env.

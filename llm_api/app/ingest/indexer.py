@@ -53,7 +53,7 @@ async def run_ingest(project_id: str, incremental: bool = True) -> dict:
         return {"error": "no sources configured", "documents": 0, "chunks": 0}
 
     chunking = get_chunking_config(project)
-    embed_model = "nomic-embed-text"
+    embed_model = "mxbai-embed-large"
     if isinstance(project.get("config_json"), dict):
         embed_model = (project["config_json"] or {}).get("embedding_model") or embed_model
 

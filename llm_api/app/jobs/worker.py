@@ -194,7 +194,7 @@ async def run_rag_job(
         policies = get_rag_policies(project)
         rag_mode = get_rag_mode(project)
         top_k = policies.get("max_chunks_to_retrieve", 5)
-        embed_model = "nomic-embed-text"
+        embed_model = "mxbai-embed-large"
         if isinstance(project.get("config_json"), dict):
             embed_model = (project["config_json"] or {}).get("embedding_model") or embed_model
 
