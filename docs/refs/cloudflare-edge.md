@@ -16,6 +16,33 @@ O DNS público (`llm.webplace.cc`) resolve na **edge Cloudflare**. O “quem man
 
 ---
 
+## TLS em `llm.webplace.cc` (browser → Google OAuth)
+
+1. **Cloudflare (zona do domínio)**  
+   - Registo `llm` (ou CNAME) **proxied** (nuvem laranja).  
+   - **SSL/TLS** → modo **Full** ou **Full (strict)** conforme a origem (nginx/Linode) tiver certificado válido ou não. O visitante fala sempre **HTTPS** com a edge.  
+   - **Always Use HTTPS** (redirect 301 http→https) activo na zona, se aplicável.
+
+2. **Google Cloud Console** (mesmo cliente OAuth **Aplicação Web** que já usas)  
+   - **APIs e serviços** → **Credenciais** → o **ID do cliente OAuth 2.0** usado em `DASHBOARD_GOOGLE_CLIENT_ID`.  
+   - **Origens JavaScript autorizadas** — adicionar exactamente:  
+     `https://llm.webplace.cc`  
+   - **URIs de redireccionamento autorizados** — adicionar exactamente (um URI por linha, **sem** barra no fim do host):  
+     `https://llm.webplace.cc/dashboard/auth/google/callback`  
+   - Opcional (dev local): `http://127.0.0.1:28471` e `http://127.0.0.1:28471/dashboard/auth/google/callback` no mesmo cliente OAuth.
+
+3. **`llm_api/.env` (produção pública)**  
+   - `DASHBOARD_OAUTH_REDIRECT_BASE=https://llm.webplace.cc` (**sem** `/` final).  
+   - A app monta o redirect canónico: `{DASHBOARD_OAUTH_REDIRECT_BASE}/dashboard/auth/google/callback` — tem de coincidir **exactamente** com o URI registado no GCP (código: `app/dashboard/google_oauth.py`, função `build_authorize_redirect_uri`).  
+   - Abrir o dashboard no browser no **mesmo** origin: `https://llm.webplace.cc/dashboard` (e não misturar `www` / outro subdomínio sem o registar no GCP).
+
+4. **`DASHBOARD_ALLOWED_EMAILS`**  
+   - Lista em minúsculas no `.env`; quem não estiver na lista não entra após o Google.
+
+Erro típico no login Google: `redirect_uri_mismatch` → comparar byte a byte o URI no GCP com o valor efectivo de `DASHBOARD_OAUTH_REDIRECT_BASE` + `/dashboard/auth/google/callback`.
+
+---
+
 ## Zero Trust (Access)
 
 **Não** liga sozinho ao túnel. É preciso criar **Application** em Zero Trust → **Access** → associar ao hostname (e opcionalmente ao path).
