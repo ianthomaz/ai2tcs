@@ -68,6 +68,14 @@
                 </div>
             </div>
 
+            <div>
+                <label class="block text-sm text-gray-400 mb-1">Modelo de embedding (Ollama)</label>
+                <input type="text" name="embedding_model" value="{{ cfg.embedding_model or '' }}"
+                       placeholder="ex.: mxbai-embed-large — vazio = default do servidor"
+                       class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-blue-500">
+                <p class="text-xs text-gray-500 mt-1">Se mudares face ao índice já construído, volta a ingerir as sources deste projecto.</p>
+            </div>
+
             <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded transition">
                 Salvar
             </button>

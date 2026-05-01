@@ -31,6 +31,8 @@ Se o teu projecto **precisa de padrões específicos** (prompts, campos extra, n
 | `config_json`, chunking, políticas por projeto | [08-project-config.md](./08-project-config.md) |
 | Ollama: modelos, variáveis `OLLAMA_*` | [09-model-upgrade.md](./09-model-upgrade.md) |
 | Contexto histórico (router, fleet, ingest) | [10-historical-router-plan.md](./10-historical-router-plan.md) |
+| Roadmap de melhorias (LLM / RAG / produto) | [11-improvements-roadmap.md](./11-improvements-roadmap.md) |
+| Operações: fleet, embeddings, checklist por projecto | [12-llm-fleet-rag-operations.md](./12-llm-fleet-rag-operations.md) |
 
 **NF Extract:** [refs/ManualNF_Extract](./refs/ManualNF_Extract). **Variáveis (sem segredos):** [`llm_api/.env.example`](../llm_api/.env.example). **Roadmap código:** [`llm_api/UPGRADES.md`](../llm_api/UPGRADES.md).
 

@@ -399,6 +399,7 @@ async def project_edit_submit(
     themes: str = Form(""),
     rag_alias: str = Form("smart"),
     edu_alias: str = Form("fast"),
+    embedding_model: str = Form(""),
     _: None = Depends(_require_dashboard_auth),
 ):
     existing = await db_module.project_get(project_id)
@@ -419,6 +420,12 @@ async def project_edit_submit(
     llm_opts["rag_alias"] = rag_alias
     llm_opts["edu_alias"] = edu_alias
     cfg["llm_options"] = llm_opts
+
+    em = (embedding_model or "").strip()
+    if em:
+        cfg["embedding_model"] = em
+    else:
+        cfg.pop("embedding_model", None)
 
     await db_module.project_update(project_id=project_id, name=name or None, sources=sources_list, config_json=cfg)
     await db_module.project_themes_set(project_id, themes_list)

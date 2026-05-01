@@ -525,3 +525,5 @@ Ver `scripts/llm_docker_autostart.sh` como base — adaptar para launchctl.
 - [BAAI Rerankers](https://huggingface.co/BAAI) — modelos de reranking open-source
 - [Model Context Protocol](https://modelcontextprotocol.io) — MCP spec
 - [Sentence Transformers](https://www.sbert.net) — cross-encoders para reranking
+
+**Seguinte:** [12-llm-fleet-rag-operations.md](./12-llm-fleet-rag-operations.md) — checklist operacional (servidor, BD, ingest).
