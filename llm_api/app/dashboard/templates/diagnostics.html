@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% set active = "diagnostics" %}
+{% block title %}Diagnósticos LLM — LLM Dashboard{% endblock %}
+
+{% block content %}
+<h2 class="text-2xl font-bold mb-2">Diagnósticos LLM</h2>
+<p class="text-gray-500 text-sm mb-6">Histórico de uso por alias de modelo, taxa de sucesso e tempo médio de retorno.</p>
+
+<form method="get" action="/dashboard/diagnostics" class="mb-5 flex items-end gap-3">
+    <div>
+        <label class="block text-sm text-gray-400 mb-1">Janela (dias)</label>
+        <input type="number" name="window_days" min="1" max="90" value="{{ window_days }}"
+               class="bg-gray-800 border border-gray-700 rounded px-3 py-2 w-32 text-sm text-white" />
+    </div>
+    <button class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded text-sm">Aplicar</button>
+</form>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 text-center">
+        <div class="text-3xl font-bold text-blue-400">{{ models|length }}</div>
+        <div class="text-xs text-gray-500 mt-1">Aliases no período</div>
+    </div>
+    <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 text-center">
+        <div class="text-3xl font-bold text-green-400">{{ total_jobs }}</div>
+        <div class="text-xs text-gray-500 mt-1">Jobs no período</div>
+    </div>
+    <div class="bg-gray-800 rounded-lg p-4 border border-gray-700 text-center">
+        <div class="text-3xl font-bold text-amber-400">{{ window_days }}</div>
+        <div class="text-xs text-gray-500 mt-1">Dias analisados</div>
+    </div>
+</div>
+
+<div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+    <table class="min-w-full text-sm">
+        <thead class="bg-gray-900 text-gray-300">
+        <tr>
+            <th class="text-left px-4 py-3">Model alias</th>
+            <th class="text-right px-4 py-3">Jobs</th>
+            <th class="text-right px-4 py-3">Done</th>
+            <th class="text-right px-4 py-3">Failed</th>
+            <th class="text-right px-4 py-3">Sucesso</th>
+            <th class="text-right px-4 py-3">Média retorno</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for m in models %}
+        <tr class="border-t border-gray-700">
+            <td class="px-4 py-3 font-mono text-gray-200">{{ m.model_alias }}</td>
+            <td class="px-4 py-3 text-right">{{ m.total_jobs }}</td>
+            <td class="px-4 py-3 text-right text-green-400">{{ m.done_jobs }}</td>
+            <td class="px-4 py-3 text-right text-red-400">{{ m.failed_jobs }}</td>
+            <td class="px-4 py-3 text-right">{{ m.success_rate_pct }}%</td>
+            <td class="px-4 py-3 text-right">
+                {% if m.avg_duration_seconds is not none %}{{ "%.2f"|format(m.avg_duration_seconds) }}s{% else %}—{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        {% if not models %}
+        <tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">Sem dados para o período.</td></tr>
+        {% endif %}
+        </tbody>
+    </table>
+</div>
+
+{% if models %}
+<div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <section class="bg-gray-800 rounded-lg border border-gray-700 p-4">
+        <h3 class="text-lg font-semibold mb-4">Uso por alias (top 8)</h3>
+        {% set top_usage = models[:8] %}
+        {% set max_usage = (top_usage | map(attribute='total_jobs') | list | max) if top_usage else 0 %}
+        <div class="space-y-3">
+            {% for m in top_usage %}
+            <div>
+                <div class="flex justify-between text-xs text-gray-400 mb-1">
+                    <span class="font-mono">{{ m.model_alias }}</span>
+                    <span>{{ m.total_jobs }} jobs</span>
+                </div>
+                <div class="h-3 bg-gray-900 rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-blue-700 to-blue-400 rounded-full"
+                         style="width: {{ ((m.total_jobs / max_usage) * 100) if max_usage else 0 }}%;"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="bg-gray-800 rounded-lg border border-gray-700 p-4">
+        <h3 class="text-lg font-semibold mb-4">Tendência diária (total jobs)</h3>
+        {% if daily %}
+        <div class="space-y-2">
+            {% for d in daily %}
+            <div>
+                <div class="flex justify-between text-xs text-gray-400 mb-1">
+                    <span>{{ d.day }}</span>
+                    <span>{{ d.total }} jobs</span>
+                </div>
+                <div class="h-3 bg-gray-900 rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-emerald-700 to-emerald-400 rounded-full"
+                         style="width: {{ ((d.total / max_daily_total) * 100) if max_daily_total else 0 }}%;"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-500 text-sm">Sem dados diários para o período.</p>
+        {% endif %}
+    </section>
+</div>
+{% endif %}
+{% endblock %}

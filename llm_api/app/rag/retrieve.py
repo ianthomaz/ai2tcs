@@ -112,4 +112,16 @@ async def retrieve(
     merged = [item for sublist in all_results for item in sublist]
     merged.sort(key=lambda x: x["distance"] if x["distance"] is not None else 2.0)
 
+    # Optional lightweight hybrid ranking:
+    # keep vector ranking as base, then apply a small keyword-overlap boost.
+    if settings.rag_hybrid_enabled and merged:
+        q_tokens = {t for t in query.lower().split() if len(t) > 2}
+        if q_tokens:
+            for item in merged:
+                snippet = (item.get("snippet") or "").lower()
+                overlap = sum(1 for t in q_tokens if t in snippet)
+                # Lower score remains better because base is distance.
+                item["_hybrid_score"] = (item["distance"] if item["distance"] is not None else 2.0) - (0.02 * overlap)
+            merged.sort(key=lambda x: x.get("_hybrid_score", x["distance"] if x["distance"] is not None else 2.0))
+
     return merged[:top_k]

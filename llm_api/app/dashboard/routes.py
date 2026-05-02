@@ -330,6 +330,32 @@ async def dashboard_usage(request: Request, _: None = Depends(_require_dashboard
     return templates.TemplateResponse(request, "usage.html", ctx)
 
 
+@router.get("/diagnostics", response_class=HTMLResponse)
+async def dashboard_diagnostics(
+    request: Request,
+    window_days: int = 7,
+    _: None = Depends(_require_dashboard_auth),
+):
+    wd = max(1, min(int(window_days), 90))
+    models = await db_module.job_model_diagnostics(window_days=wd, limit=25)
+    daily = await db_module.job_model_daily_diagnostics(window_days=wd, top_models=5)
+    max_daily_total = max([int(d.get("total", 0) or 0) for d in daily], default=0)
+    top_aliases = [m["model_alias"] for m in models[:5]]
+    total_jobs = sum(int(m.get("total_jobs", 0) or 0) for m in models)
+    return templates.TemplateResponse(
+        request,
+        "diagnostics.html",
+        {
+            "models": models,
+            "window_days": wd,
+            "total_jobs": total_jobs,
+            "daily": daily,
+            "max_daily_total": max_daily_total,
+            "top_aliases": top_aliases,
+        },
+    )
+
+
 # --- Projects ---
 
 
