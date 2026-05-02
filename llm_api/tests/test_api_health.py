@@ -1,6 +1,17 @@
 """Tests for /health and /metrics endpoints."""
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
+
+
+class _MockAcquireCM:
+    def __init__(self, conn):
+        self._conn = conn
+
+    async def __aenter__(self):
+        return self._conn
+
+    async def __aexit__(self, *_args):
+        return False
 
 
 @pytest.mark.asyncio
@@ -16,9 +27,8 @@ async def test_health_endpoint(client):
         # Mock PostgreSQL OK
         mock_conn = AsyncMock()
         mock_conn.fetchval = AsyncMock(return_value=1)
-        mock_pool_obj = AsyncMock()
-        mock_pool_obj.acquire.return_value.__aenter__ = AsyncMock(return_value=mock_conn)
-        mock_pool_obj.acquire.return_value.__aexit__ = AsyncMock(return_value=False)
+        mock_pool_obj = MagicMock()
+        mock_pool_obj.acquire = MagicMock(return_value=_MockAcquireCM(mock_conn))
         mock_pool.return_value = mock_pool_obj
 
         response = await client.get("/health")

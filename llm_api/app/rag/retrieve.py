@@ -1,4 +1,6 @@
 """Retrieve relevant chunks from project Chroma index."""
+import asyncio
+import json
 from pathlib import Path
 
 import chromadb
@@ -14,6 +16,21 @@ def get_chroma_path(project_id: str) -> Path:
 
 def get_shared_chroma_path(library_slug: str) -> Path:
     return settings.data_dir / "_shared" / library_slug / "chroma"
+
+
+def _config_json_as_dict(raw: object) -> dict:
+    """asyncpg/Prisma may return jsonb as dict or as JSON string."""
+    if raw is None:
+        return {}
+    if isinstance(raw, dict):
+        return raw
+    if isinstance(raw, str):
+        try:
+            parsed = json.loads(raw)
+            return parsed if isinstance(parsed, dict) else {}
+        except (json.JSONDecodeError, TypeError):
+            return {}
+    return {}
 
 
 async def _retrieve_from_path(
@@ -71,9 +88,10 @@ async def retrieve(
     """
     from app.registry import get_project
     project = await get_project(project_id)
-    shared_libraries = []
-    if project and project.get("config_json"):
-        shared_libraries = project["config_json"].get("shared_libraries", [])
+    cfg = _config_json_as_dict(project.get("config_json")) if project else {}
+    shared_libraries = cfg.get("shared_libraries") or []
+    if isinstance(shared_libraries, str):
+        shared_libraries = [shared_libraries]
 
     query_embedding = await get_embedding_async(query, model=embedding_model)
 
