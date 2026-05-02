@@ -6,3 +6,6 @@
 Contribuições ao código e contratos: [../CONTRIBUTING.md](../CONTRIBUTING.md). Licença: [../LICENSE](../LICENSE).
 
 **Autoria / entidade:** ITCS-Webplace — CNPJ 65.998.990/0001-44 — [email@webplace.cc](mailto:email@webplace.cc).
+
+
+- [13-optimization-execution-plan.md](13-optimization-execution-plan.md) — plano de execução incremental (sem quebra).

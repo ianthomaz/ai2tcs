@@ -1,11 +1,13 @@
 """FastAPI app: API on port 28471, background worker, dashboard."""
 import asyncio
 import logging
+import time
+import uuid
 from pathlib import Path
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
@@ -60,6 +62,38 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="LLM API", lifespan=lifespan)
+
+
+@app.middleware("http")
+async def request_timing_middleware(request: Request, call_next):
+    """Log request timing with a request id for quick troubleshooting."""
+    if not settings.request_logging_enabled:
+        return await call_next(request)
+    request_id = request.headers.get("x-request-id") or uuid.uuid4().hex[:12]
+    started = time.perf_counter()
+    try:
+        response = await call_next(request)
+    except Exception:
+        duration_ms = round((time.perf_counter() - started) * 1000, 2)
+        logger.exception(
+            "request_id=%s method=%s path=%s status_code=500 duration_ms=%s",
+            request_id,
+            request.method,
+            request.url.path,
+            duration_ms,
+        )
+        raise
+    duration_ms = round((time.perf_counter() - started) * 1000, 2)
+    response.headers["x-request-id"] = request_id
+    logger.info(
+        "request_id=%s method=%s path=%s status_code=%s duration_ms=%s",
+        request_id,
+        request.method,
+        request.url.path,
+        response.status_code,
+        duration_ms,
+    )
+    return response
 
 # Dashboard auth middleware
 app.add_middleware(DashboardAuthMiddleware)

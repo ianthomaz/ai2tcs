@@ -1,6 +1,7 @@
 """Embeddings via Ollama (default: mxbai-embed-large; override per project config_json.embedding_model)."""
 import asyncio
 import logging
+from collections import OrderedDict
 
 import httpx
 
@@ -16,6 +17,9 @@ PAUSE_EVERY_N = 100
 PAUSE_SEC = 1.0
 
 logger = logging.getLogger(__name__)
+_EMBED_CACHE_MAX = 512
+_embed_cache: "OrderedDict[str, list[float]]" = OrderedDict()
+_embed_cache_lock = asyncio.Lock()
 
 
 def _ollama_embed_url() -> str:
@@ -32,10 +36,25 @@ def get_embedding(text: str, model: str = DEFAULT_MODEL) -> list[float]:
 
 async def get_embedding_async(text: str, model: str = DEFAULT_MODEL) -> list[float]:
     """Async single text embedding."""
+    prompt = _truncate_prompt(text).strip() or " "
+    cache_key = f"{model}::{prompt}"
+    if settings.embedding_cache_enabled:
+        async with _embed_cache_lock:
+            cached = _embed_cache.get(cache_key)
+            if cached is not None:
+                _embed_cache.move_to_end(cache_key)
+                return cached
     async with httpx.AsyncClient(timeout=60.0) as client:
-        r = await client.post(_ollama_embed_url(), json={"model": model, "prompt": text})
+        r = await client.post(_ollama_embed_url(), json={"model": model, "prompt": prompt})
         r.raise_for_status()
-        return r.json()["embedding"]
+        embedding = r.json()["embedding"]
+    if settings.embedding_cache_enabled:
+        async with _embed_cache_lock:
+            _embed_cache[cache_key] = embedding
+            _embed_cache.move_to_end(cache_key)
+            while len(_embed_cache) > _EMBED_CACHE_MAX:
+                _embed_cache.popitem(last=False)
+    return embedding
 
 
 def _truncate_prompt(text: str) -> str:

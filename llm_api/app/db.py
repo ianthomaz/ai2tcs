@@ -803,6 +803,110 @@ async def job_stats() -> dict:
     }
 
 
+async def job_model_diagnostics(window_days: int = 7, limit: int = 20) -> list[dict]:
+    """Per-model usage and latency diagnostics for recent jobs."""
+    wd = max(1, int(window_days))
+    lim = max(1, min(int(limit), 100))
+    async with (await get_pool()).acquire() as conn:
+        rows = await conn.fetch(
+            f"""
+            SELECT
+                COALESCE(NULLIF(model_alias, ''), 'unknown') AS model_alias,
+                COUNT(*)::bigint AS total_jobs,
+                COUNT(*) FILTER (WHERE status = 'done')::bigint AS done_jobs,
+                COUNT(*) FILTER (WHERE status = 'failed')::bigint AS failed_jobs,
+                ROUND(
+                    AVG(EXTRACT(EPOCH FROM (updated_at - created_at)))
+                    FILTER (
+                        WHERE status IN ('done', 'no_answer', 'need_more_info')
+                          AND updated_at IS NOT NULL
+                          AND created_at IS NOT NULL
+                    )::numeric, 2
+                ) AS avg_duration_seconds
+            FROM "Job"
+            WHERE created_at > NOW() - ($1::int * interval '1 day')
+            GROUP BY 1
+            ORDER BY total_jobs DESC
+            LIMIT $2
+            """,
+            wd,
+            lim,
+        )
+    out: list[dict] = []
+    for r in rows:
+        total = int(r["total_jobs"] or 0)
+        done = int(r["done_jobs"] or 0)
+        failed = int(r["failed_jobs"] or 0)
+        out.append(
+            {
+                "model_alias": r["model_alias"],
+                "total_jobs": total,
+                "done_jobs": done,
+                "failed_jobs": failed,
+                "success_rate_pct": round((done / total) * 100, 1) if total else 0.0,
+                "avg_duration_seconds": float(r["avg_duration_seconds"]) if r["avg_duration_seconds"] is not None else None,
+            }
+        )
+    return out
+
+
+async def job_model_daily_diagnostics(window_days: int = 7, top_models: int = 5) -> list[dict]:
+    """Daily usage series for top model aliases in the selected window."""
+    wd = max(1, int(window_days))
+    top_n = max(1, min(int(top_models), 10))
+    async with (await get_pool()).acquire() as conn:
+        top_rows = await conn.fetch(
+            """
+            SELECT COALESCE(NULLIF(model_alias, ''), 'unknown') AS model_alias, COUNT(*)::bigint AS cnt
+            FROM "Job"
+            WHERE created_at > NOW() - ($1::int * interval '1 day')
+            GROUP BY 1
+            ORDER BY cnt DESC
+            LIMIT $2
+            """,
+            wd,
+            top_n,
+        )
+        aliases = [str(r["model_alias"]) for r in top_rows]
+        if not aliases:
+            return []
+        day_rows = await conn.fetch(
+            """
+            SELECT
+                TO_CHAR(DATE_TRUNC('day', created_at), 'YYYY-MM-DD') AS day,
+                COALESCE(NULLIF(model_alias, ''), 'unknown') AS model_alias,
+                COUNT(*)::bigint AS cnt
+            FROM "Job"
+            WHERE created_at > NOW() - ($1::int * interval '1 day')
+              AND COALESCE(NULLIF(model_alias, ''), 'unknown') = ANY($2::text[])
+            GROUP BY 1, 2
+            ORDER BY 1 ASC, 2 ASC
+            """,
+            wd,
+            aliases,
+        )
+    grid: dict[tuple[str, str], int] = {}
+    days_set: set[str] = set()
+    for r in day_rows:
+        day = str(r["day"])
+        alias = str(r["model_alias"])
+        cnt = int(r["cnt"] or 0)
+        grid[(day, alias)] = cnt
+        days_set.add(day)
+    days = sorted(days_set)
+    out: list[dict] = []
+    for day in days:
+        row = {"day": day}
+        total = 0
+        for alias in aliases:
+            v = grid.get((day, alias), 0)
+            row[alias] = v
+            total += v
+        row["total"] = total
+        out.append(row)
+    return out
+
+
 async def job_cancel(job_id: str) -> None:
     async with (await get_pool()).acquire() as conn:
         await conn.execute(

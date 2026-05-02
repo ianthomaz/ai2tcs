@@ -63,6 +63,13 @@ class Settings(BaseSettings):
     # Audio uploads (multipart)
     audio_max_bytes: int = 25 * 1024 * 1024
     audio_temp_subdir: str = "audio_tmp"
+    # Runtime feature flags (safe defaults keep existing behavior)
+    rag_rerank_enabled: bool = False
+    rag_hybrid_enabled: bool = False
+    ask_stream_enabled: bool = False
+    embedding_cache_enabled: bool = False
+    # Request observability
+    request_logging_enabled: bool = True
 
     def project_sources_override(self, project_id: str) -> list[str] | None:
         """Override sources for any project via env: <PROJECT_ID>_SOURCES (comma-separated paths)."""
