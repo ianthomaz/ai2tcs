@@ -33,6 +33,8 @@ Se o teu projecto **precisa de padrões específicos** (prompts, campos extra, n
 | Contexto histórico (router, fleet, ingest) | [10-historical-router-plan.md](./10-historical-router-plan.md) |
 | Roadmap de melhorias (LLM / RAG / produto) | [11-improvements-roadmap.md](./11-improvements-roadmap.md) |
 | Operações LLM / RAG (checklist enxuto) | [12-llm-fleet-rag-operations.md](./12-llm-fleet-rag-operations.md) |
+| Ian Zap pessoal (`ian_zap`, rota `cursor`) | [14-ian-zap-personal.md](./14-ian-zap-personal.md) |
+| Handoff: correções em projetos satélite | [15-cross-project-fixes.md](./15-cross-project-fixes.md) |
 
 **NF Extract:** [refs/ManualNF_Extract](./refs/ManualNF_Extract). **Variáveis (sem segredos):** [`llm_api/.env.example`](../llm_api/.env.example). **Roadmap código:** [`llm_api/UPGRADES.md`](../llm_api/UPGRADES.md).
 
@@ -48,7 +50,7 @@ Se o teu projecto **precisa de padrões específicos** (prompts, campos extra, n
 |----------|----------|
 | Tailscale, Serve, túnel, proxy | [refs/operacao-tailscale.md](./refs/operacao-tailscale.md) |
 | Cloudflare (`llm.webplace.cc`, TLS / OAuth / WAF) | [refs/cloudflare-edge.md](./refs/cloudflare-edge.md) |
-| Exemplo nginx (tailnet) | [refs/nginx/bikeanjovm.conf](./refs/nginx/bikeanjovm.conf) |
+| Exemplo nginx (tailnet) | [refs/nginx/itcsVM2.conf](./refs/nginx/itcsVM2.conf) |
 
 ---
 

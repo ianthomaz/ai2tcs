@@ -14,3 +14,4 @@ pymupdf>=1.24.0
 pillow>=10.0.0
 pytesseract>=0.3.10
 faster-whisper>=1.0.0
+sentence-transformers>=3.0.0

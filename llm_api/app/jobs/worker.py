@@ -128,6 +128,49 @@ def _sanitize_answer(answer: str) -> str:
     return answer
 
 
+REFLECTION_PROMPT = """\
+Pergunta: {question}
+Contexto RAG (trechos):
+{context}
+
+Resposta gerada:
+{answer}
+
+A resposta está embasada no contexto? Responda em JSON: {{"grounded": "SIM"|"PARCIAL"|"NAO", "corrected": "texto corrigido ou null"}}
+Se PARCIAL ou NAO, preencha corrected usando apenas o contexto. Se SIM, corrected null.
+"""
+
+
+async def _reflect_on_answer(
+    *,
+    provider,
+    question: str,
+    chunks: list[dict],
+    answer: str,
+    llm_config: dict,
+) -> str:
+    """Optional self-RAG pass with fast model to reduce hallucinations."""
+    context = "\n---\n".join((c.get("snippet") or "")[:800] for c in chunks[:4])
+    prompt = REFLECTION_PROMPT.format(question=question[:2000], context=context[:6000], answer=answer[:2000])
+    fast_model = settings.get_model_name("fast", default_alias="fast")
+    fast_opts = {**llm_config, "temperature": 0.2, "num_predict": 512}
+    try:
+        raw = await provider.chat(
+            model=fast_model,
+            messages=[{"role": "user", "content": prompt}],
+            options=fast_opts,
+        )
+        if "{" in raw and "}" in raw:
+            blob = raw[raw.find("{") : raw.rfind("}") + 1]
+            data = json.loads(blob)
+            corrected = data.get("corrected")
+            if isinstance(corrected, str) and corrected.strip():
+                return corrected.strip()
+    except Exception as exc:
+        logger.warning("RAG reflection skipped: %s", exc)
+    return answer
+
+
 def _profile_from_request_context(user_context: dict) -> dict:
     """Build prompt profile dict from request-time user_context (zapzap / sistemaBA)."""
     profile: dict = {}
@@ -144,21 +187,24 @@ def _profile_from_request_context(user_context: dict) -> dict:
     return profile
 
 
-def _parse_job_user_context(raw: dict | str | None) -> tuple[dict, list[dict] | None, str | None, str | None]:
-    """Split stored user_context_json into profile dict, optional client history, optional client system prompt, and optional model."""
+def _parse_job_user_context(
+    raw: dict | str | None,
+) -> tuple[dict, list[dict] | None, str | None, str | None, str | None]:
+    """Split stored user_context_json into profile, history, system prompt, model alias, callback URL."""
     if raw is None:
-        return {}, None, None, None
+        return {}, None, None, None, None
     if isinstance(raw, str):
         try:
             raw = json.loads(raw)
         except json.JSONDecodeError:
-            return {}, None, None, None
+            return {}, None, None, None, None
     if not isinstance(raw, dict):
-        return {}, None, None, None
+        return {}, None, None, None, None
     data = dict(raw)
     hist = data.pop("__llm_history", None)
     sys_pfx = data.pop("__llm_system_prompt", None)
     model_alias = data.pop("__llm_model", None)
+    callback_url = data.pop("__llm_callback_url", None)
     client_hist: list[dict] | None = None
     if isinstance(hist, list) and hist:
         client_hist = []
@@ -170,7 +216,34 @@ def _parse_job_user_context(raw: dict | str | None) -> tuple[dict, list[dict] | 
             client_hist.append({"role": role, "content": str(content)[:2000]})
     sys_str = str(sys_pfx).strip() if sys_pfx else None
     model_str = str(model_alias).strip() if model_alias else None
-    return data, client_hist, sys_str, model_str
+    cb = str(callback_url).strip() if callback_url else None
+    return data, client_hist, sys_str, model_str, cb
+
+
+async def _fire_job_callback(
+    callback_url: str,
+    *,
+    job_id: str,
+    status: str,
+    answer: str | None,
+    sources: list[dict],
+) -> None:
+    import httpx
+
+    if not callback_url.startswith("https://"):
+        logger.warning("Skipping callback for job %s: URL must be https://", job_id)
+        return
+    payload = {
+        "job_id": job_id,
+        "status": status,
+        "answer": answer,
+        "sources": sources,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            await client.post(callback_url, json=payload)
+    except Exception as exc:
+        logger.warning("Callback failed for job %s: %s", job_id, exc)
 
 
 async def run_rag_job(
@@ -183,8 +256,8 @@ async def run_rag_job(
     """Run RAG + LLM for a text question and persist result to the Job row."""
     try:
         await db_module.job_update_status(job_id, "working", progress="loading_project")
-        profile_ctx, client_conversation_override, client_system_prefix, model_alias = _parse_job_user_context(
-            user_context
+        profile_ctx, client_conversation_override, client_system_prefix, model_alias, callback_url = (
+            _parse_job_user_context(user_context)
         )
 
         project = await get_project(project_id)
@@ -291,6 +364,15 @@ async def run_rag_job(
         # Post-processing: fix known LLM generation errors (meta-phrases, typos, filler)
         answer = _sanitize_answer(answer)
 
+        if settings.rag_reflection_enabled and chunks and answer:
+            answer = await _reflect_on_answer(
+                provider=provider,
+                question=question,
+                chunks=chunks,
+                answer=answer,
+                llm_config=llm_config,
+            )
+
         # Persist assistant response in conversation history
         if user_id and answer:
             await db_module.conversation_append(user_id, project_id, "assistant", answer, job_id=job_id)
@@ -317,6 +399,14 @@ async def run_rag_job(
             sources=sources,
             confidence=confidence,
         )
+        if callback_url:
+            await _fire_job_callback(
+                callback_url,
+                job_id=job_id,
+                status=status,
+                answer=answer,
+                sources=sources,
+            )
         logger.info("job %s completed with status %s (user=%s)", job_id, status, user_id or "anonymous")
     except Exception as e:
         logger.exception("job %s failed", job_id)

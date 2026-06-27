@@ -9,15 +9,13 @@ from fastapi import APIRouter, Depends, Request
 from app.auth import require_token
 from app.config import settings
 from app.job_audit import log_sync_llm_job
-from app.registry import get_project, get_rag_policies
+from app.registry import get_project, get_rag_policies, get_router_config
 from app.rag.retrieve import retrieve
 from pydantic import BaseModel, ConfigDict, Field
 
 router = APIRouter(tags=["router"])
 
 ROUTER_JOB_KIND = "router"
-
-MAX_CHUNK_DISTANCE = 1.2
 
 # Canonical routes for WhatsApp clients (zapzap LLM_API_CONTRACT.md)
 ZAPZAP_ROUTES = frozenset(
@@ -29,8 +27,18 @@ ZAPZAP_ROUTES = frozenset(
         "documento",
         "status",
         "agradecimento",
+        "cursor",  # owner → zapCursorAgent bridge (:28472), not /ask
     }
 )
+
+IAN_ZAP_PROJECT_ID = "ian_zap"
+
+ROUTER_SYSTEM_IAN_ZAP = """
+Extra rules for project ian_zap (owner personal channel):
+- suggested_route "cursor": coding, infra, deploy, repos, SSH, Cursor agent, multi-step ops on Mac.
+- suggested_route "ask": quick factual / RAG from indexed docs when no agent power needed.
+- Prefer "cursor" when the message implies changing systems or investigating code.
+"""
 
 ROUTER_SYSTEM = """You are a triage router for a message API. Your goal is to decide if you can answer immediately or if we should escalate to a specialist.
 
@@ -44,7 +52,7 @@ Task types: chitchat, extract, rag_deep, reasoning, classification.
 You must reply with a single valid JSON object (no markdown fences, no prose outside JSON) with these keys:
 {
   "action": "answer_now" | "escalate",
-  "suggested_route": "ask" | "cadastro" | "saudacao" | "escalar_humano" | "documento" | "status" | "agradecimento",
+  "suggested_route": "ask" | "cadastro" | "saudacao" | "escalar_humano" | "documento" | "status" | "agradecimento" | "cursor",
   "answer": "Portuguese reply text or null",
   "escalate_to": "compact" | "smart" | "reasoner" | "auto" | null,
   "obs": "short note for the specialist or null",
@@ -65,6 +73,7 @@ Heuristics for suggested_route (ZAPZAP):
 - documento: files/docs.
 - status: progress check.
 - agradecimento: thanks.
+- cursor: delegate to Cursor SDK agent on Mac (owner only; zapzap calls bridge, not /ask).
 
 Always include "suggested_route" in the JSON object."""
 
@@ -91,7 +100,7 @@ class RouterResponse(BaseModel):
     action: str = Field(..., description="answer_now | escalate")
     suggested_route: str = Field(
         ...,
-        description="Canonical intent: ask, cadastro, saudacao, escalar_humano, documento, status, agradecimento",
+        description="Canonical intent: ask, cadastro, …, cursor (owner agent bridge)",
     )
     answer: str | None = Field(None, description="Response if action=answer_now")
     escalate_to: str | None = Field(None, description="compact | smart | reasoner | auto")
@@ -293,7 +302,8 @@ async def route_message(
         embed_model = (project["config_json"] or {}).get("embedding_model") or embed_model
 
     chunks = await retrieve(body.project_id, body.message, top_k=top_k, embedding_model=embed_model)
-    chunks = [c for c in chunks if c.get("distance") is None or c["distance"] <= MAX_CHUNK_DISTANCE]
+    max_dist = policies.get("max_chunk_distance", 1.0)
+    chunks = [c for c in chunks if c.get("distance") is None or c["distance"] <= max_dist]
 
     context_parts = []
     for c in chunks:
@@ -318,12 +328,20 @@ async def route_message(
     user_parts.append("\nContexto do projeto (biblioteca + mapa de fluxos):\n" + context_text)
     user_content = "\n".join(user_parts)
 
+    system_prompt = ROUTER_SYSTEM
+    router_cfg = get_router_config(project)
+    extra_block = (router_cfg.get("extra_system_block") or "").strip()
+    if extra_block:
+        system_prompt = ROUTER_SYSTEM + "\n\n" + extra_block
+    elif body.project_id == IAN_ZAP_PROJECT_ID:
+        system_prompt = ROUTER_SYSTEM + ROUTER_SYSTEM_IAN_ZAP
+
     try:
         response = await asyncio.to_thread(
             ollama.chat,
             model=model_alias,
             messages=[
-                {"role": "system", "content": ROUTER_SYSTEM},
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content},
             ],
             options={"temperature": 0.1, "num_predict": 512},

@@ -96,10 +96,54 @@ _PRESTADOR_BLOCK_RE = re.compile(
     r"(?is)PRESTADOR\s+DE\s+SERVI[ÇC]OS\s*(.*?)(?=TOMADOR\s+DE\s+SERVI[ÇC]OS)",
     re.DOTALL,
 )
+_TOMADOR_BLOCK_RE = re.compile(
+    r"(?is)TOMADOR\s+DE\s+SERVI[ÇC]OS\s*(.*?)(?=DISCRIMINA[ÇC][AÃ]O|INTERMEDI[ÁA]RIO|VALOR\s+TOTAL|SERVI[ÇC]O\s+PRESTADO|$)",
+    re.DOTALL,
+)
 _PRESTADOR_RAZAO_RE = re.compile(r"(?is)Nome/Raz\w*\s*Social[:\s]+([^\n]+?)(?:\s+Endere|$)")
+_TOMADOR_RAZAO_RE = re.compile(r"(?is)Nome/Raz\w*\s*Social[:\s]+([^\n]+?)(?:\s+Endere|$)")
 def _prestador_servicos_block(text: str) -> str | None:
     m = _PRESTADOR_BLOCK_RE.search(text)
     return m.group(1).strip() if m else None
+
+
+def _tomador_servicos_block(text: str) -> str | None:
+    m = _TOMADOR_BLOCK_RE.search(text)
+    return m.group(1).strip() if m else None
+
+
+def _tax_id_from_block(block: str) -> str | None:
+    m = re.search(r"(?is)CPF/CNPJ[:\s]+([^\n]+)", block)
+    if not m:
+        return None
+    line = m.group(1).strip()
+    subm = re.search(r"(§?\d{1,2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2})", line)
+    if not subm:
+        d = _digits(line)
+        if d and len(d) in (11, 14):
+            if len(d) == 14 and not _cnpj_checksum_valid(d):
+                return None
+            return d
+        return None
+    masked = subm.group(1)
+    reference = _ocr_normalize_cnpj_line_for_reference(masked)
+    candidates = _valid_cnpj_candidates_from_line(masked)
+    picked = _pick_cnpj_closest_to_reference(candidates, reference)
+    if picked:
+        return picked
+    d = _digits(masked)
+    if d and len(d) == 11:
+        return d
+    return None
+
+
+def _name_from_block(block: str, name_re: re.Pattern[str]) -> str | None:
+    m = name_re.search(block)
+    if not m:
+        return None
+    name = m.group(1).strip()
+    name = re.sub(r"\s+", " ", name)
+    return name or None
 
 
 def _ocr_normalize_cnpj_line_for_reference(line: str) -> str:
@@ -145,26 +189,26 @@ def _pick_cnpj_closest_to_reference(candidates: list[str], reference: str) -> st
 
 
 def _prestador_supplier_code(block: str) -> str | None:
-    m = re.search(r"(?is)CPF/CNPJ[:\s]+([^\n]+)", block)
-    if not m:
-        return None
-    line = m.group(1).strip()
-    subm = re.search(r"(§?\d{1,2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2})", line)
-    if not subm:
-        return None
-    masked = subm.group(1)
-    reference = _ocr_normalize_cnpj_line_for_reference(masked)
-    candidates = _valid_cnpj_candidates_from_line(masked)
-    return _pick_cnpj_closest_to_reference(candidates, reference)
+    return _tax_id_from_block(block)
 
 
 def _prestador_supplier_name(block: str) -> str | None:
-    m = _PRESTADOR_RAZAO_RE.search(block)
-    if not m:
-        return None
-    name = m.group(1).strip()
-    name = re.sub(r"\s+", " ", name)
-    return name or None
+    return _name_from_block(block, _PRESTADOR_RAZAO_RE)
+
+
+def _extract_tomador_fields(text: str) -> tuple[dict[str, Any], bool]:
+    """NFS-e PDF/OCR: tomador CNPJ/CPF before LLM enrichment."""
+    out: dict[str, Any] = {}
+    block = _tomador_servicos_block(text)
+    if not block:
+        return out, False
+    code = _tax_id_from_block(block)
+    if code:
+        out["service_recipient_code"] = code
+    name = _name_from_block(block, _TOMADOR_RAZAO_RE)
+    if name:
+        out["service_recipient_name"] = name
+    return out, True
 
 
 def _extract_prestador_supplier_fields(text: str) -> tuple[dict[str, Any], bool]:
@@ -503,6 +547,7 @@ def _extract_payment_from_text(text: str) -> dict[str, Any]:
 def extract_from_text_heuristics(text: str) -> dict[str, Any]:
     compact = " ".join(text.split())
     prest_fields, prestador_block_found = _extract_prestador_supplier_fields(text)
+    tomador_fields, tomador_block_found = _extract_tomador_fields(text)
     supplier_code = prest_fields.get("supplier_code")
     supplier_name = prest_fields.get("supplier_name")
     if supplier_code is None and not prestador_block_found:
@@ -514,6 +559,7 @@ def extract_from_text_heuristics(text: str) -> dict[str, Any]:
     data: dict[str, Any] = {
         "supplier_code": supplier_code,
         "supplier_name": supplier_name,
+        "service_recipient_code": tomador_fields.get("service_recipient_code"),
         "nf_number": nf_number_match.group(1) if nf_number_match else None,
         "amount": amount,
     }
@@ -637,6 +683,56 @@ def read_document_from_path(path: str) -> tuple[bytes, str]:
     return p.read_bytes(), p.name
 
 
+def _validate_role_documents(
+    base: dict[str, Any],
+    heuristic_snapshot: dict[str, Any],
+    warnings: list[str],
+) -> None:
+    """Prevent LLM from swapping prestador/tomador tax ids when heuristics found both."""
+    h_sup = heuristic_snapshot.get("supplier_code")
+    h_rec = heuristic_snapshot.get("service_recipient_code")
+    if h_sup and h_rec and h_sup == h_rec:
+        warnings.append("Heuristic prestador and tomador share the same document; tomador cleared.")
+        base["service_recipient_code"] = None
+        return
+    if h_sup and base.get("supplier_code") == h_rec and base.get("service_recipient_code") == h_sup:
+        warnings.append("LLM swapped prestador/tomador documents; restored heuristic values.")
+        base["supplier_code"] = h_sup
+        base["service_recipient_code"] = h_rec
+        return
+    if h_sup and base.get("supplier_code") != h_sup:
+        warnings.append("LLM changed prestador document; kept heuristic prestador value.")
+        base["supplier_code"] = h_sup
+    if h_rec and base.get("service_recipient_code") != h_rec:
+        warnings.append("LLM changed tomador document; kept heuristic tomador value.")
+        base["service_recipient_code"] = h_rec
+    if (
+        base.get("supplier_code")
+        and base.get("service_recipient_code")
+        and base["supplier_code"] == base["service_recipient_code"]
+    ):
+        warnings.append("Prestador and tomador documents are identical after merge; tomador cleared.")
+        base["service_recipient_code"] = None
+
+
+def _confidence_for_field(
+    field: str,
+    value: Any,
+    heuristic_snapshot: dict[str, Any],
+    llm_touched: set[str],
+    conflict_fields: set[str],
+) -> float:
+    if value in (None, "", "unknown"):
+        return 0.0
+    if field in conflict_fields:
+        return 0.4
+    if field in heuristic_snapshot and heuristic_snapshot[field] == value:
+        return 0.9
+    if field in llm_touched:
+        return 0.6
+    return 0.75
+
+
 async def run_extraction_pipeline(
     *,
     source_type: str,
@@ -670,21 +766,40 @@ async def run_extraction_pipeline(
         "payment_type": None,
     }
     extracted_text = ""
+    heuristic_snapshot: dict[str, Any] = {}
     try:
         if doc_type == "xml":
             xml_data, extracted_text = extract_from_xml(raw_bytes)
             base.update({k: v for k, v in xml_data.items() if v is not None})
+            heuristic_snapshot = {
+                k: base[k]
+                for k in ("supplier_code", "supplier_name", "service_recipient_code")
+                if base.get(k) not in (None, "", "unknown")
+            }
         elif doc_type == "pdf":
             extracted_text, pdf_warnings = extract_pdf_text_with_fallbacks(raw_bytes)
             warnings.extend(pdf_warnings)
-            base.update({k: v for k, v in extract_from_text_heuristics(extracted_text).items() if v is not None})
+            heur = extract_from_text_heuristics(extracted_text)
+            base.update({k: v for k, v in heur.items() if v is not None})
+            heuristic_snapshot = {
+                k: heur[k]
+                for k in ("supplier_code", "supplier_name", "service_recipient_code")
+                if heur.get(k) not in (None, "", "unknown")
+            }
         elif doc_type == "img":
             extracted_text = _extract_img_text(raw_bytes)
-            base.update({k: v for k, v in extract_from_text_heuristics(extracted_text).items() if v is not None})
+            heur = extract_from_text_heuristics(extracted_text)
+            base.update({k: v for k, v in heur.items() if v is not None})
+            heuristic_snapshot = {
+                k: heur[k]
+                for k in ("supplier_code", "supplier_name", "service_recipient_code")
+                if heur.get(k) not in (None, "", "unknown")
+            }
         else:
             errors.append("Unsupported document type. Send XML, PDF, or image.")
     except Exception as exc:  # noqa: BLE001
         errors.append(str(exc))
+    pre_llm = dict(base)
     llm_data, llm_warnings = await enrich_with_local_llm(
         ollama_host=ollama_host,
         model=ollama_model,
@@ -693,27 +808,39 @@ async def run_extraction_pipeline(
         timeout_s=ollama_timeout_s,
     )
     warnings.extend(llm_warnings)
+    llm_touched: set[str] = set()
     for key, value in llm_data.items():
         if key not in base:
             continue
         if key == "service_recipient_code":
             normalized = _normalize_service_recipient_digits(value)
+            if normalized and normalized != pre_llm.get(key):
+                llm_touched.add(key)
             if normalized:
                 base[key] = normalized
             continue
         if key == "payment_type":
             normalized = _normalize_payment_type_field(value)
+            if normalized and normalized != pre_llm.get(key):
+                llm_touched.add(key)
             if normalized:
                 base[key] = normalized
             continue
         normalized = _normalize_nf_llm_value(value)
         if normalized not in ("", None):
+            if normalized != pre_llm.get(key):
+                llm_touched.add(key)
             base[key] = normalized
+    conflict_before = len(warnings)
+    _validate_role_documents(base, heuristic_snapshot, warnings)
+    conflict_fields = set()
+    if len(warnings) > conflict_before:
+        conflict_fields = {"supplier_code", "service_recipient_code"}
     apply_nf_extract_postprocess(base, extracted_text)
     confidence_by_field: dict[str, float] = {}
     populated = 0
     for k, v in base.items():
-        score = 0.0 if v in (None, "", "unknown") else 0.85
+        score = _confidence_for_field(k, v, heuristic_snapshot, llm_touched, conflict_fields)
         confidence_by_field[k] = score
         if score > 0:
             populated += 1

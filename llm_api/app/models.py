@@ -66,6 +66,10 @@ class AskRequest(BaseModel):
     )
     model: str | None = Field(None, description="Model alias ('fast' or 'smart') or specific model name")
     hint: str | None = Field(None, description="Optional hint for auto-router")
+    callback_url: str | None = Field(
+        None,
+        description="Optional HTTPS URL; API POSTs job result when complete (webhook).",
+    )
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -351,6 +355,36 @@ class NFExtractResponse(BaseModel):
     raw_text_excerpt: str | None = None
 
     model_config = {"populate_by_name": True}
+
+
+class BoletoExtractResponse(BaseModel):
+    status: str = "ok"
+    source_type: str | None = None
+    document_type: str = "unknown"
+    file_name: str | None = None
+
+    beneficiary_name: str | None = None
+    beneficiary_document: str | None = Field(
+        default=None,
+        description="CNPJ/CPF of cedente/beneficiário (who receives payment).",
+    )
+    payer_name: str | None = None
+    payer_document: str | None = Field(
+        default=None,
+        description="CNPJ/CPF of sacado/pagador (who pays).",
+    )
+    digitable_line: str | None = Field(default=None, description="47 or 48 digit linha digitável")
+    barcode: str | None = Field(default=None, description="44-digit barcode")
+    due_date: str | None = None
+    amount: float | None = None
+    bank_code: str | None = None
+    document_number: str | None = None
+
+    confidence: float = 0.0
+    confidence_by_field: dict[str, float] = Field(default_factory=dict)
+    warnings: list[str] = Field(default_factory=list)
+    errors: list[str] = Field(default_factory=list)
+    raw_text_excerpt: str | None = None
 
 # --- Educational API ---
 

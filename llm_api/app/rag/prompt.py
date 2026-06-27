@@ -1,16 +1,39 @@
 """Build system and user prompt for LLM with RAG context, user profile, and conversation history."""
 from datetime import date
 
-SYSTEM_TEMPLATE = """\
-You are a helpful assistant for the project "{project_name}". \
-You answer questions based ONLY on the provided context passages. \
-Never invent information. When the context has relevant content, use it to answer directly.
+# Profile-specific opening rules (context strictness + no-answer behavior)
+_PROFILE_OPENINGS = {
+    "factual": (
+        'You are a helpful assistant for the project "{project_name}". '
+        "You answer questions based ONLY on the provided context passages. "
+        "Never invent information. When the context has relevant content, use it to answer directly."
+    ),
+    "sales": (
+        'You are a helpful assistant for the project "{project_name}". '
+        "You answer questions based on the provided context passages. "
+        "When the context has relevant content, use it to answer directly and invite contact when appropriate. "
+        "Never invent facts not supported by the context."
+    ),
+    "creative": (
+        'You are a creative assistant for the project "{project_name}". '
+        "Use the knowledge base passages as inspiration when they fit the question, "
+        "but you may improvise in character when the passages are empty or only loosely related. "
+        "Stay in the project's voice and never claim specific business facts without context support."
+    ),
+}
 
+_DEFAULT_NO_ANSWER_FALLBACK = (
+    "Responda em uma frase o que o serviço oferece sobre o tema e convide para contato."
+)
+
+_CALIBRATION_BLOCK = """\
 Calibration (obrigatório):
 - Responda sempre de forma direta. NUNCA use nenhuma destas frases (nem variações): "Com base no contexto fornecido", "Com base apenas na informação fornecida", "Segundo o conteúdo", "Segundo o contexto", "não encontrei informação específica", "não encontrei informação suficiente", "não há informações que justifiquem ou desaconselhem", "A pergunta é sobre", "recomendo consultar os links", "De acordo com as informações disponíveis". Se há trechos relevantes no contexto, use-os para responder diretamente.
-- Quando não houver nada útil no contexto: diga em UMA frase o que o serviço cobre sobre o tema e convide para contato. Exemplo: "A Mobi cuida disso para você — fale com a equipe pelo WhatsApp para mais detalhes." Nunca explique que não encontrou informação, nem use frases longas negativas.
+- Quando não houver nada útil no contexto: {no_answer_fallback} Nunca explique que não encontrou informação, nem use frases longas negativas.
 - Use linguagem natural e fluente em português. Nunca gere construções gramaticalmente incorretas como "Você pode abertura", "você pode fale", "para falecimento ou envio". Revise mentalmente a frase antes de responder.
+"""
 
+_RULES_BLOCK = """\
 Rules:
 - Answer in Portuguese (pt-BR) by default. Only use another language if the user clearly writes in that language.
 - {tone_instruction}
@@ -18,10 +41,13 @@ Rules:
 - Do NOT cite internal file paths or document names; the user does not have access to them. If the context includes external URLs (sites, links) about the topic, you may mention those for further reading.
 - If the user asks a follow-up that references previous conversation, use the conversation history and summaries to understand what they mean.
 - Use the user profile information to personalize your responses when relevant (e.g. address them by name, consider their age or health conditions).
-- When the project is about services/sales: adopt a helpful, service-oriented tone. Instead of "I don't have that info", say what the service offers and invite to contact the team.
-
-{user_profile_block}\
+{sales_rule}\
 """
+
+_SALES_RULE = (
+    "- When the project is about services/sales: adopt a helpful, service-oriented tone. "
+    'Instead of "I don\'t have that info", say what the service offers and invite to contact the team.\n'
+)
 
 USER_TEMPLATE = """\
 {conversation_summaries}\
@@ -34,12 +60,46 @@ Context from the knowledge base:
 
 Question: {question}
 
-Answer (based only on the context above):\
+Answer{answer_hint}:\
+"""
+
+USER_TEMPLATE_CREATIVE = """\
+{conversation_summaries}\
+{conversation_history}\
+Optional inspiration from the knowledge base:
+
+{context}
+
+---
+
+Question: {question}
+
+Answer in character{answer_hint}:\
 """
 
 CONVERSATION_HEADER = "Recent conversation with this user:\n\n"
 CONVERSATION_ENTRY = "[{role}]: {content}\n"
 CONVERSATION_SEPARATOR = "\n---\n\n"
+
+
+def get_prompt_profile(project: dict) -> str:
+    """Return prompt profile: factual | sales | creative."""
+    cfg = project.get("config_json") or {}
+    if isinstance(cfg, dict):
+        profile = (cfg.get("prompt_profile") or "factual").strip().lower()
+        if profile in ("factual", "sales", "creative"):
+            return profile
+    return "factual"
+
+
+def get_no_answer_fallback(project: dict) -> str:
+    """Project-specific fallback when RAG has no useful context."""
+    cfg = project.get("config_json") or {}
+    if isinstance(cfg, dict):
+        fb = cfg.get("no_answer_fallback")
+        if isinstance(fb, str) and fb.strip():
+            return fb.strip()
+    return _DEFAULT_NO_ANSWER_FALLBACK
 
 
 def _format_user_profile(profile: dict | None) -> str:
@@ -83,11 +143,7 @@ def _format_conversation_summaries(summaries: list[dict]) -> str:
 
 
 def _format_conversation_history(history: list[dict], max_turns: int = 6) -> str:
-    """Format recent conversation history for inclusion in the prompt.
-
-    Keeps at most max_turns exchanges (user+assistant pairs) to avoid
-    blowing up context size on a 7B model.
-    """
+    """Format recent conversation history for inclusion in the prompt."""
     if not history:
         return ""
     recent = history[-(max_turns * 2):]
@@ -115,6 +171,44 @@ SIZE_MAP = {
 }
 
 
+def build_system_prompt(
+    project: dict,
+    user_profile: dict | None = None,
+    llm_config: dict | None = None,
+    extra_system_instruction: str | None = None,
+    client_system_prompt_prefix: str | None = None,
+) -> str:
+    """Build the system message without RAG user context."""
+    project_name = project.get("name") or project.get("project_id", "unknown")
+    profile_block = _format_user_profile(user_profile)
+    prompt_profile = get_prompt_profile(project)
+    no_answer_fallback = get_no_answer_fallback(project)
+
+    config = llm_config or {}
+    tone = config.get("tone_of_voice", "direct")
+    size = config.get("message_size", "medium")
+    tone_inst = TONE_MAP.get(tone, TONE_MAP["direct"])
+    size_inst = SIZE_MAP.get(size, SIZE_MAP["medium"])
+
+    opening = _PROFILE_OPENINGS.get(prompt_profile, _PROFILE_OPENINGS["factual"]).format(
+        project_name=project_name
+    )
+    calibration = _CALIBRATION_BLOCK.format(no_answer_fallback=no_answer_fallback)
+    sales_rule = _SALES_RULE if prompt_profile == "sales" else ""
+    rules = _RULES_BLOCK.format(
+        tone_instruction=tone_inst,
+        size_instruction=size_inst,
+        sales_rule=sales_rule,
+    )
+
+    system = f"{opening}\n\n{calibration}\n{rules}\n{profile_block}"
+    if extra_system_instruction and extra_system_instruction.strip():
+        system = system.rstrip() + "\n\n" + extra_system_instruction.strip() + "\n"
+    if client_system_prompt_prefix and client_system_prompt_prefix.strip():
+        system = client_system_prompt_prefix.strip() + "\n\n" + system
+    return system
+
+
 def build_messages(
     project: dict,
     question: str,
@@ -127,38 +221,25 @@ def build_messages(
     client_system_prompt_prefix: str | None = None,
     llm_config: dict | None = None,
 ) -> tuple[str, str]:
-    """Return (system_message, user_message).
-    extra_system_instruction: optional project-specific behavior (e.g. role/context like vendedor).
-    conversation_override: when set, use these {role, content} rows for the history block instead of conversation_history.
-    client_system_prompt_prefix: prepended before the default RAG system template (e.g. WhatsApp persona).
-    """
-    project_name = project.get("name") or project.get("project_id", "unknown")
-    profile_block = _format_user_profile(user_profile)
-
-    # Resolve tone and size instructions
-    config = llm_config or {}
-    tone = config.get("tone_of_voice", "direct")
-    size = config.get("message_size", "medium")
-    tone_inst = TONE_MAP.get(tone, TONE_MAP["direct"])
-    size_inst = SIZE_MAP.get(size, SIZE_MAP["medium"])
-
-    system = SYSTEM_TEMPLATE.format(
-        project_name=project_name,
-        user_profile_block=profile_block,
-        tone_instruction=tone_inst,
-        size_instruction=size_inst,
+    """Return (system_message, user_message)."""
+    prompt_profile = get_prompt_profile(project)
+    system = build_system_prompt(
+        project,
+        user_profile=user_profile,
+        llm_config=llm_config,
+        extra_system_instruction=extra_system_instruction,
+        client_system_prompt_prefix=client_system_prompt_prefix,
     )
-    if extra_system_instruction and extra_system_instruction.strip():
-        system = system.rstrip() + "\n\n" + extra_system_instruction.strip() + "\n"
-    if client_system_prompt_prefix and client_system_prompt_prefix.strip():
-        system = client_system_prompt_prefix.strip() + "\n\n" + system
 
     summaries_text = _format_conversation_summaries(conversation_summaries or [])
     conv_source = conversation_override if conversation_override is not None else (conversation_history or [])
     conv_text = _format_conversation_history(conv_source)
 
     if not chunks:
-        context = "(No relevant passages found in the knowledge base.)"
+        if prompt_profile == "creative":
+            context = "(No passages retrieved — respond in character.)"
+        else:
+            context = "(No relevant passages found in the knowledge base.)"
     else:
         context_blocks = []
         for c in chunks:
@@ -171,10 +252,14 @@ def build_messages(
             context_blocks.append(f"{header}\n{snippet}")
         context = "\n\n---\n\n".join(context_blocks)
 
-    user = USER_TEMPLATE.format(
+    answer_hint = "" if prompt_profile == "creative" else " (based only on the context above)"
+    user_template = USER_TEMPLATE_CREATIVE if prompt_profile == "creative" else USER_TEMPLATE
+
+    user = user_template.format(
         conversation_summaries=summaries_text,
         conversation_history=conv_text,
         context=context,
         question=question,
+        answer_hint=answer_hint,
     )
     return system, user

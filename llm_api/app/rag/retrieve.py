@@ -124,4 +124,14 @@ async def retrieve(
                 item["_hybrid_score"] = (item["distance"] if item["distance"] is not None else 2.0) - (0.02 * overlap)
             merged.sort(key=lambda x: x.get("_hybrid_score", x["distance"] if x["distance"] is not None else 2.0))
 
-    return merged[:top_k]
+    candidate_k = min(len(merged), max(top_k * 2, top_k))
+    merged = merged[:candidate_k]
+
+    if settings.rag_rerank_enabled and merged:
+        from app.rag.rerank import rerank_chunks
+
+        merged = rerank_chunks(query, merged, top_k=top_k)
+    else:
+        merged = merged[:top_k]
+
+    return merged

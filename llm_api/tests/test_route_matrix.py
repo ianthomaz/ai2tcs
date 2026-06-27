@@ -38,6 +38,7 @@ def clear_global_token():
         ("POST", "/extract", {"json": {"project_id": "p", "field": "name", "message": "x"}}),
         ("POST", "/extract-multi", {"json": {"project_id": "p", "message": "x", "fields": ["name"]}}),
         ("POST", "/nfExtract", {}),
+        ("POST", "/boletoExtract", {}),
         ("POST", "/nabilvideomap/qualify-caption", {"json": {"project_id": "p", "text": "caption"}}),
         ("POST", "/audio/transcribe", {"files": {"file": ("x.wav", b"RIFF", "audio/wav")}}),
         ("POST", "/audio/ask", {"files": {"file": ("x.wav", b"RIFF", "audio/wav")}}),

@@ -51,12 +51,18 @@ def get_rag_policies(project: dict) -> dict:
     cfg = project.get("config_json") or {}
     if isinstance(cfg, dict):
         p = cfg.get("policies") or {}
+        dedup_raw = p.get("dedup_ttl_seconds", 600)
+        try:
+            dedup_ttl = int(dedup_raw)
+        except (TypeError, ValueError):
+            dedup_ttl = 600
         return {
             "prefer_cite_sources": p.get("prefer_cite_sources", True),
             "when_no_answer": p.get("when_no_answer", "no_answer"),
             "max_chunks_to_retrieve": p.get("max_chunks_to_retrieve", 5),
             "max_chunk_distance": p.get("max_chunk_distance", 1.0),
             "search_depth": p.get("search_depth", "standard"),
+            "dedup_ttl_seconds": max(0, dedup_ttl),
         }
     return {
         "prefer_cite_sources": True,
@@ -64,6 +70,7 @@ def get_rag_policies(project: dict) -> dict:
         "max_chunks_to_retrieve": 5,
         "max_chunk_distance": 1.0,
         "search_depth": "standard",
+        "dedup_ttl_seconds": 600,
     }
 
 
@@ -99,6 +106,30 @@ def get_behavior_instruction_inline(project: dict) -> str | None:
         s = cfg.get("system_instruction")
         return s if isinstance(s, str) and s.strip() else None
     return None
+
+
+def get_router_config(project: dict) -> dict:
+    """Router-specific config from config_json.router."""
+    cfg = project.get("config_json") or {}
+    if isinstance(cfg, dict):
+        r = cfg.get("router") or {}
+        if isinstance(r, dict):
+            routes = r.get("routes")
+            return {
+                "routes": routes if isinstance(routes, list) else None,
+                "extra_system_block": r.get("extra_system_block") or "",
+                "default_escalate_model": r.get("default_escalate_model") or "smart",
+            }
+    return {"routes": None, "extra_system_block": "", "default_escalate_model": "smart"}
+
+
+def get_extract_steps_config(project: dict) -> dict:
+    """Optional per-project extract step overrides from config_json.extract_steps."""
+    cfg = project.get("config_json") or {}
+    if isinstance(cfg, dict):
+        steps = cfg.get("extract_steps")
+        return steps if isinstance(steps, dict) else {}
+    return {}
 
 
 def get_llm_config(project: dict) -> dict:

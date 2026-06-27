@@ -107,6 +107,18 @@ VALOR TOTAL DO SERVICO = R$ 10,00
     assert data.get("supplier_name") == "GBA SERVICOS ESPECIALIZADOS LTDA"
     assert data.get("supplier_code") is not None
     assert data.get("supplier_code") != "60746948000112"
+    assert data.get("service_recipient_code") == "60746948000112"
+
+
+def test_extract_from_text_tomador_block() -> None:
+    text = """
+TOMADOR DE SERVICOS
+CPF/CNPJ: 60.746.948/0001-12
+Nome/Razão Social: ASSOCIACAO BIKE ANJO
+Endereco: R Y
+"""
+    data = extract_from_text_heuristics(text)
+    assert data.get("service_recipient_code") == "60746948000112"
 
 
 def test_apply_nf_extract_postprocess_payment_type_boleto_from_text() -> None:

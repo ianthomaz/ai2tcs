@@ -66,8 +66,9 @@ class Settings(BaseSettings):
     # Runtime feature flags (safe defaults keep existing behavior)
     rag_rerank_enabled: bool = False
     rag_hybrid_enabled: bool = False
+    rag_reflection_enabled: bool = False
     ask_stream_enabled: bool = False
-    embedding_cache_enabled: bool = False
+    embedding_cache_enabled: bool = True
     # Request observability
     request_logging_enabled: bool = True
 

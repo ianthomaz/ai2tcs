@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.db import close_pool, get_pool
-from app.api import ask, audio, extract, edu, health, ingest, jobs, message_router, nabil_qualify, nf_extract, projects, users
+from app.api import ask, audio, boleto_extract, extract, edu, health, ingest, jobs, message_router, nabil_qualify, nf_extract, projects, users
 from app.dashboard.routes import router as dashboard_router, DashboardAuthMiddleware
 from app.jobs import worker as job_worker
 
@@ -113,6 +113,7 @@ app.include_router(health.router)
 app.include_router(projects.router)
 app.include_router(jobs.router)
 app.include_router(nf_extract.router)
+app.include_router(boleto_extract.router)
 app.include_router(edu.router)
 app.include_router(users.router)
 

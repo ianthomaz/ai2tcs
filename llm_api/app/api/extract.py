@@ -12,6 +12,7 @@ from app.auth import require_token
 from app.config import settings
 from app.job_audit import log_sync_llm_job
 from app.models import ExtractMultiRequest, ExtractMultiResponse, ExtractRequest, ExtractResponse
+from app.registry import get_extract_steps_config, get_project
 
 router = APIRouter(tags=["extract"])
 
@@ -45,6 +46,23 @@ PAYMENT_NF_ALLOWED_KEYS = frozenset(
         "bank_account",
         "internal_reference",
         "context_notes",
+        "notes",
+    }
+)
+
+PAYMENT_BOLETO_ALLOWED_KEYS = frozenset(
+    {
+        "beneficiary_name",
+        "beneficiary_document",
+        "payer_name",
+        "payer_document",
+        "digitable_line",
+        "barcode",
+        "due_date",
+        "amount",
+        "bank_code",
+        "document_number",
+        "payment_type",
         "notes",
     }
 )
@@ -150,6 +168,101 @@ def _sanitize_payment_nf_object(parsed: dict) -> str:
             continue
         clean[kid] = s
     return json.dumps(clean, ensure_ascii=False)
+
+
+    return json.dumps(clean, ensure_ascii=False)
+
+
+def _sanitize_payment_boleto_object(parsed: dict) -> str:
+    if not parsed or not isinstance(parsed, dict):
+        return "{}"
+    clean: dict[str, str] = {}
+    for k, v in parsed.items():
+        kid = str(k).strip().lower()
+        if kid not in PAYMENT_BOLETO_ALLOWED_KEYS:
+            continue
+        if v is None:
+            continue
+        s = str(v).strip()
+        if kid in ("beneficiary_document", "payer_document", "digitable_line", "barcode"):
+            s = re.sub(r"\D", "", s)
+        if not s or s.upper() == "NULL":
+            continue
+        clean[kid] = s
+    return json.dumps(clean, ensure_ascii=False)
+
+
+async def _project_extract_system(request: ExtractRequest, step: str, default: str) -> str:
+    if not request.project_id:
+        return default
+    project = await get_project(request.project_id)
+    if not project:
+        return default
+    steps_cfg = get_extract_steps_config(project)
+    step_cfg = steps_cfg.get(step) if isinstance(steps_cfg, dict) else None
+    if isinstance(step_cfg, dict):
+        custom = step_cfg.get("system_instruction")
+        if isinstance(custom, str) and custom.strip():
+            return custom.strip()
+    return default
+
+
+async def _extract_payment_boleto_confirmation(req: Request, request: ExtractRequest) -> ExtractResponse:
+    """Zapzap payment flow: free-text corrections after boleto read → JSON object string."""
+    system = await _project_extract_system(
+        request,
+        "payment_boleto_confirmation",
+        (
+            "You extract structured corrections for a Brazilian bank slip (boleto). "
+            "Reply with ONE JSON object only, no markdown. "
+            "beneficiary_document = CNPJ/CPF of cedente/beneficiário (who receives). "
+            "payer_document = CNPJ/CPF of sacado/pagador (who pays). Never swap them. "
+            "Allowed keys: beneficiary_name, beneficiary_document, payer_name, payer_document, "
+            "digitable_line, barcode, due_date, amount, bank_code, document_number, payment_type, notes. "
+            "payment_type must be boleto when applicable. "
+            "Omit keys you cannot infer. If nothing applies, return exactly {}."
+        ),
+    )
+    user_content = f"Server context:\n{request.question}\n\nUser message:\n{request.user_reply}\n"
+    model_alias = settings.get_model_name(request.model, default_alias="smart")
+    try:
+        response = await asyncio.to_thread(
+            ollama.chat,
+            model=model_alias,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user_content},
+            ],
+            options={"temperature": 0.1, "num_predict": 900},
+        )
+        content = (response.get("message") or {}).get("content") or ""
+        parsed = _parse_llm_json_object(content)
+        out = ExtractResponse(extracted=_sanitize_payment_boleto_object(parsed))
+        await log_sync_llm_job(
+            req,
+            project_id_explicit=request.project_id,
+            job_kind=EXTRACT_JOB_KIND,
+            question=f"extract:payment_boleto_confirmation\n{request.user_reply[:8000]}",
+            status="done",
+            model_alias=model_alias,
+            answer=out,
+            user_context={"endpoint": "/extract", "step": "payment_boleto_confirmation"},
+        )
+        return out
+    except Exception:
+        out = ExtractResponse(extracted=None)
+        await log_sync_llm_job(
+            req,
+            project_id_explicit=request.project_id,
+            job_kind=EXTRACT_JOB_KIND,
+            question=f"extract:payment_boleto_confirmation\n{request.user_reply[:8000]}",
+            status="failed",
+            model_alias=model_alias,
+            answer=out,
+            error_message="ollama_or_parse_failed",
+            user_context={"endpoint": "/extract", "step": "payment_boleto_confirmation"},
+        )
+        return out
 
 
 async def _extract_payment_nf_confirmation(req: Request, request: ExtractRequest) -> ExtractResponse:
@@ -318,6 +431,8 @@ async def extract(req: Request, request: ExtractRequest, _: None = Depends(requi
     step = (request.step or "").strip().lower()
     if step == "payment_nf_confirmation":
         return await _extract_payment_nf_confirmation(req, request)
+    if step == "payment_boleto_confirmation":
+        return await _extract_payment_boleto_confirmation(req, request)
 
     instruction = STEP_INSTRUCTIONS.get(step)
     model_alias = settings.get_model_name(request.model, default_alias="fast")

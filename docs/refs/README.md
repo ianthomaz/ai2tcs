@@ -6,7 +6,7 @@ Contrato HTTP: [../02-api-integration.md](../02-api-integration.md).
 |----------|----------|
 | Tailscale, túnel, proxy | [operacao-tailscale.md](./operacao-tailscale.md) |
 | Cloudflare (`llm.webplace.cc`): TLS, OAuth, WAF | [cloudflare-edge.md](./cloudflare-edge.md) |
-| Exemplo nginx (tailnet) | [nginx/bikeanjovm.conf](./nginx/bikeanjovm.conf) |
+| Exemplo nginx (tailnet) | [nginx/itcsVM2.conf](./nginx/itcsVM2.conf) |
 | NF Extract (`POST /nfExtract`) | [ManualNF_Extract](./ManualNF_Extract) |
 
 Índice: [../01-overview.md](../01-overview.md).

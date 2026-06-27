@@ -123,6 +123,7 @@ Boas práticas: guarde o token em **variável de ambiente** no cliente — nunca
 | **POST** | **`/extract`** | **Extração síncrona (zapzap onboarding)** — um campo por chamada; ver § 3.1 |
 | **POST** | **`/extract-multi`** | **Extração multi-campo (zapzap)** — vários campos numa mensagem; ver § 3.1 |
 | **POST** | **`/nfExtract`** | **Extração de nota fiscal (itcsNFextract)** — corpo **somente** `multipart/form-data`; exatamente **um** campo: `file` (upload) **ou** `server_file_path` **ou** `document_url` (nomes fixos). Manual: [ManualNF_Extract](./refs/ManualNF_Extract) §3.1. |
+| **POST** | **`/boletoExtract`** | **Extração de boleto bancário** — mesmo contrato de fonte que `/nfExtract` (PDF/imagem). Campos: `beneficiary_document`, `payer_document`, `digitable_line`, `barcode`, `due_date`, `amount`, etc. |
 | **POST** | **`/nabilvideomap/qualify-caption`** | **Qualificação síncrona de legenda** (ex.: catálogo de conteúdo / nabilVideoMap) — JSON; auth § 2. Corpo e chaves de resposta: **§ 1.2**. Detalhe de prompts/RAG por ambiente: acordar com manutenção ou notas no clone privado. |
 | **POST** | **`/router`** | **Roteador de mensagem** — ver § 3.2 (orienta: biblioteca vs fluxo; decisão é do orquestrador) |
 | POST | `/ingest` | Indexar/reindexar biblioteca; cria projeto se não existir (com sources no body ou env) |
@@ -237,7 +238,7 @@ Contrato alinhado ao zapzap (`LLM_API_CONTRACT.md` no repo bikeanjo/zapzap). O c
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
 | `action` | string | `answer_now` — a resposta curta vai em `answer`; `escalate` — seguir com especialista. |
-| `suggested_route` | string | Intenção canónica zapzap: `ask`, `cadastro`, `saudacao`, `escalar_humano`, `documento`, `status`, `agradecimento`. |
+| `suggested_route` | string | Intenção canónica zapzap: `ask`, `cadastro`, `saudacao`, `escalar_humano`, `documento`, `status`, `agradecimento`, **`cursor`** (owner → bridge Cursor `:28472`, ver [14-ian-zap-personal.md](./14-ian-zap-personal.md)). |
 | `answer` | string \| null | Texto em português se `action` = `answer_now`. |
 | `escalate_to` | string \| null | `compact`, `smart`, `reasoner`, ou `auto` (o servidor pode resolver para um alias). |
 | `obs` | string \| null | Nota curta para o especialista ou para log. |
@@ -505,6 +506,7 @@ Detalhes de campos e normalização: [06-edu-contract.md](./06-edu-contract.md).
 - `user_context` (opcional): nome, `birth_date` (DD/MM/AAAA ou ISO), CEP, cidade, estado, saúde, `interesse`, `registered` (zapzap). Personaliza a resposta; `interesse` e `registered` entram no bloco de perfil do prompt.
 - `history` (opcional): lista de `{ "role": "user"|"assistant", "text": "..." }` (também aceita chave `content` em vez de `text`).
 - `system_prompt` (opcional): texto enviado pelo cliente (persona WhatsApp); é **prefixado** ao system prompt interno de RAG/calibração.
+- `callback_url` (opcional): URL **HTTPS**; a API faz POST com `{ job_id, status, answer, sources }` quando o job termina (alternativa ao polling).
 - `hint` (opcional): dica para auto-router quando `project_id` é ambíguo.
 
 ### 4.2 Response — 202 Accepted

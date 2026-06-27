@@ -1,0 +1,17 @@
+[
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "O que é o Bike Anjo?",
+    "expected_keywords": ["voluntário", "ciclismo", "bike"]
+  },
+  {
+    "project_id": "aiclaudia",
+    "question": "Onde foi parar minha chave?",
+    "expected_keywords": []
+  },
+  {
+    "project_id": "estudosmobi",
+    "question": "Como abrir uma empresa MEI?",
+    "expected_keywords": ["mei", "empresa"]
+  }
+]

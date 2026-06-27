@@ -37,7 +37,9 @@ Ação:
 - Guardar flags em `.env` para habilitar/desabilitar recursos sem deploy destrutivo:
   - `RAG_RERANK_ENABLED=false`
   - `RAG_HYBRID_ENABLED=false`
+  - `RAG_REFLECTION_ENABLED=false`
   - `ASK_STREAM_ENABLED=false`
+  - `EMBEDDING_CACHE_ENABLED=true`
 
 Critério de pronto:
 - Sistema atual continua igual com todas as flags em `false`.

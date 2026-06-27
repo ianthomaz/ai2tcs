@@ -74,7 +74,7 @@ O comportamento desejado quando a base não tem o detalhe:
 ### 3.1 Prompt base (`app/rag/prompt.py`)
 
 - **Calibração obrigatória** no system prompt: responder de forma direta; não usar "Com base no contexto fornecido", "Segundo o conteúdo", "não encontrei informação específica", "A pergunta é sobre" ou similares.
-- Quando não houver nada útil no contexto: responder em uma ou duas frases e indicar que podem falar com a equipe ou acessar o site; **não** usar a frase longa "Não encontrei informação suficiente na base de conhecimento para responder essa pergunta."
+- Quando não houver nada útil no contexto: usar `no_answer_fallback` do `config_json` do projeto (default genérico na API). Projetos de vendas (ex.: estudosMobi) definem fallback com marca própria em `behavior_instruction_path` ou `no_answer_fallback`.
 - Assim, **todos os projetos** recebem essa regra; projetos com instruções próprias (ex.: estudiosmobi) somam as deles em cima.
 
 ### 3.2 Instruções por projeto (fluxosLLM / behavior_instruction_path)
@@ -240,6 +240,31 @@ Informação prática: telefone, WhatsApp, link, passo a passo.
 5. **Palavras-chave naturais:** incluir no texto, não como tags artificiais. "A Mobi faz abertura de empresa, alteração contratual e encerramento" é melhor que "tags: abertura, alteração, encerramento".
 6. **Um tema por arquivo:** evitar arquivos "guarda-chuva" com 10 temas misturados. Melhor 5 arquivos curtos que 1 arquivo longo.
 7. **Links externos:** incluir quando relevante (site, WhatsApp). A LLM pode citar links externos mas não cita caminhos internos.
+
+---
+
+## 9. Eval baseline (jun 2026)
+
+Flags enabled on mini62 after sprint:
+
+| Flag | Value |
+|------|-------|
+| `EMBEDDING_CACHE_ENABLED` | true |
+| `RAG_HYBRID_ENABLED` | true |
+| `RAG_RERANK_ENABLED` | false (enable after latency check) |
+| `RAG_REFLECTION_ENABLED` | false |
+
+Run after `docker compose up -d api`:
+
+```bash
+cd llm_api
+export LLM_API_URL=http://127.0.0.1:28471
+export LLM_API_TOKEN=<token>
+python3 scripts/eval_rag.py --project aiclaudia
+python3 scripts/eval_rag.py --project estudosmobi
+```
+
+Record hit-rate / latency here after each flag change.
 
 ---
 

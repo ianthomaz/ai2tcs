@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app import db as db_module
 from app.auth import require_token
 from app.models import AskRequest, AskResponse, ResultResponse, StatusResponse, UserSourceRef
-from app.registry import get_project
+from app.registry import get_project, get_rag_policies
 
 router = APIRouter(tags=["ask"])
 
@@ -29,7 +29,13 @@ async def ask(request: AskRequest, _: None = Depends(require_token)):
     if not project:
         raise HTTPException(status_code=404, detail="project not found")
     qhash = _question_hash(request.project_id, request.question)
-    existing = await db_module.job_find_recent_duplicate(request.project_id, qhash, within_seconds=600)
+    policies = get_rag_policies(project)
+    dedup_ttl = policies.get("dedup_ttl_seconds", 600)
+    existing = None
+    if dedup_ttl > 0:
+        existing = await db_module.job_find_recent_duplicate(
+            request.project_id, qhash, within_seconds=dedup_ttl
+        )
     if existing:
         return AskResponse(
             job_id=existing,
@@ -48,6 +54,8 @@ async def ask(request: AskRequest, _: None = Depends(require_token)):
         user_context_dict["__llm_system_prompt"] = request.system_prompt
     if request.model:
         user_context_dict["__llm_model"] = request.model
+    if request.callback_url:
+        user_context_dict["__llm_callback_url"] = request.callback_url
     job_ctx = user_context_dict if user_context_dict else None
     job_id = await db_module.job_create(
         request.project_id,

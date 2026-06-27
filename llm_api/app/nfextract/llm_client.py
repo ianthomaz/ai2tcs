@@ -51,6 +51,8 @@ async def enrich_with_local_llm(
         "\"desconhecido\", \"N/A\", or \"sem informação\".\n"
         "Never use 0 for unknown monetary amounts; use JSON null.\n"
         "Input data and OCR text may be noisy. Prioritize reliable values.\n"
+        "For payment_receiver_document: CNPJ or CPF of whoever RECEIVES the payment (beneficiary), "
+        "NOT the NFS-e tomador unless they are the same party paying the invoice. "
         "For supplier_code: only the 14-digit CNPJ of the service provider (prestador/emitente), "
         "or 11-digit CPF when the issuer is an individual. "
         "Never use the NFS-e access key (44 digits) or any substring of it.\n"
