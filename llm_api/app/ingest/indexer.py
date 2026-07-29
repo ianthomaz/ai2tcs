@@ -1,6 +1,7 @@
 """Build/update vector index per project (Chroma on disk)."""
 import hashlib
 import json
+import logging
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,6 +13,8 @@ from app.config import settings
 from app.ingest.chunking import iter_files, split_text
 from app.ingest.embeddings import get_embeddings_batch
 from app.registry import get_chunking_config, get_project
+
+logger = logging.getLogger(__name__)
 
 # Regex to extract heading from chunk text (março 2026 — enriched metadata for retrieval)
 _HEADING_RE = re.compile(r"^#{1,4}\s+(.+)", re.MULTILINE)
@@ -100,10 +103,25 @@ async def run_ingest(project_id: str, incremental: bool = True) -> dict:
     # title/section = extracted from chunk content for richer retrieval metadata (março 2026).
     metadatas = [_extract_chunk_metadata(c[1], c[2]) for c in all_chunks]
 
-    embeddings = await get_embeddings_batch(texts, model=embed_model)
+    embeddings, skipped = await get_embeddings_batch(texts, model=embed_model)
     collection.add(ids=ids, embeddings=embeddings, documents=texts, metadatas=metadatas)
 
-    result = {"documents": document_count, "chunks": len(all_chunks)}
+    indexed = len(all_chunks) - skipped
+    result = {
+        "project_id": project_id,
+        "documents": document_count,
+        "chunks": len(all_chunks),
+        "indexed": indexed,
+        "skipped": skipped,
+    }
+    logger.info(
+        "Ingest complete project_id=%s indexed=%s skipped=%s documents=%s chunks=%s",
+        project_id,
+        indexed,
+        skipped,
+        document_count,
+        len(all_chunks),
+    )
     # Persist last ingest result for dashboard (indexation status)
     last_ingest_path = path / "last_ingest.json"
     try:
@@ -112,6 +130,8 @@ async def run_ingest(project_id: str, incremental: bool = True) -> dict:
                 {
                     "documents": result["documents"],
                     "chunks": result["chunks"],
+                    "indexed": result["indexed"],
+                    "skipped": result["skipped"],
                     "at": datetime.now(timezone.utc).isoformat(),
                 },
                 indent=2,

@@ -7,7 +7,42 @@
   {
     "project_id": "aiclaudia",
     "question": "Onde foi parar minha chave?",
-    "expected_keywords": []
+    "system_prompt": "Responda DIRECTO em 2 frases curtas. Modo nuvem preguiçosa: sarcasmo poético, sem pressa.",
+    "expected_keywords": [],
+    "max_chars": 420,
+    "forbidden_keywords": [
+      "voz aiclaudia",
+      "com base no contexto",
+      "segundo o conteúdo",
+      "esquerda, humanitarismo",
+      "léxico",
+      "documentação"
+    ]
+  },
+  {
+    "project_id": "aiclaudia",
+    "question": "Qual é a capital da França?",
+    "system_prompt": "Responda DIRECTO em 2 frases curtas. Modo horóscopo surreal.",
+    "expected_keywords": [],
+    "max_chars": 420,
+    "forbidden_keywords": ["mobi", "mobicontabil", "voz aiclaudia", "com base no contexto", "personas criativas"]
+  },
+  {
+    "project_id": "aiclaudia",
+    "question": "oi",
+    "system_prompt": "Responda DIRECTO em 1–2 frases curtas. Modo gata rainha: deboque real.",
+    "model": "fast",
+    "expected_keywords": [],
+    "max_chars": 250,
+    "forbidden_keywords": ["voz aiclaudia", "com base no contexto", "personas criativas", "documentação", "session_id"]
+  },
+  {
+    "project_id": "aiclaudia",
+    "question": "Me dá um conselho de vida",
+    "system_prompt": "Responda DIRECTO em 2 frases curtas. Modo motivacional absurdo: coach de nuvens.",
+    "expected_keywords": [],
+    "max_chars": 420,
+    "forbidden_keywords": ["voz aiclaudia", "segundo o conteúdo", "esquerda, humanitarismo", "brincadeira literária"]
   },
   {
     "project_id": "estudosmobi",

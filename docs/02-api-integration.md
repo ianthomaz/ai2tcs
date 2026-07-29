@@ -506,8 +506,19 @@ Detalhes de campos e normalização: [06-edu-contract.md](./06-edu-contract.md).
 - `user_context` (opcional): nome, `birth_date` (DD/MM/AAAA ou ISO), CEP, cidade, estado, saúde, `interesse`, `registered` (zapzap). Personaliza a resposta; `interesse` e `registered` entram no bloco de perfil do prompt.
 - `history` (opcional): lista de `{ "role": "user"|"assistant", "text": "..." }` (também aceita chave `content` em vez de `text`).
 - `system_prompt` (opcional): texto enviado pelo cliente (persona WhatsApp); é **prefixado** ao system prompt interno de RAG/calibração.
+- `model` (opcional): alias (`fast`, `compact`, `smart`, `reasoner`) ou nome Ollama **para esta pergunta**; default vem do projecto / alias global.
 - `callback_url` (opcional): URL **HTTPS**; a API faz POST com `{ job_id, status, answer, sources }` quando o job termina (alternativa ao polling).
 - `hint` (opcional): dica para auto-router quando `project_id` é ambíguo.
+
+**O que fica no cliente vs no seed (DB):**
+
+| No cliente (`POST /ask` body) | No seed / `config_json` (ai2tcs) |
+|-------------------------------|----------------------------------|
+| `system_prompt` — persona, tom, regras de UI | `prompt_profile`, `no_answer_fallback`, `behavior_instruction_path` |
+| `history` — fio recente WhatsApp | `policies.rag_mode`, `rag_hybrid_enabled`, `rag_rerank_enabled`, `dedup_ttl_seconds` |
+| `model` — alias por mensagem (latência vs qualidade) | `llm_options` (temperature, num_predict, tone), `embedding_model`, `sources` |
+
+Calibração de RAG e anti-bleed entre projectos vivem no **seed**; o cliente só envia persona + histórico + alias de modelo quando precisa de override por mensagem. Ver matriz em [08-project-config.md § Matriz por tipo](./08-project-config.md#matriz-por-tipo).
 
 ### 4.2 Response — 202 Accepted
 

@@ -86,7 +86,7 @@ async def retrieve(
     Return list of { "id", "path", "snippet", "distance", "origin" } for top_k chunks.
     Retrieves from project index AND shared libraries if configured.
     """
-    from app.registry import get_project
+    from app.registry import get_project, get_rag_feature_flags
     project = await get_project(project_id)
     cfg = _config_json_as_dict(project.get("config_json")) if project else {}
     shared_libraries = cfg.get("shared_libraries") or []
@@ -94,6 +94,7 @@ async def retrieve(
         shared_libraries = [shared_libraries]
 
     query_embedding = await get_embedding_async(query, model=embedding_model)
+    flags = get_rag_feature_flags(project or {})
 
     # 1. Retrieve from project
     tasks = [
@@ -114,7 +115,7 @@ async def retrieve(
 
     # Optional lightweight hybrid ranking:
     # keep vector ranking as base, then apply a small keyword-overlap boost.
-    if settings.rag_hybrid_enabled and merged:
+    if flags["rag_hybrid_enabled"] and merged:
         q_tokens = {t for t in query.lower().split() if len(t) > 2}
         if q_tokens:
             for item in merged:
@@ -127,7 +128,7 @@ async def retrieve(
     candidate_k = min(len(merged), max(top_k * 2, top_k))
     merged = merged[:candidate_k]
 
-    if settings.rag_rerank_enabled and merged:
+    if flags["rag_rerank_enabled"] and merged:
         from app.rag.rerank import rerank_chunks
 
         merged = rerank_chunks(query, merged, top_k=top_k)

@@ -33,6 +33,14 @@ Calibration (obrigatório):
 - Use linguagem natural e fluente em português. Nunca gere construções gramaticalmente incorretas como "Você pode abertura", "você pode fale", "para falecimento ou envio". Revise mentalmente a frase antes de responder.
 """
 
+_CALIBRATION_CREATIVE = """\
+Calibration (obrigatório):
+- Responda sempre de forma direta, na persona do projeto. NUNCA use meta-frases ("Com base no contexto", "Segundo o conteúdo", "não encontrei informação", etc.).
+- Quando não houver trechos úteis na base: {no_answer_fallback} Improvise curto, em personagem — sem explicar que faltou contexto.
+- NUNCA mencione Mobi, mobicontabil, contabilidade, MEI ou convites comerciais de WhatsApp, salvo se esses termos aparecerem literalmente nos trechos da base acima.
+- Use linguagem natural em português (pt-BR). Respostas curtas quando possível.
+"""
+
 _RULES_BLOCK = """\
 Rules:
 - Answer in Portuguese (pt-BR) by default. Only use another language if the user clearly writes in that language.
@@ -193,7 +201,10 @@ def build_system_prompt(
     opening = _PROFILE_OPENINGS.get(prompt_profile, _PROFILE_OPENINGS["factual"]).format(
         project_name=project_name
     )
-    calibration = _CALIBRATION_BLOCK.format(no_answer_fallback=no_answer_fallback)
+    if prompt_profile == "creative":
+        calibration = _CALIBRATION_CREATIVE.format(no_answer_fallback=no_answer_fallback)
+    else:
+        calibration = _CALIBRATION_BLOCK.format(no_answer_fallback=no_answer_fallback)
     sales_rule = _SALES_RULE if prompt_profile == "sales" else ""
     rules = _RULES_BLOCK.format(
         tone_instruction=tone_inst,

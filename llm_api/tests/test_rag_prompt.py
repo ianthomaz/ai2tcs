@@ -31,6 +31,7 @@ def test_system_prompt_creative_allows_improv() -> None:
     system = build_system_prompt(proj)
     assert "improvise" in system.lower() or "improv" in system.lower()
     assert "ONLY on the provided context" not in system
+    assert "NUNCA mencione Mobi" in system
 
 
 def test_no_answer_fallback_custom() -> None:

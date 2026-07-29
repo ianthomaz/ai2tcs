@@ -64,6 +64,8 @@ async def main() -> None:
                         "prefer_cite_sources": True,
                         "when_no_answer": "no_answer",
                         "rag_mode": "required",
+                        "rag_hybrid_enabled": True,
+                        "rag_rerank_enabled": True,
                         "max_chunks_to_retrieve": 5,
                         "max_chunk_distance": 0.9,
                         "search_depth": "standard",

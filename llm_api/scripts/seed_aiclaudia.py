@@ -51,6 +51,7 @@ async def main() -> None:
             json.dumps(
                 {
                     "prompt_profile": "creative",
+                    "behavior_instruction_path": "instrucoes-llm.md",
                     "no_answer_fallback": (
                         "Responda com humor surreal em uma frase curta, mantendo a persona da sessão."
                     ),
@@ -59,15 +60,17 @@ async def main() -> None:
                     "policies": {
                         "prefer_cite_sources": False,
                         "when_no_answer": "allow_model",
-                        "rag_mode": "optional",
-                        "max_chunks_to_retrieve": 4,
+                        "rag_mode": "disabled",
+                        "rag_hybrid_enabled": False,
+                        "rag_rerank_enabled": False,
+                        "max_chunks_to_retrieve": 1,
                         "max_chunk_distance": 1.1,
                         "search_depth": "standard",
                         "dedup_ttl_seconds": 0,
                     },
                     "llm_options": {
                         "temperature": 0.85,
-                        "num_predict": 400,
+                        "num_predict": 180,
                         "top_k": 40,
                         "top_p": 0.92,
                         "repeat_penalty": 1.15,

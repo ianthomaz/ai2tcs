@@ -11,7 +11,7 @@ DEFAULT_MODEL = "mxbai-embed-large"
 # Ollama embedding models have context limits; truncate to avoid 500
 MAX_PROMPT_CHARS = 4000
 RETRY_ATTEMPTS = 3
-RETRY_DELAY_SEC = 2
+RETRY_BASE_DELAY_SEC = 2
 # Pause every N requests to avoid overheating/OOM on Ollama
 PAUSE_EVERY_N = 100
 PAUSE_SEC = 1.0
@@ -64,11 +64,15 @@ def _truncate_prompt(text: str) -> str:
     return text[: MAX_PROMPT_CHARS - 3] + "..."
 
 
-async def get_embeddings_batch(texts: list[str], model: str = DEFAULT_MODEL) -> list[list[float]]:
-    """Embed a list of texts (sequential, with truncation, retries, and skip on persistent failure)."""
+async def get_embeddings_batch(texts: list[str], model: str = DEFAULT_MODEL) -> tuple[list[list[float]], int]:
+    """Embed a list of texts (sequential, with truncation, retries, and skip on persistent failure).
+
+    Returns (embeddings, skipped_count).
+    """
     url = _ollama_embed_url()
     # Get embedding dimension once (from first successful request or fallback)
     dim: int | None = None
+    skipped = 0
 
     async with httpx.AsyncClient(timeout=120.0) as client:
         out: list[list[float]] = []
@@ -89,9 +93,11 @@ async def get_embeddings_batch(texts: list[str], model: str = DEFAULT_MODEL) -> 
                 except (httpx.HTTPStatusError, httpx.RequestError) as e:
                     last_error = e
                     if attempt < RETRY_ATTEMPTS - 1:
-                        await asyncio.sleep(RETRY_DELAY_SEC)
+                        delay = RETRY_BASE_DELAY_SEC * (2**attempt)
+                        await asyncio.sleep(delay)
             else:
                 # Skip this chunk: use zero vector so index size stays aligned with ids/documents
+                skipped += 1
                 if dim is None:
                     try:
                         small = await client.post(url, json={"model": model, "prompt": "x"})
@@ -101,4 +107,11 @@ async def get_embeddings_batch(texts: list[str], model: str = DEFAULT_MODEL) -> 
                         dim = 768
                 logger.warning("Skipping chunk %s after %s attempts: %s", i + 1, RETRY_ATTEMPTS, last_error)
                 out.append([0.0] * dim)
-        return out
+        if skipped:
+            logger.warning(
+                "Embedding batch finished with %s skipped of %s chunks (model=%s)",
+                skipped,
+                len(texts),
+                model,
+            )
+        return out, skipped

@@ -89,6 +89,23 @@ def get_rag_mode(project: dict) -> str:
     return "required"
 
 
+def get_rag_feature_flags(project: dict) -> dict:
+    """Per-project RAG feature toggles; null in config falls back to global settings."""
+    cfg = project.get("config_json") or {}
+    policies = (cfg.get("policies") or {}) if isinstance(cfg, dict) else {}
+
+    def _resolve(key: str, global_default: bool) -> bool:
+        val = policies.get(key)
+        if val is None:
+            return global_default
+        return bool(val)
+
+    return {
+        "rag_hybrid_enabled": _resolve("rag_hybrid_enabled", settings.rag_hybrid_enabled),
+        "rag_rerank_enabled": _resolve("rag_rerank_enabled", settings.rag_rerank_enabled),
+    }
+
+
 def get_behavior_instruction_path(project: dict) -> str | None:
     """Relative path to behavior instruction file (e.g. instrucoes-llm.md) under first source dir.
     Resolved at runtime by the worker from project sources.

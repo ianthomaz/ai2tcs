@@ -11,6 +11,7 @@ Exemplos de `config_json` por tipo de uso.
 3. [Projeto de Suporte/FAQ](#faq)
 4. [Projeto Criativo/Marketing](#criativo)
 5. [Template Customizado](#customizado)
+6. [Matriz por tipo](#matriz-por-tipo)
 
 ---
 
@@ -441,6 +442,38 @@ O usuário pode ser um vendedor ou parceiro. Adapte a resposta para quem vai ind
 O caminho é relativo à **primeira pasta** em `sources`. Alternativa: use `"system_instruction": "texto aqui"` no `config_json` para definir a instrução direto no banco (sem arquivo).
 
 Para desvios comuns da LLM (frases meta, autodesvalorização, tom) e o que já está calibrado no prompt base, ver [07-llm-calibration.md](./07-llm-calibration.md).
+
+---
+
+## Matriz por tipo
+
+Referência rápida para integradores: combinação recomendada de perfil, RAG e flags.
+
+| Tipo | Exemplo | `prompt_profile` | `rag_mode` | `rag_hybrid` / `rag_rerank` | `model` (cliente) | Notas |
+|------|---------|------------------|------------|-----------------------------|-------------------|-------|
+| Chat creative | `aiclaudia` | `creative` | `disabled` | `false` / `false` | `fast` ou `smart` | Persona via `system_prompt` do cliente; RAG off reduz latência; `dedup_ttl_seconds: 0` |
+| Sales FAQ | `estudosmobi` | `sales` | `required` | `true` / `true` (ou global) | `smart` | Corpus + `instrucoes-llm.md`; fallback Mobi no seed |
+| Factual / comunidade | `bikeanjoall_2026` | `factual` (default) | `optional` ou omitido | global `.env` | `smart` | RAG quando há chunk relevante |
+
+Template **chat creative** (seed mínimo):
+
+```json
+{
+  "prompt_profile": "creative",
+  "policies": {
+    "rag_mode": "disabled",
+    "rag_hybrid_enabled": false,
+    "rag_rerank_enabled": false,
+    "dedup_ttl_seconds": 0
+  },
+  "llm_options": {
+    "message_size": "short",
+    "tone_of_voice": "informal"
+  }
+}
+```
+
+Eval de regressão (incl. anti-bleed off-topic): `python3 scripts/eval_rag.py --project aiclaudia` — ver `forbidden_keywords` em `tests/eval/eval_questions.json`.
 
 ---
 

@@ -19,6 +19,7 @@ from app.registry import (
     get_behavior_instruction_path,
 )
 from app.rag.prompt import build_messages
+from app.rag.answer_guard import guard_answer_for_profile
 from app.rag.retrieve import retrieve
 
 logger = logging.getLogger(__name__)
@@ -363,6 +364,7 @@ async def run_rag_job(
 
         # Post-processing: fix known LLM generation errors (meta-phrases, typos, filler)
         answer = _sanitize_answer(answer)
+        answer = guard_answer_for_profile(answer, project)
 
         if settings.rag_reflection_enabled and chunks and answer:
             answer = await _reflect_on_answer(

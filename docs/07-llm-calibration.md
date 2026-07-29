@@ -251,18 +251,30 @@ Flags enabled on mini62 after sprint:
 |------|-------|
 | `EMBEDDING_CACHE_ENABLED` | true |
 | `RAG_HYBRID_ENABLED` | true |
-| `RAG_RERANK_ENABLED` | false (enable after latency check) |
+| `RAG_RERANK_ENABLED` | true (enabled 2026-06-27; re-eval hit dedup — see below) |
 | `RAG_REFLECTION_ENABLED` | false |
 
-Run after `docker compose up -d api`:
+### Baseline recorded (2026-06-27, mini62)
 
-```bash
-cd llm_api
-export LLM_API_URL=http://127.0.0.1:28471
-export LLM_API_TOKEN=<token>
-python3 scripts/eval_rag.py --project aiclaudia
-python3 scripts/eval_rag.py --project estudosmobi
-```
+| Project | Question | Result | Latency (hybrid only) | Latency (hybrid+rerank) |
+|---------|----------|--------|----------------------|-------------------------|
+| aiclaudia | Onde foi parar minha chave? | PASS | 27.9s | dedup (0.0s) |
+| estudosmobi | Como abrir uma empresa MEI? | PASS | 17.7s | dedup (0.0s) |
+
+### Eval pós-melhorias (2026-06-27)
+
+Suite: `python3 scripts/eval_rag.py` com `tests/eval/eval_questions.json`.
+
+| Project | Question | Critério |
+|---------|----------|----------|
+| aiclaudia | Qual é a capital da França? | PASS + `forbidden_keywords`: mobi, mobicontabil |
+| aiclaudia | Onde foi parar minha chave? | PASS (creative, sem keywords) |
+| estudosmobi | Como abrir uma empresa MEI? | PASS + keywords mei, empresa |
+| bikeanjoall_2026 | O que é o Bike Anjo? | PASS + keywords voluntário/ciclismo |
+
+Registar aqui hit-rate e latência após cada mudança de flags ou seed.
+
+Flags active after sprint: hybrid + rerank + embedding cache. Re-ingest ran before first eval; a few estudosmobi chunks skipped on Ollama 500 during ingest. Second eval row reflects ask dedup, not rerank overhead — re-run with fresh questions to measure rerank latency.
 
 Record hit-rate / latency here after each flag change.
 

@@ -11,16 +11,16 @@ Ações **fora do repo ai2tcs** que completam o plano de melhorias. Implementaç
 | Item | Ação | Onde |
 |------|------|------|
 | Seed API | Rodar `python3 llm_api/scripts/seed_aiclaudia.py` e `POST /ingest` com `project_id=aiclaudia` | ai2tcs |
-| Personas DB | Chamar `load_rndbase.py` no startup (hoje não roda automaticamente) | `033_aiClaudia/deploy/` |
+| Personas DB | Chamar `load_rndbase.py` no startup | `033_aiClaudia/deploy/` — wired in `start_aiclaudia.sh` |
 | API key | Usar `itcs_aiclaudia_*` em vez de token global | env do deploy |
-| Histórico | Enviar **só** `history` **ou** contexto no `system_prompt`, não os dois | `simple_prompt_selector.py` |
+| Histórico | Enviar **só** `history` **ou** contexto no `system_prompt`, não os dois | `simple_prompt_selector.py` — fixed |
 | Dedup | Já desligado via seed (`dedup_ttl_seconds: 0`) | ai2tcs DB |
 
 Checklist pós-deploy:
 
-1. Confirmar `prompt_profile: creative` e `rag_mode: optional` no dashboard.
-2. Pergunta off-topic não deve mencionar Mobi (prompt global neutralizado na API).
-3. `SELECT COUNT(*) FROM rndbase` = 25 no Postgres do aiClaudia.
+1. [ x ] Confirmar `prompt_profile: creative` e `rag_mode: disabled` no dashboard (seed ai2tcs).
+2. [ x ] Pergunta off-topic não deve mencionar Mobi — guard + prompt creative na API (`answer_guard.py`, eval `forbidden_keywords`).
+3. [ x ] `SELECT COUNT(*) FROM rndbase` = 25 no Postgres do aiClaudia (validado 2026-06-27 via `load_rndbase` no startup).
 
 ---
 
@@ -71,9 +71,9 @@ Ver também [02-api-integration.md](./02-api-integration.md) e template em `llm_
 
 | Variável | Default | Efeito |
 |----------|---------|--------|
-| `RAG_RERANK_ENABLED` | false | Cross-encoder após Chroma |
-| `RAG_HYBRID_ENABLED` | false | Boost por keyword overlap |
+| `RAG_RERANK_ENABLED` | false | Cross-encoder após Chroma (override por projecto em `policies.rag_rerank_enabled`) |
+| `RAG_HYBRID_ENABLED` | false | Boost por keyword overlap (override por projecto) |
 | `RAG_REFLECTION_ENABLED` | false | Self-check pós-resposta |
 | `EMBEDDING_CACHE_ENABLED` | true | LRU de embeddings de pergunta |
 
-Eval manual: `python3 scripts/eval_rag.py --project aiclaudia`
+Eval manual: `python3 scripts/eval_rag.py --project aiclaudia` (inclui off-topic + `forbidden_keywords: mobi, mobicontabil`).

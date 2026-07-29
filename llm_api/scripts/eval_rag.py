@@ -16,6 +16,7 @@ import json
 import os
 import sys
 import time
+import uuid
 from pathlib import Path
 
 import httpx
@@ -30,10 +31,15 @@ async def ask_and_wait(
     *,
     project_id: str,
     question: str,
+    system_prompt: str | None = None,
+    model: str = "smart",
     timeout_s: float = 120.0,
 ) -> tuple[str | None, float]:
     t0 = time.perf_counter()
-    r = await client.post("/ask", json={"project_id": project_id, "question": question, "model": "smart"})
+    payload: dict = {"project_id": project_id, "question": question, "model": model}
+    if system_prompt:
+        payload["system_prompt"] = system_prompt
+    r = await client.post("/ask", json=payload)
     r.raise_for_status()
     job_id = r.json()["job_id"]
     deadline = time.perf_counter() + timeout_s
@@ -51,12 +57,23 @@ async def ask_and_wait(
     return data.get("answer"), elapsed
 
 
-def score_answer(answer: str | None, expected_keywords: list[str]) -> tuple[bool, str]:
+def score_answer(
+    answer: str | None,
+    expected_keywords: list[str],
+    forbidden_keywords: list[str] | None = None,
+    max_chars: int | None = None,
+) -> tuple[bool, str]:
     if not answer:
         return False, "empty answer"
+    if max_chars is not None and len(answer) > max_chars:
+        return False, f"too long ({len(answer)} > {max_chars} chars)"
+    low = answer.lower()
+    forbidden = forbidden_keywords or []
+    found_forbidden = [k for k in forbidden if k.lower() in low]
+    if found_forbidden:
+        return False, f"forbidden keywords: {', '.join(found_forbidden)}"
     if not expected_keywords:
         return True, "no keywords required"
-    low = answer.lower()
     missing = [k for k in expected_keywords if k.lower() not in low]
     if missing:
         return False, f"missing keywords: {', '.join(missing)}"
@@ -69,6 +86,7 @@ async def main() -> int:
     parser.add_argument("--token", default=os.environ.get("LLM_API_TOKEN", ""))
     parser.add_argument("--project", help="Filter dataset to one project_id")
     parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
+    parser.add_argument("--unique", action="store_true", help="Append random ref to each question (avoid stale answers)")
     args = parser.parse_args()
 
     if not args.token:
@@ -88,9 +106,21 @@ async def main() -> int:
         for row in rows:
             pid = row["project_id"]
             q = row["question"]
+            if args.unique:
+                q = f"{q} (ref {uuid.uuid4().hex[:8]})"
             keywords = row.get("expected_keywords") or []
-            answer, elapsed = await ask_and_wait(client, project_id=pid, question=q)
-            ok, note = score_answer(answer, keywords)
+            forbidden = row.get("forbidden_keywords") or []
+            max_chars = row.get("max_chars")
+            system_prompt = row.get("system_prompt")
+            model = row.get("model") or "smart"
+            answer, elapsed = await ask_and_wait(
+                client,
+                project_id=pid,
+                question=q,
+                system_prompt=system_prompt,
+                model=model,
+            )
+            ok, note = score_answer(answer, keywords, forbidden, max_chars)
             passed += int(ok)
             status = "PASS" if ok else "FAIL"
             preview = (answer or "")[:120].replace("\n", " ")

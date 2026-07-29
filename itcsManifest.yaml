@@ -1,0 +1,39 @@
+# itcsManifest.yaml — cartão de identidade (v1)
+# Contrato: 0MM_ITCS docs/21_project_hub_contract.md
+
+apiVersion: itcs.io/v1
+kind: Project
+metadata:
+  projectDbId: ai2tcs
+  humanProjectId: ai2tcs
+  displayName: ai2tcs (LLM/RAG)
+  legacyNnn: ""
+spec:
+  managerId: itcs
+  clientId: null
+  sphere: itcs
+  status: prod
+  github:
+    repo: ianthomaz/ai2tcs
+    branch: main
+  paths:
+    local: ~/Documents/projects/ai2tcs
+  envs:
+    - env: prod
+      machineId: mini62
+      isPrimary: true
+  hostnames:
+    - llm.webplace.cc
+monitor:
+  enabled: true
+  tier: server
+  cadence: daily
+  checks:
+    - id: http-apex
+      type: http
+      url: https://llm.webplace.cc/
+      expectStatus: 200
+hub:
+  manifestRevision: 1
+  lastHarvestAt: null
+  contractVersion: "21"

@@ -55,6 +55,11 @@ async def main():
                 "chunking": {"chunk_size": 512, "chunk_overlap": 64, "separator": "\n\n"},
                 "embedding_model": "mxbai-embed-large",
                 "policies": {"prefer_cite_sources": True, "when_no_answer": "no_answer", "max_chunks_to_retrieve": 8},
+                "llm_options": {
+                    "tone_of_voice": "friendly",
+                    "message_size": "short",
+                    "temperature": 0.3,
+                },
             }),
         )
         for theme in ("webplace", "zap"):
