@@ -180,7 +180,21 @@ def _profile_from_request_context(user_context: dict) -> dict:
     if user_context.get("birth_date"):
         profile["birth_date"] = user_context["birth_date"]
     meta = {}
-    for key in ("cep", "city", "state", "health", "interesse", "registered"):
+    for key in (
+        "cep",
+        "city",
+        "state",
+        "health",
+        "interesse",
+        "registered",
+        "clearance",
+        "intended_clearance",
+        "journey_kind",
+        "journey_destination",
+        "next_event_name",
+        "next_event_at",
+        "current_time",
+    ):
         if user_context.get(key) is not None and user_context.get(key) != "":
             meta[key] = user_context[key]
     if meta:

@@ -18,7 +18,7 @@ class IngestResponse(BaseModel):
 class UserContextIn(BaseModel):
     """Optional request-time user data for personalization (e.g. from zapzap/sistemaBA)."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
     name: str | None = Field(None, description="Display name")
     birth_date: str | None = Field(
@@ -32,6 +32,13 @@ class UserContextIn(BaseModel):
     health: str | None = Field(None, description="Health notes (allergies, limitations, etc.)")
     interesse: str | None = Field(None, description="Onboarding interest slug (e.g. aprender_a_pedalar)")
     registered: bool | None = Field(None, description="Whether the user is already registered in the system")
+    clearance: str | None = Field(None, description="Current N/O/I/A clearance level")
+    intended_clearance: str | None = Field(None, description="Intended clearance track")
+    journey_kind: str | None = Field(None, description="Open POfR journey kind")
+    journey_destination: str | None = Field(None, description="Open POfR journey destination path")
+    next_event_name: str | None = Field(None, description="Next enrolled event name")
+    next_event_at: str | None = Field(None, description="Next enrolled event timestamp (ISO)")
+    current_time: str | None = Field(None, description="Client local time (e.g. America/Sao_Paulo)")
 
 
 class ChatTurn(BaseModel):

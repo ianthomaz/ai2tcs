@@ -122,3 +122,95 @@ async def test_extract_multi_accepts_payment_context_and_extra_keys(client):
     assert r.status_code == 200
     data = r.json()
     assert data["extracted"].get("supplier_name") == "Novo Emissor SA"
+
+
+@pytest.mark.asyncio
+async def test_router_injects_rich_context_into_llm_prompt(client):
+    """§1.1: city/clearance/journey/next_event in body must appear in the user prompt."""
+    raw = (
+        '{"action": "escalate", "suggested_route": "ask", "escalate_to": "smart", '
+        '"confidence": 0.7}'
+    )
+    with patch("app.api.message_router.get_project", new_callable=AsyncMock) as mock_project, \
+         patch("app.api.message_router.retrieve", new_callable=AsyncMock) as mock_retrieve, \
+         patch("app.api.message_router.log_sync_llm_job", new_callable=AsyncMock), \
+         patch("ollama.chat", return_value={"message": {"content": raw}}) as mock_ollama:
+        mock_project.return_value = {"project_id": "bikeanjoall_2026", "config_json": {}}
+        mock_retrieve.return_value = []
+
+        r = await client.post(
+            "/router",
+            json={
+                "message": "quero ir no evento",
+                "project_id": "bikeanjoall_2026",
+                "city": "São Paulo",
+                "state": "SP",
+                "clearance": "O",
+                "intended_clearance": "I",
+                "interesse": "aprender_a_pedalar",
+                "journey_kind": "event_signup",
+                "journey_destination": "/eixo/event-abc",
+                "next_event_name": "EBA Centro",
+                "next_event_at": "2026-08-01T14:00:00-03:00",
+                "unknown_future_field": "ignored",
+            },
+            headers=HEADERS,
+        )
+        assert r.status_code == 200
+        mock_ollama.assert_called_once()
+        messages = mock_ollama.call_args.kwargs["messages"]
+        user_content = next(m["content"] for m in messages if m["role"] == "user")
+        assert "Cidade: São Paulo" in user_content
+        assert "Estado: SP" in user_content
+        assert "Clearance: O" in user_content
+        assert "Clearance pretendida: I" in user_content
+        assert "Interesse: aprender_a_pedalar" in user_content
+        assert "Jornada: event_signup" in user_content
+        assert "Destino da jornada: /eixo/event-abc" in user_content
+        assert "Próximo evento: EBA Centro" in user_content
+        assert "Data do próximo evento: 2026-08-01T14:00:00-03:00" in user_content
+        assert "ignored" not in user_content
+
+
+@pytest.mark.asyncio
+async def test_ask_stores_rich_user_context_fields(client):
+    """§1.1: clearance/journey/next_event/current_time survive AskRequest → job payload."""
+    with patch("app.api.ask.get_project", new_callable=AsyncMock) as mock_project, \
+         patch("app.api.ask.db_module.job_find_recent_duplicate", new_callable=AsyncMock, return_value=None), \
+         patch("app.api.ask.db_module.job_create", new_callable=AsyncMock) as mock_create:
+        mock_project.return_value = {"project_id": "bikeanjoall_2026", "config_json": {}}
+        mock_create.return_value = "job-rich-ctx"
+        r = await client.post(
+            "/ask",
+            json={
+                "project_id": "bikeanjoall_2026",
+                "question": "onde fica o EBA?",
+                "user_context": {
+                    "name": "Ana",
+                    "city": "Campinas",
+                    "clearance": "N",
+                    "intended_clearance": "O",
+                    "journey_kind": "onboarding",
+                    "journey_destination": "/eixo/cadastro",
+                    "next_event_name": "Pedal Noturno",
+                    "next_event_at": "2026-09-10T19:00:00-03:00",
+                    "current_time": "2026-07-29T23:00:00-03:00",
+                    "interesse": "passeio",
+                    "future_ignored": "x",
+                },
+            },
+            headers=HEADERS,
+        )
+    assert r.status_code == 202
+    mock_create.assert_called_once()
+    _args, kwargs = mock_create.call_args
+    ctx = kwargs.get("user_context") or {}
+    assert ctx.get("clearance") == "N"
+    assert ctx.get("intended_clearance") == "O"
+    assert ctx.get("journey_kind") == "onboarding"
+    assert ctx.get("journey_destination") == "/eixo/cadastro"
+    assert ctx.get("next_event_name") == "Pedal Noturno"
+    assert ctx.get("next_event_at") == "2026-09-10T19:00:00-03:00"
+    assert ctx.get("current_time") == "2026-07-29T23:00:00-03:00"
+    assert ctx.get("interesse") == "passeio"
+    assert "future_ignored" not in ctx

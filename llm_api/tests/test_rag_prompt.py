@@ -1,4 +1,5 @@
 """Tests for RAG prompt profiles and project policy helpers."""
+from app.jobs.worker import _profile_from_request_context
 from app.rag.prompt import build_messages, build_system_prompt, get_no_answer_fallback, get_prompt_profile
 from app.registry import get_rag_policies, get_router_config
 
@@ -57,3 +58,50 @@ def test_router_config_extra_block() -> None:
     proj = _project({"router": {"extra_system_block": "Custom router rules."}})
     cfg = get_router_config(proj)
     assert cfg["extra_system_block"] == "Custom router rules."
+
+
+def test_profile_from_request_context_promotes_rich_fields() -> None:
+    """§1.1: clearance/journey/next_event/current_time land in metadata for the prompt."""
+    profile = _profile_from_request_context(
+        {
+            "name": "Ana",
+            "city": "Campinas",
+            "clearance": "N",
+            "intended_clearance": "O",
+            "journey_kind": "onboarding",
+            "journey_destination": "/eixo/cadastro",
+            "next_event_name": "Pedal Noturno",
+            "next_event_at": "2026-09-10T19:00:00-03:00",
+            "current_time": "2026-07-29T23:00:00-03:00",
+            "interesse": "passeio",
+        }
+    )
+    assert profile["display_name"] == "Ana"
+    meta = profile["metadata"]
+    assert meta["city"] == "Campinas"
+    assert meta["clearance"] == "N"
+    assert meta["intended_clearance"] == "O"
+    assert meta["journey_kind"] == "onboarding"
+    assert meta["journey_destination"] == "/eixo/cadastro"
+    assert meta["next_event_name"] == "Pedal Noturno"
+    assert meta["next_event_at"] == "2026-09-10T19:00:00-03:00"
+    assert meta["current_time"] == "2026-07-29T23:00:00-03:00"
+    assert meta["interesse"] == "passeio"
+
+
+def test_system_prompt_includes_rich_user_metadata() -> None:
+    profile = _profile_from_request_context(
+        {
+            "name": "Ana",
+            "clearance": "O",
+            "journey_kind": "event_signup",
+            "next_event_name": "EBA Centro",
+            "current_time": "2026-07-29T23:00:00-03:00",
+        }
+    )
+    system = build_system_prompt(_project(), user_profile=profile)
+    assert "- clearance: O" in system
+    assert "- journey_kind: event_signup" in system
+    assert "- next_event_name: EBA Centro" in system
+    assert "- current_time: 2026-07-29T23:00:00-03:00" in system
+    assert "Name: Ana" in system

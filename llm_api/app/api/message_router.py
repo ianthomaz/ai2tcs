@@ -79,6 +79,8 @@ Always include "suggested_route" in the JSON object."""
 
 
 class RouterRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
     message: str = Field(..., description="User message text")
     project_id: str | None = Field(None, description="Project slug; when set, uses flow map and library")
     user_name: str | None = Field(None, description="User display name for context")
@@ -87,6 +89,15 @@ class RouterRequest(BaseModel):
     onboarding_completed: bool | None = Field(None, description="User finished onboarding")
     current_flow: str | None = Field(None, description="Current flow id if user is in a flow")
     current_step: str | None = Field(None, description="Current step/level within flow")
+    city: str | None = Field(None, description="User city from registration")
+    state: str | None = Field(None, description="User state/UF from registration")
+    clearance: str | None = Field(None, description="Current N/O/I/A clearance level")
+    intended_clearance: str | None = Field(None, description="Intended clearance track")
+    interesse: str | None = Field(None, description="Noted interest slug")
+    journey_kind: str | None = Field(None, description="Open POfR journey kind")
+    journey_destination: str | None = Field(None, description="Open POfR journey destination path")
+    next_event_name: str | None = Field(None, description="Next enrolled event name")
+    next_event_at: str | None = Field(None, description="Next enrolled event timestamp (ISO)")
     last_messages: list[str] | None = Field(None, description="Last N messages (user/assistant) for context")
     model: str | None = Field(
         None,
@@ -323,6 +334,24 @@ async def route_message(
         user_parts.append(f"Fluxo atual: {body.current_flow}")
     if body.current_step:
         user_parts.append(f"Etapa atual: {body.current_step}")
+    if body.city:
+        user_parts.append(f"Cidade: {body.city}")
+    if body.state:
+        user_parts.append(f"Estado: {body.state}")
+    if body.clearance:
+        user_parts.append(f"Clearance: {body.clearance}")
+    if body.intended_clearance:
+        user_parts.append(f"Clearance pretendida: {body.intended_clearance}")
+    if body.interesse:
+        user_parts.append(f"Interesse: {body.interesse}")
+    if body.journey_kind:
+        user_parts.append(f"Jornada: {body.journey_kind}")
+    if body.journey_destination:
+        user_parts.append(f"Destino da jornada: {body.journey_destination}")
+    if body.next_event_name:
+        user_parts.append(f"Próximo evento: {body.next_event_name}")
+    if body.next_event_at:
+        user_parts.append(f"Data do próximo evento: {body.next_event_at}")
     if body.last_messages:
         user_parts.append("Últimas mensagens:\n" + "\n".join(body.last_messages[:5]))
     user_parts.append("\nContexto do projeto (biblioteca + mapa de fluxos):\n" + context_text)
