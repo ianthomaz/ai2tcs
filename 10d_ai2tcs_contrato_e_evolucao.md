@@ -1,3 +1,64 @@
+## PROMPT DE EXECUÇÃO (colar no Cursor do mini62 / anexar este MD)
+
+Tu estás no repo **ai2tcs** no mini62. Objetivo: fechar o gap do §1.1 deste documento —
+campos que o zap **já envia** e o serviço **ainda não injecta no prompt**.
+
+### Escopo (fazer só isto neste run)
+
+1. **`POST /router`** — `llm_api/app/api/message_router.py`
+   - Declarar em `RouterRequest` (opcionais): `city`, `state`, `clearance`,
+     `intended_clearance`, `interesse`, `journey_kind`, `journey_destination`,
+     `next_event_name`, `next_event_at`.
+   - Injectar em `user_parts` quando presentes (mesmo padrão dos campos atuais).
+   - Manter `extra="ignore"` / campos desconhecidos sem erro (P1).
+2. **`POST /ask`** — `llm_api/app/jobs/worker.py` → `_profile_from_request_context`
+   - Promover para o perfil/metadata: `clearance`, `intended_clearance`,
+     `journey_kind`, `journey_destination`, `next_event_name`, `next_event_at`,
+     `current_time` (além do que já existe).
+   - Confirmar que `app/rag/prompt.py` formata esses metadados no system/user
+     prompt (ajustar formatação só se o dado entrar no dict e sumir no texto).
+3. **Testes** — estender ou acrescentar cobertura em
+   `llm_api/tests/test_api_zapzap_contract.py` (e unitário de montagem de prompt
+   se já existir padrão no repo). Provar: campo no body → aparece no texto
+   mandado ao modelo (ou no profile formatado), sem exigir Ollama live se os
+   testes forem mockados.
+4. **Commit local** com mensagem clara (só estes ficheiros). **Não push** a
+   menos que o humano peça.
+
+### Fora de escopo (NÃO fazer)
+
+- Não alterar código do Bike Anjo / zapzap.
+- Não reingerir, não seedar, não mexer em Chroma/DB, não tocar outros
+  `project_id` (aiclaudia, estudosmobi, ian_zap, etc.).
+- Não mudar `ROUTER_SYSTEM` global nem tom “friendly” neste run (tom BA =
+  `extra_system_block` do project — run futuro).
+- Não “melhorar a LLM”, temperatura, modelo, nem corpus.
+
+### Consulta só-leitura (Bike Anjo) — pode abrir, não editar
+
+Clone atualizado no mini62:
+
+- Repo: `/Users/ianthomaz/Documents/projects/BikeAnjo_Sistema2026/`
+- Contrato / payload: `zapzap/lib/llm-remote.js`, `zapzap/lib/router-user-context.js`
+- Cópia canónica deste doc no BA: `docs/10d_ai2tcs_contrato_e_evolucao.md`
+- Corpus / mapa (referência): `bibliotecaConteudoLLM/`, `mapaFluxosLLM/`
+- Calibração: `docs/07b_ZAP_FLUXOS_E_LLM.md`
+
+Se precisares confirmar o que o bot manda, lê esses ficheiros. **Zero writes**
+fora de `ai2tcs/`.
+
+### Critério de pronto
+
+- Gap §1.1 fechado no código do serviço para os campos listados.
+- Testes passando no que for razoável offline.
+- Diff pequeno e revistável; resto do doc abaixo = spec detalhada.
+
+### Mensagem curta do humano (VNC lento)
+
+> Anexei o 10d. Executa só o **PROMPT DE EXECUÇÃO**. Não mexas no Bike Anjo.
+
+---
+
 # 10d. ai2tcs × Bike Anjo — contrato do bot e guia de evolução
 
 O que o zapzap **envia** à LLM self-hosted (ai2tcs), o que **espera** de volta, e
