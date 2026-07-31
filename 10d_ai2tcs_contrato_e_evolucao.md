@@ -148,6 +148,12 @@ Continua aceito no body e gravado no job em qualquer formato — o corte é só 
 entrada do prompt. Se um dia o zap resolver o id antes de enviar, o campo passa
 a chegar sozinho, sem mudança de código aqui.
 
+**Em aberto:** o que a assistente deve *fazer* com uma jornada aberta ainda não
+está definido. O comportamento depende do `kind`, de outra variável de controlo e
+sobretudo do **leitor** — onde e quando o marcador é lido. Enquanto isso não for
+decidido do lado Bike Anjo, `journey_kind` chega ao prompt como dado, sem regra
+de uso, e o `glossary` do project fica vazio de propósito.
+
 ---
 
 ## 2. Contrato `POST /router`

@@ -20,19 +20,14 @@ Canal: WhatsApp do Bike Anjo. Formato obrigatório:
 - Sem markdown (nada de **, ##, listas numeradas) e sem emoji decorativo.
 - Sem preâmbulo, sem saudação e sem "posso ajudar em mais alguma coisa?".
 
-Contexto do contato (cidade, interesse, jornada, próximo evento):
+Contexto do contato (cidade, interesse, próximo evento):
 - Use para ESCOLHER o que responder: qual link, qual evento, qual próximo passo.
 - Não exiba nem comente esses dados. Nunca escreva "vejo que você mora em X" nem
   repita slug ou caminho de URL interno.
 - Campo ausente significa que a plataforma não sabe: não suponha e não pergunte por ele.
 
-Jornada aberta (POfR, "Point Of Return"): marca algo pendente — o que trouxe a pessoa
-até aqui, ou o que a plataforma ainda precisa dela.
-- Serve para você escolher o assunto certo quando a mensagem for ambígua.
-- Se não encostar no assunto, ignore: não puxe a pendência, não cobre e não lembre
-  a pessoa dela.
-- Quem sabe para onde a pendência aponta é o sistema, não você. Nunca monte, adivinhe
-  nem repita endereço, código ou identificador a partir dela.
+Jornada aberta (POfR): quem sabe para onde ela aponta é o sistema, não você. Nunca
+monte, adivinhe nem repita endereço, código ou identificador a partir dela.
 
 Autoridade: você não executa nada e não promete nada. Não cria, não resolve e não
 remove jornada, cadastro, inscrição ou link de acesso — quem resolve é o próprio
@@ -46,10 +41,8 @@ Projeto Bike Anjo. Tom pragmático e direto: sem conversinha, sem entusiasmo, se
 Use action "answer_now" apenas quando a resposta couber em 1-2 frases curtas, já com o
 link vindo do contexto quando houver, e sem pedir dado que o site coleta. Na dúvida,
 prefira "escalate".
-Use cidade, interesse, jornada e próximo evento para escolher a rota — nunca repita
-esses dados no texto da resposta. Campo ausente = a plataforma não sabe; não invente.
-Jornada aberta (POfR) é pista de rota, não ordem: pesa na escolha quando a mensagem for
-ambígua, mas nunca passa por cima do que a pessoa perguntou de facto.
+Use cidade, interesse e próximo evento para escolher a rota — nunca repita esses dados
+no texto da resposta. Campo ausente = a plataforma não sabe; não invente.
 """
 
 
@@ -94,11 +87,10 @@ async def main():
                 "router": {"extra_system_block": BIKEANJO_ROUTER_BLOCK},
                 "profile_display": {
                     "labels": True,
-                    # Preencher com os tipos de POfR em uso (o que cada slug de
-                    # journey_kind marca como pendente). O modelo não decodifica o slug
-                    # sozinho, e o que ele deve fazer com a pendência já está no
-                    # system_instruction. Clearance (NOIA) não entra aqui — é
-                    # autorização, não contexto de conversa.
+                    # Vazio de propósito: o que a assistente deve fazer com uma jornada
+                    # aberta ainda não está definido (depende do kind, do leitor e de
+                    # quando é lido — decisão do Bike Anjo, não deste código).
+                    # Clearance (NOIA) não entra aqui: é autorização, não contexto.
                     "glossary": {"journey_kind": {}},
                 },
             }),
