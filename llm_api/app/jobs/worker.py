@@ -173,7 +173,14 @@ async def _reflect_on_answer(
 
 
 def _profile_from_request_context(user_context: dict) -> dict:
-    """Build prompt profile dict from request-time user_context (zapzap / sistemaBA)."""
+    """Build prompt profile dict from request-time user_context (zapzap / sistemaBA).
+
+    clearance / intended_clearance are intentionally absent: they are an authorization
+    tier (NOIA), validated before this call, and the flows where I/A can execute
+    anything do not consult the LLM semantically. Surfacing a permission level in the
+    prompt only invites the model to reason about access, which it has no authority
+    over. They remain on the stored job payload — just not in the prompt.
+    """
     profile: dict = {}
     if user_context.get("name"):
         profile["display_name"] = user_context["name"]
@@ -187,8 +194,6 @@ def _profile_from_request_context(user_context: dict) -> dict:
         "health",
         "interesse",
         "registered",
-        "clearance",
-        "intended_clearance",
         "journey_kind",
         "journey_destination",
         "next_event_name",

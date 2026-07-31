@@ -11,7 +11,7 @@ from app.rag.prompt import build_system_prompt, get_profile_display_config
 ZAP_CONTEXT = {
     "name": "Ana",
     "city": "Campinas",
-    "clearance": "N",
+    "clearance": "N",  # accepted on the wire, must never reach the prompt
     "journey_kind": "pofr",
     "journey_destination": "/eixo/event-123",
     "next_event_name": "EBA Vila Mariana",
@@ -26,8 +26,18 @@ def _project(config: dict | None = None) -> dict:
 def test_profile_display_defaults_to_raw_rendering() -> None:
     """No config → unchanged output, so other projects cannot be affected."""
     system = build_system_prompt(_project(), user_profile=_profile_from_request_context(ZAP_CONTEXT))
-    assert "- clearance: N" in system
+    assert "- journey_kind: pofr" in system
     assert "- journey_destination: /eixo/event-123" in system
+
+
+def test_clearance_never_reaches_the_prompt() -> None:
+    """NOIA is an authorization tier, validated upstream; the model has no use for it."""
+    for config in ({}, {"profile_display": {"labels": True}}):
+        system = build_system_prompt(
+            _project(config), user_profile=_profile_from_request_context(ZAP_CONTEXT)
+        )
+        assert "clearance" not in system
+        assert "Nível de cadastro" not in system
 
 
 def test_labels_make_platform_fields_readable() -> None:
@@ -35,7 +45,6 @@ def test_labels_make_platform_fields_readable() -> None:
         _project({"profile_display": {"labels": True}}),
         user_profile=_profile_from_request_context(ZAP_CONTEXT),
     )
-    assert "- Nível de cadastro do contato: N" in system
     assert "- Jornada aberta (tipo): pofr" in system
     assert "- Hora local do contato agora: 2026-07-31T09:00:00-03:00" in system
     # Keys outside the platform set keep their original rendering.
@@ -50,27 +59,27 @@ def test_base_url_expands_path_so_model_never_emits_half_link() -> None:
     assert "https://example.org/eixo/event-123" in system
 
 
-def test_glossary_decodes_opaque_clearance_code() -> None:
+def test_glossary_decodes_opaque_journey_slug() -> None:
     system = build_system_prompt(
         _project(
             {
                 "profile_display": {
                     "labels": True,
-                    "glossary": {"clearance": {"N": "ainda não cadastrado"}},
+                    "glossary": {"journey_kind": {"pofr": "<significado real vem do seed>"}},
                 }
             }
         ),
         user_profile=_profile_from_request_context(ZAP_CONTEXT),
     )
-    assert "N (ainda não cadastrado)" in system
+    assert "pofr (<significado real vem do seed>)" in system
 
 
 def test_glossary_leaves_unknown_values_untouched() -> None:
     system = build_system_prompt(
-        _project({"profile_display": {"labels": True, "glossary": {"clearance": {"A": "avançado"}}}}),
+        _project({"profile_display": {"labels": True, "glossary": {"journey_kind": {"outra": "x"}}}}),
         user_profile=_profile_from_request_context(ZAP_CONTEXT),
     )
-    assert "- Nível de cadastro do contato: N\n" in system
+    assert "- Jornada aberta (tipo): pofr\n" in system
 
 
 def test_profile_display_config_ignores_malformed_values() -> None:

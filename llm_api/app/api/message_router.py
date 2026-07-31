@@ -363,10 +363,12 @@ async def route_message(
         user_parts.append(f"Cidade: {body.city}")
     if body.state:
         user_parts.append(f"Estado: {body.state}")
-    if body.clearance:
-        user_parts.append(f"Clearance: {body.clearance}")
-    if body.intended_clearance:
-        user_parts.append(f"Clearance pretendida: {body.intended_clearance}")
+    # clearance / intended_clearance are deliberately NOT sent to the model. They are
+    # an authorization signal (NOIA: New/Outside/Inside/Adm), already validated before
+    # the call, and flows where I/A can execute anything (NF, payment request) run on
+    # predefined text without consulting the LLM. Putting a permission tier in the
+    # prompt only invites the model to reason about access, which §5 of the contract
+    # forbids it. The fields stay accepted on the wire and stored on the job.
     if body.interesse:
         user_parts.append(f"Interesse: {body.interesse}")
     if body.journey_kind:

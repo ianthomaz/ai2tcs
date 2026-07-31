@@ -120,8 +120,8 @@ def get_profile_display_config(project: dict) -> dict:
     - labels: translate known platform keys to readable labels.
     - base_url: expand path-only values (e.g. "/eixo/event-1") into full URLs, so
       the model never emits a half-link to the user.
-    - glossary: {field: {raw_value: meaning}} for opaque codes the model cannot
-      decode on its own (e.g. clearance levels).
+    - glossary: {field: {raw_value: meaning}} for opaque slugs the model cannot
+      decode on its own (e.g. journey kinds).
     """
     cfg = project.get("config_json") or {}
     disp = cfg.get("profile_display") if isinstance(cfg, dict) else None
@@ -140,8 +140,6 @@ def get_profile_display_config(project: dict) -> dict:
 # contract). Only keys listed here are relabelled; every other metadata key keeps
 # its raw rendering, so existing projects are unaffected.
 _PLATFORM_FIELD_LABELS = {
-    "clearance": "Nível de cadastro do contato",
-    "intended_clearance": "Nível de cadastro pretendido",
     "journey_kind": "Jornada aberta (tipo)",
     "journey_destination": "Jornada aberta (destino)",
     "next_event_name": "Próximo evento inscrito",

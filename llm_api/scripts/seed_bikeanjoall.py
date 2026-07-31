@@ -86,9 +86,10 @@ async def main():
                     # Expande "/eixo/event-123" em URL completa para o modelo nunca
                     # emitir meio link. Vazio = mantém o caminho cru.
                     "base_url": os.environ.get("BIKEANJOALL_2026_BASE_URL", "").strip(),
-                    # Preencher com o significado real dos níveis N/O/I/A e dos tipos
-                    # de jornada: o modelo não decodifica sigla nem slug sozinho.
-                    "glossary": {"clearance": {}, "intended_clearance": {}, "journey_kind": {}},
+                    # Preencher com o significado real dos tipos de jornada: o modelo
+                    # não decodifica o slug sozinho. Clearance (NOIA) não entra aqui —
+                    # é autorização, não contexto de conversa.
+                    "glossary": {"journey_kind": {}},
                 },
             }),
         )

@@ -126,7 +126,7 @@ async def test_extract_multi_accepts_payment_context_and_extra_keys(client):
 
 @pytest.mark.asyncio
 async def test_router_injects_rich_context_into_llm_prompt(client):
-    """§1.1: city/clearance/journey/next_event in body must appear in the user prompt."""
+    """§1.1: city/journey/next_event reach the user prompt; clearance stays out of it."""
     raw = (
         '{"action": "escalate", "suggested_route": "ask", "escalate_to": "smart", '
         '"confidence": 0.7}'
@@ -162,8 +162,8 @@ async def test_router_injects_rich_context_into_llm_prompt(client):
         user_content = next(m["content"] for m in messages if m["role"] == "user")
         assert "Cidade: São Paulo" in user_content
         assert "Estado: SP" in user_content
-        assert "Clearance: O" in user_content
-        assert "Clearance pretendida: I" in user_content
+        # Authorization tier (NOIA) is accepted on the wire but never shown to the model.
+        assert "Clearance" not in user_content
         assert "Interesse: aprender_a_pedalar" in user_content
         assert "Jornada: event_signup" in user_content
         assert "Destino da jornada: /eixo/event-abc" in user_content
