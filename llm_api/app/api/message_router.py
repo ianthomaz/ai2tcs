@@ -120,6 +120,29 @@ class RouterResponse(BaseModel):
     confidence: float = Field(0.0, description="0.0 to 1.0")
 
 
+# Context fields worth adding to the retrieval query: free text that helps the
+# embedding find city/journey/topic docs. Opaque codes (clearance), ISO dates and
+# id-bearing paths are excluded — they add noise to the vector, not signal.
+_RETRIEVAL_CONTEXT_FIELDS = ("city", "interesse", "journey_kind", "next_event_name")
+
+
+def _build_retrieval_query(body: "RouterRequest") -> str:
+    """Message plus the context terms that should steer retrieval.
+
+    The router used to retrieve on the raw message only, so the flow map describing
+    how to use journey/city never came back unless the message happened to look like
+    it. Clients that send no context get the message unchanged.
+    """
+    extras = [
+        str(value).strip()
+        for field in _RETRIEVAL_CONTEXT_FIELDS
+        if (value := getattr(body, field, None))
+    ]
+    if not extras:
+        return body.message
+    return body.message + "\n" + " ".join(extras)
+
+
 def _parse_router_llm_response(raw: str) -> dict:
     """Extract structured triage data from LLM output (expects JSON)."""
     try:
@@ -312,7 +335,9 @@ async def route_message(
     if isinstance(project.get("config_json"), dict):
         embed_model = (project["config_json"] or {}).get("embedding_model") or embed_model
 
-    chunks = await retrieve(body.project_id, body.message, top_k=top_k, embedding_model=embed_model)
+    chunks = await retrieve(
+        body.project_id, _build_retrieval_query(body), top_k=top_k, embedding_model=embed_model
+    )
     max_dist = policies.get("max_chunk_distance", 1.0)
     chunks = [c for c in chunks if c.get("distance") is None or c["distance"] <= max_dist]
 
