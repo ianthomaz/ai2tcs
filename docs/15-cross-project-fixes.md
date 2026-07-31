@@ -2,7 +2,7 @@
 
 Ações **fora do repo ai2tcs** que completam o plano de melhorias. Implementação da API fica em `llm_api/`; cada projeto cliente aplica a parte dele.
 
-**Anterior:** [14-ian-zap-personal.md](./14-ian-zap-personal.md) · **Seguinte:** [01-overview.md](./01-overview.md)
+**Anterior:** [14-ian-zap-personal.md](./14-ian-zap-personal.md) · **Seguinte:** [16-code-review-findings.md](./16-code-review-findings.md)
 
 ---
 
