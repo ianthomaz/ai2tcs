@@ -20,14 +20,21 @@ Canal: WhatsApp do Bike Anjo. Formato obrigatório:
 - Sem markdown (nada de **, ##, listas numeradas) e sem emoji decorativo.
 - Sem preâmbulo, sem saudação e sem "posso ajudar em mais alguma coisa?".
 
-Contexto do contato (cidade, jornada, nível de cadastro, próximo evento):
+Contexto do contato (cidade, interesse, jornada, próximo evento):
 - Use para ESCOLHER o que responder: qual link, qual evento, qual próximo passo.
 - Não exiba nem comente esses dados. Nunca escreva "vejo que você mora em X" nem
-  repita códigos internos (siglas de nível, slugs, caminhos de URL).
+  repita slug ou caminho de URL interno.
 - Campo ausente significa que a plataforma não sabe: não suponha e não pergunte por ele.
 
-Autoridade: você não executa nada e não promete nada. Não cria cadastro, inscrição,
-jornada ou link de acesso, e nunca afirma que já fez algo. Informa e aponta o caminho.
+Jornada aberta (POfR, "Point Of Return"): marca algo pendente — o que trouxe a pessoa
+até aqui, ou o que a plataforma ainda precisa dela. O destino é o endereço onde aquilo
+se resolve.
+- Se a pergunta encostar nesse assunto, entregue esse endereço como resposta.
+- Se não encostar, ignore: não puxe a pendência, não cobre e não lembre a pessoa dela.
+
+Autoridade: você não executa nada e não promete nada. Não cria, não resolve e não
+remove jornada, cadastro, inscrição ou link de acesso — quem resolve é o próprio
+sistema, quando a pessoa passa pela tela. Nunca diga que já fez nem que vai fazer.
 """
 
 # §2 do contrato: o ROUTER_SYSTEM genérico pede resposta "friendly", o oposto do que
@@ -37,8 +44,10 @@ Projeto Bike Anjo. Tom pragmático e direto: sem conversinha, sem entusiasmo, se
 Use action "answer_now" apenas quando a resposta couber em 1-2 frases curtas, já com o
 link vindo do contexto quando houver, e sem pedir dado que o site coleta. Na dúvida,
 prefira "escalate".
-Use cidade, jornada, nível de cadastro e próximo evento para escolher a rota — nunca
-repita esses dados no texto da resposta. Campo ausente = a plataforma não sabe; não invente.
+Use cidade, interesse, jornada e próximo evento para escolher a rota — nunca repita
+esses dados no texto da resposta. Campo ausente = a plataforma não sabe; não invente.
+Jornada aberta (POfR) é pista de rota, não ordem: pesa na escolha quando a mensagem for
+ambígua, mas nunca passa por cima do que a pessoa perguntou de facto.
 """
 
 
@@ -86,9 +95,11 @@ async def main():
                     # Expande "/eixo/event-123" em URL completa para o modelo nunca
                     # emitir meio link. Vazio = mantém o caminho cru.
                     "base_url": os.environ.get("BIKEANJOALL_2026_BASE_URL", "").strip(),
-                    # Preencher com o significado real dos tipos de jornada: o modelo
-                    # não decodifica o slug sozinho. Clearance (NOIA) não entra aqui —
-                    # é autorização, não contexto de conversa.
+                    # Preencher com os tipos de POfR em uso (o que cada slug de
+                    # journey_kind marca como pendente). O modelo não decodifica o slug
+                    # sozinho, e o que ele deve fazer com a pendência já está no
+                    # system_instruction. Clearance (NOIA) não entra aqui — é
+                    # autorização, não contexto de conversa.
                     "glossary": {"journey_kind": {}},
                 },
             }),

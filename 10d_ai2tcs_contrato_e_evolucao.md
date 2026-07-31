@@ -154,7 +154,7 @@ Código: `ai2tcs/llm_api/app/api/message_router.py` (`ROUTER_SYSTEM` + montagem
 | `city`, `state` | string? | Do cadastro | sim (§1.1 fechado) |
 | `clearance`, `intended_clearance` | string? | Nível N/O/I/A e trilha pretendida | **não — por decisão** ([§1.2](#12-clearance-não-entra-no-prompt--decisão-não-esquecimento)) |
 | `interesse` | string? | Interesse anotado no contato | sim |
-| `journey_kind`, `journey_destination` | string? | **Jornada POfR aberta** e destino (`/eixo/event-…`) | sim |
+| `journey_kind`, `journey_destination` | string? | **Jornada POfR aberta** (Point Of Return — marcador de pendência, ver [02b](02b_POFR.md)) e destino onde resolve (`/eixo/event-…`) | sim |
 | `next_event_name`, `next_event_at` | string? | Próximo evento inscrito (ISO) | sim |
 | `last_messages` | string[] | Até 5, prefixadas `user:` / `assistant:` | sim |
 
