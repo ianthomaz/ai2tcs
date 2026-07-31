@@ -18,7 +18,7 @@ from app.registry import (
     get_behavior_instruction_inline,
     get_behavior_instruction_path,
 )
-from app.rag.prompt import build_messages
+from app.rag.prompt import build_messages, is_shareable_url
 from app.rag.answer_guard import guard_answer_for_profile
 from app.rag.retrieve import retrieve
 
@@ -202,6 +202,12 @@ def _profile_from_request_context(user_context: dict) -> dict:
     ):
         if user_context.get(key) is not None and user_context.get(key) != "":
             meta[key] = user_context[key]
+    # The journey destination is normally an internal reference (event id, system
+    # pointer) that the platform resolves later, not a link. The model cannot resolve
+    # it and would only leak the raw id, so it passes through only when it already is
+    # a usable URL.
+    if "journey_destination" in meta and not is_shareable_url(meta["journey_destination"]):
+        del meta["journey_destination"]
     if meta:
         profile["metadata"] = meta
     return profile

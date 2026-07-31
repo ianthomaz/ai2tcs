@@ -135,6 +135,19 @@ proíbe. O sinal com sentido para a conversa é a **situação na jornada**
 Quem quiser reverter: os dois campos estão declarados e comentados nos dois
 lados (`message_router.py` e `worker.py`), com o motivo escrito ao lado.
 
+### 1.3 `journey_destination` só entra se já for URL
+
+O destino de um POfR normalmente é **referência interna** — o id do evento por
+onde a pessoa entrou, um ponteiro que a plataforma resolve depois — e não um
+endereço. A LLM não faz essa resolução: se receber o id cru, só pode vazá-lo ao
+contato ou inventar um link em volta dele. Por isso o campo só é montado no
+prompt quando já chega como URL absoluta (`http://` / `https://`); id, caminho
+ou slug são descartados antes do prompt (`is_shareable_url`, em `app/rag/prompt.py`).
+
+Continua aceito no body e gravado no job em qualquer formato — o corte é só na
+entrada do prompt. Se um dia o zap resolver o id antes de enviar, o campo passa
+a chegar sozinho, sem mudança de código aqui.
+
 ---
 
 ## 2. Contrato `POST /router`
@@ -154,7 +167,8 @@ Código: `ai2tcs/llm_api/app/api/message_router.py` (`ROUTER_SYSTEM` + montagem
 | `city`, `state` | string? | Do cadastro | sim (§1.1 fechado) |
 | `clearance`, `intended_clearance` | string? | Nível N/O/I/A e trilha pretendida | **não — por decisão** ([§1.2](#12-clearance-não-entra-no-prompt--decisão-não-esquecimento)) |
 | `interesse` | string? | Interesse anotado no contato | sim |
-| `journey_kind`, `journey_destination` | string? | **Jornada POfR aberta** (Point Of Return — marcador de pendência, ver [02b](02b_POFR.md)) e destino onde resolve (`/eixo/event-…`) | sim |
+| `journey_kind` | string? | **Jornada POfR aberta** (Point Of Return — marcador de pendência, ver [02b](02b_POFR.md)) | sim |
+| `journey_destination` | string? | Para onde a pendência aponta. Via de regra **referência interna** (id de evento etc.), não link — quem resolve é a plataforma | só se já vier URL absoluta ([§1.3](#13-journey_destination-só-entra-se-já-for-url)) |
 | `next_event_name`, `next_event_at` | string? | Próximo evento inscrito (ISO) | sim |
 | `last_messages` | string[] | Até 5, prefixadas `user:` / `assistant:` | sim |
 

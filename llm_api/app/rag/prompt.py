@@ -118,22 +118,30 @@ def get_profile_display_config(project: dict) -> dict:
     byte-identical.
 
     - labels: translate known platform keys to readable labels.
-    - base_url: expand path-only values (e.g. "/eixo/event-1") into full URLs, so
-      the model never emits a half-link to the user.
     - glossary: {field: {raw_value: meaning}} for opaque slugs the model cannot
       decode on its own (e.g. journey kinds).
     """
     cfg = project.get("config_json") or {}
     disp = cfg.get("profile_display") if isinstance(cfg, dict) else None
     if not isinstance(disp, dict):
-        return {"labels": False, "base_url": "", "glossary": {}}
+        return {"labels": False, "glossary": {}}
     glossary = disp.get("glossary")
-    base_url = disp.get("base_url")
     return {
         "labels": bool(disp.get("labels")),
-        "base_url": base_url.strip().rstrip("/") if isinstance(base_url, str) else "",
         "glossary": glossary if isinstance(glossary, dict) else {},
     }
+
+
+def is_shareable_url(value: object) -> bool:
+    """True when a value is already a URL the assistant could hand to the user.
+
+    Journey destinations are usually an internal reference (an event id, a system
+    pointer), not a link: the platform resolves them later. The model cannot do that
+    resolution, so anything that is not already an absolute URL must not reach it —
+    it could only leak the raw id or invent a link around it.
+    """
+    text = str(value or "").strip()
+    return text.startswith("https://") or text.startswith("http://")
 
 
 # Readable labels for the platform context the client sends (§1.1 of the Bike Anjo
@@ -147,16 +155,9 @@ _PLATFORM_FIELD_LABELS = {
     "current_time": "Hora local do contato agora",
 }
 
-# Values that are paths, not text: expanded with base_url when configured.
-_PATH_VALUED_FIELDS = ("journey_destination",)
-
-
 def _render_metadata_value(key: str, value: object, display: dict) -> str:
-    """Render one metadata value, expanding paths and decoding known codes."""
+    """Render one metadata value, decoding known slugs."""
     text = str(value)
-    base_url = display.get("base_url") or ""
-    if base_url and key in _PATH_VALUED_FIELDS and text.startswith("/"):
-        text = f"{base_url}{text}"
     meaning = (display.get("glossary") or {}).get(key, {})
     if isinstance(meaning, dict):
         decoded = meaning.get(str(value))
@@ -169,7 +170,7 @@ def _format_user_profile(profile: dict | None, display: dict | None = None) -> s
     """Format user profile for inclusion in the system prompt."""
     if not profile:
         return ""
-    display = display or {"labels": False, "base_url": "", "glossary": {}}
+    display = display or {"labels": False, "glossary": {}}
     parts = ["About the current user:"]
     if profile.get("display_name"):
         parts.append(f"- Name: {profile['display_name']}")

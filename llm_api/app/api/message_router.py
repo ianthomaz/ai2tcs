@@ -10,6 +10,7 @@ from app.auth import require_token
 from app.config import settings
 from app.job_audit import log_sync_llm_job
 from app.registry import get_project, get_rag_policies, get_router_config
+from app.rag.prompt import is_shareable_url
 from app.rag.retrieve import retrieve
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -95,7 +96,7 @@ class RouterRequest(BaseModel):
     intended_clearance: str | None = Field(None, description="Intended clearance track")
     interesse: str | None = Field(None, description="Noted interest slug")
     journey_kind: str | None = Field(None, description="Open POfR journey kind")
-    journey_destination: str | None = Field(None, description="Open POfR journey destination path")
+    journey_destination: str | None = Field(None, description="Open POfR destination: usually an internal reference the platform resolves, not a link")
     next_event_name: str | None = Field(None, description="Next enrolled event name")
     next_event_at: str | None = Field(None, description="Next enrolled event timestamp (ISO)")
     last_messages: list[str] | None = Field(None, description="Last N messages (user/assistant) for context")
@@ -373,7 +374,9 @@ async def route_message(
         user_parts.append(f"Interesse: {body.interesse}")
     if body.journey_kind:
         user_parts.append(f"Jornada: {body.journey_kind}")
-    if body.journey_destination:
+    # Usually an internal reference the platform resolves later, not a link: only a
+    # ready-to-use URL is worth showing the model. See is_shareable_url.
+    if is_shareable_url(body.journey_destination):
         user_parts.append(f"Destino da jornada: {body.journey_destination}")
     if body.next_event_name:
         user_parts.append(f"Próximo evento: {body.next_event_name}")

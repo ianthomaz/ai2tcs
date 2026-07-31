@@ -27,10 +27,12 @@ Contexto do contato (cidade, interesse, jornada, próximo evento):
 - Campo ausente significa que a plataforma não sabe: não suponha e não pergunte por ele.
 
 Jornada aberta (POfR, "Point Of Return"): marca algo pendente — o que trouxe a pessoa
-até aqui, ou o que a plataforma ainda precisa dela. O destino é o endereço onde aquilo
-se resolve.
-- Se a pergunta encostar nesse assunto, entregue esse endereço como resposta.
-- Se não encostar, ignore: não puxe a pendência, não cobre e não lembre a pessoa dela.
+até aqui, ou o que a plataforma ainda precisa dela.
+- Serve para você escolher o assunto certo quando a mensagem for ambígua.
+- Se não encostar no assunto, ignore: não puxe a pendência, não cobre e não lembre
+  a pessoa dela.
+- Quem sabe para onde a pendência aponta é o sistema, não você. Nunca monte, adivinhe
+  nem repita endereço, código ou identificador a partir dela.
 
 Autoridade: você não executa nada e não promete nada. Não cria, não resolve e não
 remove jornada, cadastro, inscrição ou link de acesso — quem resolve é o próprio
@@ -92,9 +94,6 @@ async def main():
                 "router": {"extra_system_block": BIKEANJO_ROUTER_BLOCK},
                 "profile_display": {
                     "labels": True,
-                    # Expande "/eixo/event-123" em URL completa para o modelo nunca
-                    # emitir meio link. Vazio = mantém o caminho cru.
-                    "base_url": os.environ.get("BIKEANJOALL_2026_BASE_URL", "").strip(),
                     # Preencher com os tipos de POfR em uso (o que cada slug de
                     # journey_kind marca como pendente). O modelo não decodifica o slug
                     # sozinho, e o que ele deve fazer com a pendência já está no

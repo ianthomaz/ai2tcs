@@ -166,7 +166,8 @@ async def test_router_injects_rich_context_into_llm_prompt(client):
         assert "Clearance" not in user_content
         assert "Interesse: aprender_a_pedalar" in user_content
         assert "Jornada: event_signup" in user_content
-        assert "Destino da jornada: /eixo/event-abc" in user_content
+        # Internal reference, not a link: the model never sees it.
+        assert "/eixo/event-abc" not in user_content
         assert "Próximo evento: EBA Centro" in user_content
         assert "Data do próximo evento: 2026-08-01T14:00:00-03:00" in user_content
         assert "ignored" not in user_content

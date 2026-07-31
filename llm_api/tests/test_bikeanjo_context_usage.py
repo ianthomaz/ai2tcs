@@ -13,7 +13,7 @@ ZAP_CONTEXT = {
     "city": "Campinas",
     "clearance": "N",  # accepted on the wire, must never reach the prompt
     "journey_kind": "pofr",
-    "journey_destination": "/eixo/event-123",
+    "journey_destination": "event-123",  # internal reference, not a link
     "next_event_name": "EBA Vila Mariana",
     "current_time": "2026-07-31T09:00:00-03:00",
 }
@@ -27,7 +27,7 @@ def test_profile_display_defaults_to_raw_rendering() -> None:
     """No config → unchanged output, so other projects cannot be affected."""
     system = build_system_prompt(_project(), user_profile=_profile_from_request_context(ZAP_CONTEXT))
     assert "- journey_kind: pofr" in system
-    assert "- journey_destination: /eixo/event-123" in system
+    assert "- city: Campinas" in system
 
 
 def test_clearance_never_reaches_the_prompt() -> None:
@@ -51,12 +51,20 @@ def test_labels_make_platform_fields_readable() -> None:
     assert "- city: Campinas" in system
 
 
-def test_base_url_expands_path_so_model_never_emits_half_link() -> None:
-    system = build_system_prompt(
-        _project({"profile_display": {"labels": True, "base_url": "https://example.org/"}}),
-        user_profile=_profile_from_request_context(ZAP_CONTEXT),
+def test_internal_journey_reference_never_reaches_the_model() -> None:
+    """The destination is normally an id the platform resolves, not a link."""
+    for raw in ("event-123", "/eixo/event-123", "42"):
+        profile = _profile_from_request_context({**ZAP_CONTEXT, "journey_destination": raw})
+        assert "journey_destination" not in profile["metadata"]
+        system = build_system_prompt(_project({"profile_display": {"labels": True}}), user_profile=profile)
+        assert raw not in system
+
+
+def test_already_usable_url_is_kept() -> None:
+    profile = _profile_from_request_context(
+        {**ZAP_CONTEXT, "journey_destination": "https://example.org/eixo/event-123"}
     )
-    assert "https://example.org/eixo/event-123" in system
+    assert profile["metadata"]["journey_destination"] == "https://example.org/eixo/event-123"
 
 
 def test_glossary_decodes_opaque_journey_slug() -> None:
@@ -83,8 +91,8 @@ def test_glossary_leaves_unknown_values_untouched() -> None:
 
 
 def test_profile_display_config_ignores_malformed_values() -> None:
-    cfg = get_profile_display_config(_project({"profile_display": {"glossary": "nope", "base_url": 7}}))
-    assert cfg == {"labels": False, "base_url": "", "glossary": {}}
+    cfg = get_profile_display_config(_project({"profile_display": {"glossary": "nope"}}))
+    assert cfg == {"labels": False, "glossary": {}}
 
 
 def test_retrieval_query_unchanged_without_context() -> None:

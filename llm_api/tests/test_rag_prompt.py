@@ -83,7 +83,8 @@ def test_profile_from_request_context_promotes_rich_fields() -> None:
     assert "clearance" not in meta
     assert "intended_clearance" not in meta
     assert meta["journey_kind"] == "onboarding"
-    assert meta["journey_destination"] == "/eixo/cadastro"
+    # An internal reference, not a link the model could hand over.
+    assert "journey_destination" not in meta
     assert meta["next_event_name"] == "Pedal Noturno"
     assert meta["next_event_at"] == "2026-09-10T19:00:00-03:00"
     assert meta["current_time"] == "2026-07-29T23:00:00-03:00"
