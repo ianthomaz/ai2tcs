@@ -311,7 +311,7 @@ def extract_from_xml(raw_bytes: bytes) -> tuple[dict[str, Any], str]:
     if tom is not None:
         service_recipient_raw = _xml_tax_id_from_subtree(tom)
 
-    nf_number = _find_text_by_localname(root, ["nNF", "Numero", "InfNfseNumero"])
+    nf_number = _find_text_by_localname(root, ["nNF", "InfNfseNumero", "NumeroNfse", "Numero"])
     issue_date = _find_text_by_localname(root, ["dhEmi", "dEmi", "DataEmissao"])
     total = _find_text_by_localname(root, ["vNF", "ValorServicos", "ValorLiquidoNfse"])
     amount_tax = _find_text_by_localname(root, ["vISS", "ValorIss", "ValorIssRetido"])
@@ -544,6 +544,111 @@ def _extract_payment_from_text(text: str) -> dict[str, Any]:
     }
 
 
+
+def _strip_leading_zeros_nf(num: str | None) -> str | None:
+    if not num:
+        return None
+    s = str(num).strip()
+    if not s:
+        return None
+    if re.fullmatch(r"\d+", s):
+        stripped = s.lstrip("0")
+        return stripped if stripped else "0"
+    return s
+
+
+def _extract_series_from_text(text: str) -> str | None:
+    compact = " ".join(text.split())
+    m = re.search(r"\bs[ée]rie\b\s*[:#\-]?\s*(\d{1,6})\b", compact, re.IGNORECASE)
+    if not m:
+        return None
+    return _strip_leading_zeros_nf(m.group(1))
+
+
+def _extract_nf_number_from_text(text: str) -> str | None:
+    """Prefer NFS-e *número da nota*; never confuse with série (often "1")."""
+    if not text or not text.strip():
+        return None
+    compact = " ".join(text.split())
+    series = _extract_series_from_text(compact)
+
+    patterns_high = [
+        r"(?:n[úu]mero\s+da\s+nota(?:\s+fiscal)?(?:\s+eletr[oô]nica)?|n[úu]mero\s+da\s+nfs-?e|n[ºo°]\s*da\s+nota(?:\s+fiscal)?)\s*[:#\-]?\s*0*(\d{1,11})\b",
+        r"\bnnf\b\s*[:#\-]?\s*0*(\d{1,11})\b",
+    ]
+    for pat in patterns_high:
+        m = re.search(pat, compact, re.IGNORECASE)
+        if m:
+            return _strip_leading_zeros_nf(m.group(1))
+
+    for m in re.finditer(
+        r"(?:n[úu]mero|n[ºo°])\s*[:#\-]?\s*0*(\d{1,11})\b",
+        compact,
+        re.IGNORECASE,
+    ):
+        start = max(0, m.start() - 24)
+        window = compact[start : m.start()].lower()
+        if re.search(r"s[ée]rie\s*[:#\-]?\s*$", window):
+            continue
+        cand = _strip_leading_zeros_nf(m.group(1))
+        if cand and series and cand == series:
+            continue
+        if cand:
+            return cand
+
+    label = re.search(
+        r"(?:nfs-?e|nfse|nota\s+fiscal(?:\s+de\s+servi[cç]o)?(?:\s+eletr[oô]nica)?)",
+        compact,
+        re.IGNORECASE,
+    )
+    if label:
+        chunk = compact[label.start() : label.start() + 120]
+        nums = [_strip_leading_zeros_nf(x) for x in re.findall(r"\b(\d{1,11})\b", chunk)]
+        nums = [n for n in nums if n]
+        if series:
+            filtered = [n for n in nums if n != series]
+            if filtered:
+                nums = filtered
+        if nums:
+            multi = [n for n in nums if len(n) >= 2]
+            return multi[-1] if multi else nums[-1]
+
+    return None
+
+
+def _sanitize_nf_number_field(
+    base: dict[str, Any], extracted_text: str, warnings: list[str] | None = None
+) -> None:
+    """Fix série-as-number mistakes using document text when possible."""
+    text_num = _extract_nf_number_from_text(extracted_text)
+    series = _extract_series_from_text(extracted_text)
+    current = base.get("nf_number")
+    cur = None
+    if isinstance(current, (str, int)) and str(current).strip():
+        cur = _strip_leading_zeros_nf(str(current).strip())
+
+    should_replace = False
+    if text_num and not cur:
+        should_replace = True
+    elif text_num and series and cur == series and text_num != series:
+        should_replace = True
+    elif text_num and cur == "1" and text_num != "1":
+        should_replace = True
+
+    if should_replace and text_num:
+        if cur and cur != text_num and warnings is not None:
+            warnings.append(
+                f"nf_number corrected from {cur!r} to {text_num!r} (avoided série confusion)."
+            )
+        base["nf_number"] = text_num
+        return
+
+    if cur and series and cur == series and text_num is None and warnings is not None:
+        warnings.append(
+            f"nf_number {cur!r} equals document série; confirm manually — número da nota may be missing."
+        )
+
+
 def extract_from_text_heuristics(text: str) -> dict[str, Any]:
     compact = " ".join(text.split())
     prest_fields, prestador_block_found = _extract_prestador_supplier_fields(text)
@@ -552,15 +657,12 @@ def extract_from_text_heuristics(text: str) -> dict[str, Any]:
     supplier_name = prest_fields.get("supplier_name")
     if supplier_code is None and not prestador_block_found:
         supplier_code = _first_valid_cnpj_digits_from_text(compact)
-    nf_number_match = re.search(r"(?:nfs-e|nfse|nota fiscal)\D{0,30}(\d{1,8})", compact, re.IGNORECASE)
-    if not nf_number_match:
-        nf_number_match = re.search(r"(?:n[úu]mero)\D{0,8}(\d{1,8})", compact, re.IGNORECASE)
     amount = _extract_total_amount(compact)
     data: dict[str, Any] = {
         "supplier_code": supplier_code,
         "supplier_name": supplier_name,
         "service_recipient_code": tomador_fields.get("service_recipient_code"),
-        "nf_number": nf_number_match.group(1) if nf_number_match else None,
+        "nf_number": _extract_nf_number_from_text(text),
         "amount": amount,
     }
     if data.get("amount") is not None:
@@ -642,8 +744,9 @@ def _sanitize_service_recipient_value(raw: Any) -> str | None:
     return None
 
 
-def apply_nf_extract_postprocess(base: dict[str, Any], extracted_text: str) -> None:
-    """Infer payment_type, normalize description prefix from issue_date, sanitize tax ids."""
+def apply_nf_extract_postprocess(base: dict[str, Any], extracted_text: str, warnings: list[str] | None = None) -> None:
+    """Infer payment_type, normalize description, sanitize tax ids / nf_number."""
+    _sanitize_nf_number_field(base, extracted_text, warnings)
     base["service_recipient_code"] = _sanitize_service_recipient_value(base.get("service_recipient_code"))
 
     pt = _normalize_payment_type_field(base.get("payment_type"))
@@ -836,7 +939,7 @@ async def run_extraction_pipeline(
     conflict_fields = set()
     if len(warnings) > conflict_before:
         conflict_fields = {"supplier_code", "service_recipient_code"}
-    apply_nf_extract_postprocess(base, extracted_text)
+    apply_nf_extract_postprocess(base, extracted_text, warnings)
     confidence_by_field: dict[str, float] = {}
     populated = 0
     for k, v in base.items():

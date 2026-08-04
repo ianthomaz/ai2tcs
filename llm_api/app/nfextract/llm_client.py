@@ -63,7 +63,8 @@ async def enrich_with_local_llm(
         "\"transferencia\" when bank+agency+account without Pix; \"boleto\" when the document "
         "mentions boleto, linha digitável, or barcode; \"cartao_credito\" for credit card; "
         "\"dinheiro\" for cash/espécie.\n"
-        "For description: when you output a description and the emission date is known, "
+        "For nf_number: use the invoice NUMBER (numero da nota / nNF / Numero da NFS-e), NOT the series (serie), which is often 1 or Unica on Brazilian NFS-e. If both serie and numero appear, return only the numero. Do not keep a base_json nf_number that equals the serie when the document shows a different numero.\nFor description: when you output a description and the emission date is known, "
+
         "the first line MUST be exactly: NF emitida DD/mmm/YYYY where DD is two digits, "
         "mmm is one of jan fev mar abr mai jun jul ago set out nov dez (lowercase Portuguese "
         "month abbreviations), YYYY is four digits. After a newline, add a short human summary "
