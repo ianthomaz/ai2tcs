@@ -10,6 +10,7 @@ from app.auth import require_token
 from app.config import settings
 from app.job_audit import log_sync_llm_job
 from app.registry import get_project, get_rag_policies, get_router_config
+from app.rag.prompt import is_shareable_url
 from app.rag.retrieve import retrieve
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -95,7 +96,7 @@ class RouterRequest(BaseModel):
     intended_clearance: str | None = Field(None, description="Intended clearance track")
     interesse: str | None = Field(None, description="Noted interest slug")
     journey_kind: str | None = Field(None, description="Open POfR journey kind")
-    journey_destination: str | None = Field(None, description="Open POfR journey destination path")
+    journey_destination: str | None = Field(None, description="Open POfR destination: usually an internal reference the platform resolves, not a link")
     next_event_name: str | None = Field(None, description="Next enrolled event name")
     next_event_at: str | None = Field(None, description="Next enrolled event timestamp (ISO)")
     last_messages: list[str] | None = Field(None, description="Last N messages (user/assistant) for context")
@@ -118,6 +119,29 @@ class RouterResponse(BaseModel):
     obs: str | None = Field(None, description="Note for specialist")
     task_type: str | None = Field(None, description="chitchat | extract | rag_deep | reasoning | classification")
     confidence: float = Field(0.0, description="0.0 to 1.0")
+
+
+# Context fields worth adding to the retrieval query: free text that helps the
+# embedding find city/journey/topic docs. Opaque codes (clearance), ISO dates and
+# id-bearing paths are excluded — they add noise to the vector, not signal.
+_RETRIEVAL_CONTEXT_FIELDS = ("city", "interesse", "journey_kind", "next_event_name")
+
+
+def _build_retrieval_query(body: "RouterRequest") -> str:
+    """Message plus the context terms that should steer retrieval.
+
+    The router used to retrieve on the raw message only, so the flow map describing
+    how to use journey/city never came back unless the message happened to look like
+    it. Clients that send no context get the message unchanged.
+    """
+    extras = [
+        str(value).strip()
+        for field in _RETRIEVAL_CONTEXT_FIELDS
+        if (value := getattr(body, field, None))
+    ]
+    if not extras:
+        return body.message
+    return body.message + "\n" + " ".join(extras)
 
 
 def _parse_router_llm_response(raw: str) -> dict:
@@ -312,7 +336,9 @@ async def route_message(
     if isinstance(project.get("config_json"), dict):
         embed_model = (project["config_json"] or {}).get("embedding_model") or embed_model
 
-    chunks = await retrieve(body.project_id, body.message, top_k=top_k, embedding_model=embed_model)
+    chunks = await retrieve(
+        body.project_id, _build_retrieval_query(body), top_k=top_k, embedding_model=embed_model
+    )
     max_dist = policies.get("max_chunk_distance", 1.0)
     chunks = [c for c in chunks if c.get("distance") is None or c["distance"] <= max_dist]
 
@@ -338,15 +364,19 @@ async def route_message(
         user_parts.append(f"Cidade: {body.city}")
     if body.state:
         user_parts.append(f"Estado: {body.state}")
-    if body.clearance:
-        user_parts.append(f"Clearance: {body.clearance}")
-    if body.intended_clearance:
-        user_parts.append(f"Clearance pretendida: {body.intended_clearance}")
+    # clearance / intended_clearance are deliberately NOT sent to the model. They are
+    # an authorization signal (NOIA: New/Outside/Inside/Adm), already validated before
+    # the call, and flows where I/A can execute anything (NF, payment request) run on
+    # predefined text without consulting the LLM. Putting a permission tier in the
+    # prompt only invites the model to reason about access, which §5 of the contract
+    # forbids it. The fields stay accepted on the wire and stored on the job.
     if body.interesse:
         user_parts.append(f"Interesse: {body.interesse}")
     if body.journey_kind:
         user_parts.append(f"Jornada: {body.journey_kind}")
-    if body.journey_destination:
+    # Usually an internal reference the platform resolves later, not a link: only a
+    # ready-to-use URL is worth showing the model. See is_shareable_url.
+    if is_shareable_url(body.journey_destination):
         user_parts.append(f"Destino da jornada: {body.journey_destination}")
     if body.next_event_name:
         user_parts.append(f"Próximo evento: {body.next_event_name}")

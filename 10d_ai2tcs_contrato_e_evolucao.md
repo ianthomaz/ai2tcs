@@ -117,6 +117,43 @@ só mexendo no corpus nem só no tom do system prompt.
 
 Sem o passo 3, o campo “viaja” no JSON e a LLM nunca o vê.
 
+### 1.2 `clearance` não entra no prompt — decisão, não esquecimento
+
+O gap do §1.1 foi fechado, **menos** para `clearance` / `intended_clearance`.
+Esses dois continuam aceitos no body e gravados no job, mas **não** são montados
+em `user_parts` nem promovidos em `_profile_from_request_context`.
+
+Razão: NOIA (New / Outside / Inside / Adm) é **autorização**, não contexto de
+conversa. A clearance já foi validada antes da chamada, e os fluxos em que I/A
+executam algo (nota fiscal, pedido de pagamento) rodam com texto pré-definido,
+sem consultar a LLM semanticamente — quando ela entra, entra depois da validação
+e só para entregar. Expor um nível de permissão no prompt só convida o modelo a
+raciocinar sobre acesso, que é exactamente o que o [§5](#5-autoridade--o-que-a-llm-nunca-decide)
+proíbe. O sinal com sentido para a conversa é a **situação na jornada**
+(`journey_kind` / `journey_destination`), e esse sim é injectado.
+
+Quem quiser reverter: os dois campos estão declarados e comentados nos dois
+lados (`message_router.py` e `worker.py`), com o motivo escrito ao lado.
+
+### 1.3 `journey_destination` só entra se já for URL
+
+O destino de um POfR normalmente é **referência interna** — o id do evento por
+onde a pessoa entrou, um ponteiro que a plataforma resolve depois — e não um
+endereço. A LLM não faz essa resolução: se receber o id cru, só pode vazá-lo ao
+contato ou inventar um link em volta dele. Por isso o campo só é montado no
+prompt quando já chega como URL absoluta (`http://` / `https://`); id, caminho
+ou slug são descartados antes do prompt (`is_shareable_url`, em `app/rag/prompt.py`).
+
+Continua aceito no body e gravado no job em qualquer formato — o corte é só na
+entrada do prompt. Se um dia o zap resolver o id antes de enviar, o campo passa
+a chegar sozinho, sem mudança de código aqui.
+
+**Em aberto:** o que a assistente deve *fazer* com uma jornada aberta ainda não
+está definido. O comportamento depende do `kind`, de outra variável de controlo e
+sobretudo do **leitor** — onde e quando o marcador é lido. Enquanto isso não for
+decidido do lado Bike Anjo, `journey_kind` chega ao prompt como dado, sem regra
+de uso, e o `glossary` do project fica vazio de propósito.
+
 ---
 
 ## 2. Contrato `POST /router`
@@ -133,11 +170,12 @@ Código: `ai2tcs/llm_api/app/api/message_router.py` (`ROUTER_SYSTEM` + montagem
 | `user_name` | string? | Primeiro nome | sim |
 | `current_flow` / `current_step` | string? | Fluxo estruturado ativo, se houver | sim |
 | `user_registered` / `onboarding_active` / `onboarding_completed` | bool | Flags históricas | sim |
-| `city`, `state` | string? | Do cadastro | **não** (§1.1) |
-| `clearance`, `intended_clearance` | string? | Nível N/O/I/A e trilha pretendida | **não** |
-| `interesse` | string? | Interesse anotado no contato | **não** |
-| `journey_kind`, `journey_destination` | string? | **Jornada POfR aberta** e destino (`/eixo/event-…`) | **não** |
-| `next_event_name`, `next_event_at` | string? | Próximo evento inscrito (ISO) | **não** |
+| `city`, `state` | string? | Do cadastro | sim (§1.1 fechado) |
+| `clearance`, `intended_clearance` | string? | Nível N/O/I/A e trilha pretendida | **não — por decisão** ([§1.2](#12-clearance-não-entra-no-prompt--decisão-não-esquecimento)) |
+| `interesse` | string? | Interesse anotado no contato | sim |
+| `journey_kind` | string? | **Jornada POfR aberta** (Point Of Return — marcador de pendência, ver [02b](02b_POFR.md)) | sim |
+| `journey_destination` | string? | Para onde a pendência aponta. Via de regra **referência interna** (id de evento etc.), não link — quem resolve é a plataforma | só se já vier URL absoluta ([§1.3](#13-journey_destination-só-entra-se-já-for-url)) |
+| `next_event_name`, `next_event_at` | string? | Próximo evento inscrito (ISO) | sim |
 | `last_messages` | string[] | Até 5, prefixadas `user:` / `assistant:` | sim |
 
 Origem do contexto rico: `zapzap/lib/router-user-context.js`. Uso esperado de
@@ -189,8 +227,9 @@ que o replay usa) e `user_context`:
 | Identidade | `name`, `birth_date`, `registered` (bool) | sim (nome/idade; `registered` em metadata) |
 | Local | `cep`, `city`, `state` | sim (metadata) |
 | Saúde | `health` | sim (metadata) |
-| Momento | `current_time` (America/Sao_Paulo), `interesse` | `interesse` sim; **`current_time` não** |
-| Plataforma | `clearance`, `intended_clearance`, `journey_kind`, `journey_destination`, `next_event_name`, `next_event_at` | **não** (§1.1) |
+| Momento | `current_time` (America/Sao_Paulo), `interesse` | sim (metadata) |
+| Plataforma | `journey_kind`, `journey_destination`, `next_event_name`, `next_event_at` | sim (metadata) |
+| Autorização | `clearance`, `intended_clearance` | **não — por decisão** ([§1.2](#12-clearance-não-entra-no-prompt--decisão-não-esquecimento)) |
 
 > ⚠️ Histórico (jul/2026): a whitelist do **cliente** descartava em silêncio tudo
 > além dos 6 primeiros campos — `current_time`, `interesse` e `registered` eram

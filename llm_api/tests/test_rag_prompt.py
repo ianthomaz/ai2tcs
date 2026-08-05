@@ -61,7 +61,7 @@ def test_router_config_extra_block() -> None:
 
 
 def test_profile_from_request_context_promotes_rich_fields() -> None:
-    """§1.1: clearance/journey/next_event/current_time land in metadata for the prompt."""
+    """§1.1: journey/next_event/current_time land in metadata; clearance stays out."""
     profile = _profile_from_request_context(
         {
             "name": "Ana",
@@ -79,10 +79,12 @@ def test_profile_from_request_context_promotes_rich_fields() -> None:
     assert profile["display_name"] == "Ana"
     meta = profile["metadata"]
     assert meta["city"] == "Campinas"
-    assert meta["clearance"] == "N"
-    assert meta["intended_clearance"] == "O"
+    # Authorization tier (NOIA) never reaches the prompt — see _profile_from_request_context.
+    assert "clearance" not in meta
+    assert "intended_clearance" not in meta
     assert meta["journey_kind"] == "onboarding"
-    assert meta["journey_destination"] == "/eixo/cadastro"
+    # An internal reference, not a link the model could hand over.
+    assert "journey_destination" not in meta
     assert meta["next_event_name"] == "Pedal Noturno"
     assert meta["next_event_at"] == "2026-09-10T19:00:00-03:00"
     assert meta["current_time"] == "2026-07-29T23:00:00-03:00"
@@ -100,7 +102,7 @@ def test_system_prompt_includes_rich_user_metadata() -> None:
         }
     )
     system = build_system_prompt(_project(), user_profile=profile)
-    assert "- clearance: O" in system
+    assert "clearance" not in system
     assert "- journey_kind: event_signup" in system
     assert "- next_event_name: EBA Centro" in system
     assert "- current_time: 2026-07-29T23:00:00-03:00" in system

@@ -110,10 +110,67 @@ def get_no_answer_fallback(project: dict) -> str:
     return _DEFAULT_NO_ANSWER_FALLBACK
 
 
-def _format_user_profile(profile: dict | None) -> str:
+def get_profile_display_config(project: dict) -> dict:
+    """Rendering options for the user-profile block (config_json.profile_display).
+
+    Opt-in per project: with no config the profile block renders exactly as before
+    (raw `- key: value` lines), so projects that do not send platform context are
+    byte-identical.
+
+    - labels: translate known platform keys to readable labels.
+    - glossary: {field: {raw_value: meaning}} for opaque slugs the model cannot
+      decode on its own (e.g. journey kinds).
+    """
+    cfg = project.get("config_json") or {}
+    disp = cfg.get("profile_display") if isinstance(cfg, dict) else None
+    if not isinstance(disp, dict):
+        return {"labels": False, "glossary": {}}
+    glossary = disp.get("glossary")
+    return {
+        "labels": bool(disp.get("labels")),
+        "glossary": glossary if isinstance(glossary, dict) else {},
+    }
+
+
+def is_shareable_url(value: object) -> bool:
+    """True when a value is already a URL the assistant could hand to the user.
+
+    Journey destinations are usually an internal reference (an event id, a system
+    pointer), not a link: the platform resolves them later. The model cannot do that
+    resolution, so anything that is not already an absolute URL must not reach it —
+    it could only leak the raw id or invent a link around it.
+    """
+    text = str(value or "").strip()
+    return text.startswith("https://") or text.startswith("http://")
+
+
+# Readable labels for the platform context the client sends (§1.1 of the Bike Anjo
+# contract). Only keys listed here are relabelled; every other metadata key keeps
+# its raw rendering, so existing projects are unaffected.
+_PLATFORM_FIELD_LABELS = {
+    "journey_kind": "Jornada aberta (tipo)",
+    "journey_destination": "Jornada aberta (destino)",
+    "next_event_name": "Próximo evento inscrito",
+    "next_event_at": "Data do próximo evento inscrito",
+    "current_time": "Hora local do contato agora",
+}
+
+def _render_metadata_value(key: str, value: object, display: dict) -> str:
+    """Render one metadata value, decoding known slugs."""
+    text = str(value)
+    meaning = (display.get("glossary") or {}).get(key, {})
+    if isinstance(meaning, dict):
+        decoded = meaning.get(str(value))
+        if decoded:
+            text = f"{text} ({decoded})"
+    return text
+
+
+def _format_user_profile(profile: dict | None, display: dict | None = None) -> str:
     """Format user profile for inclusion in the system prompt."""
     if not profile:
         return ""
+    display = display or {"labels": False, "glossary": {}}
     parts = ["About the current user:"]
     if profile.get("display_name"):
         parts.append(f"- Name: {profile['display_name']}")
@@ -132,8 +189,10 @@ def _format_user_profile(profile: dict | None) -> str:
         parts.append(f"- Notes: {profile['notes']}")
     metadata = profile.get("metadata") or {}
     if isinstance(metadata, dict):
+        use_labels = display.get("labels")
         for key, value in metadata.items():
-            parts.append(f"- {key}: {value}")
+            label = _PLATFORM_FIELD_LABELS.get(key, key) if use_labels else key
+            parts.append(f"- {label}: {_render_metadata_value(key, value, display)}")
     if len(parts) <= 1:
         return ""
     return "\n".join(parts) + "\n"
@@ -188,7 +247,7 @@ def build_system_prompt(
 ) -> str:
     """Build the system message without RAG user context."""
     project_name = project.get("name") or project.get("project_id", "unknown")
-    profile_block = _format_user_profile(user_profile)
+    profile_block = _format_user_profile(user_profile, get_profile_display_config(project))
     prompt_profile = get_prompt_profile(project)
     no_answer_fallback = get_no_answer_fallback(project)
 

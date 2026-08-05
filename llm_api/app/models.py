@@ -35,7 +35,7 @@ class UserContextIn(BaseModel):
     clearance: str | None = Field(None, description="Current N/O/I/A clearance level")
     intended_clearance: str | None = Field(None, description="Intended clearance track")
     journey_kind: str | None = Field(None, description="Open POfR journey kind")
-    journey_destination: str | None = Field(None, description="Open POfR journey destination path")
+    journey_destination: str | None = Field(None, description="Open POfR destination: usually an internal reference the platform resolves, not a link")
     next_event_name: str | None = Field(None, description="Next enrolled event name")
     next_event_at: str | None = Field(None, description="Next enrolled event timestamp (ISO)")
     current_time: str | None = Field(None, description="Client local time (e.g. America/Sao_Paulo)")
