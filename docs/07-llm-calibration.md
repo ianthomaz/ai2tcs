@@ -278,6 +278,12 @@ Flags active after sprint: hybrid + rerank + embedding cache. Re-ingest ran befo
 
 Record hit-rate / latency here after each flag change.
 
+Desde ago/2026 isto não precisa de ser transcrito à mão: `scripts/eval_rag.py` grava
+cada corrida em `tests/eval/results/` com o `config_json` do projeto anexado, e
+`--compare` imprime a tabela antes/depois já com o diff de configuração. A linha
+"dedup (0.0s)" acima é o modo de falha que `--unique` evita — ver
+[13 §2](./13-optimization-execution-plan.md).
+
 ---
 
 **Anterior:** [06-edu-contract.md](./06-edu-contract.md) · **Seguinte:** [08-project-config.md](./08-project-config.md)

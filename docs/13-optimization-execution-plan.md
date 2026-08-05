@@ -31,6 +31,31 @@ Ação:
 Critério de pronto:
 - Tabela "antes/depois" para qualquer mudança de RAG/modelo.
 
+Mecânica (ago/2026):
+
+```bash
+# 1. receber exemplos já avaliados (shadow LLM) para o dataset
+python scripts/import_eval_set.py --input export.jsonl --dry-run
+python scripts/import_eval_set.py --input export.jsonl
+
+# 2. medir — grava em tests/eval/results/ com a config do projeto anexada
+python scripts/eval_rag.py --project bikeanjoall_2026 --unique --report-only
+
+# 3. mudar UMA coisa (ex.: policies.rag_rerank_enabled), medir outra vez, comparar
+python scripts/eval_rag.py --compare tests/eval/results/<antes>.json tests/eval/results/<depois>.json
+```
+
+Duas regras que decidem se o número vale alguma coisa:
+
+- **`--unique` sempre que a latência importar.** O `/ask` deduplica pergunta
+  idêntica dentro do TTL (`policies.dedup_ttl_seconds`, 600s por defeito) e devolve
+  o job anterior em ~0s. Sem `--unique`, mede-se o dedup, não o serviço — é o que
+  contaminou a tabela do [07](./07-llm-calibration.md).
+- **Uma variável por corrida.** O `--compare` imprime o diff de `config_json` entre
+  as duas corridas; se aparecer mais de uma linha, o resultado não atribui causa.
+  Em particular, `rag_rerank_enabled` e `rag_hybrid_enabled` juntos não são
+  separáveis: o cross-encoder reordena por cima e dissolve o boost do híbrido.
+
 ### 3) Feature flags para melhorias futuras
 
 Ação:
