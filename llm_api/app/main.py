@@ -8,6 +8,7 @@ from pathlib import Path
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
@@ -62,6 +63,31 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="LLM API", lifespan=lifespan)
+
+
+@app.middleware("http")
+async def max_body_size_middleware(request: Request, call_next):
+    """Reject an oversized body via Content-Length before any parsing starts.
+
+    /audio/* only checked audio_max_bytes after Starlette's multipart parser had
+    already spooled the whole upload (SpooledTemporaryFile per part), and
+    /ingest/upload had no size check at all. This runs first, so a request that
+    declares itself too large never reaches either. Content-Length is optional
+    (chunked transfer has none), so this is a backstop against a client that
+    reports its size honestly, not a hard guarantee against every path.
+    """
+    content_length = request.headers.get("content-length")
+    if content_length is not None:
+        try:
+            declared = int(content_length)
+        except ValueError:
+            declared = None
+        if declared is not None and declared > settings.max_request_body_bytes:
+            return JSONResponse(
+                status_code=413,
+                content={"detail": f"Request body too large ({declared} bytes, max {settings.max_request_body_bytes})"},
+            )
+    return await call_next(request)
 
 
 @app.middleware("http")

@@ -111,16 +111,26 @@ async def _enqueue_audio_job(
         logger.exception("failed to write audio temp file")
         raise HTTPException(status_code=500, detail=f"could not store upload: {e}") from e
 
-    await db_module.job_create(
-        project_id,
-        "[audio]",
-        None,
-        user_id=user_id,
-        user_context=user_context,
-        job_kind=job_kind,
-        audio_path=str(dest.resolve()),
-        job_id=job_id,
-    )
+    try:
+        await db_module.job_create(
+            project_id,
+            "[audio]",
+            None,
+            user_id=user_id,
+            user_context=user_context,
+            job_kind=job_kind,
+            audio_path=str(dest.resolve()),
+            job_id=job_id,
+        )
+    except Exception:
+        # dest was already written to disk; without this it becomes a permanent
+        # orphan under audio_temp_subdir, since no Job row exists to reference it
+        # and nothing in the repo reaps unreferenced files there.
+        try:
+            dest.unlink(missing_ok=True)
+        except OSError:
+            logger.warning("failed to clean up orphaned audio temp file %s", dest)
+        raise
 
     return AudioJobResponse(
         job_id=job_id,

@@ -65,6 +65,12 @@ class Settings(BaseSettings):
 
     # Audio uploads (multipart)
     audio_max_bytes: int = 25 * 1024 * 1024
+    # Global safety net, checked before any body/multipart parsing runs. audio.py's
+    # own audio_max_bytes check only fires after Starlette has already spooled the
+    # whole upload to disk/memory (SpooledTemporaryFile per multipart part), and
+    # /ingest/upload had no size limit of any kind. Generous on purpose — this is
+    # a backstop against a broken/abusive client, not a per-route content policy.
+    max_request_body_bytes: int = 50 * 1024 * 1024
     audio_temp_subdir: str = "audio_tmp"
     # Runtime feature flags (safe defaults keep existing behavior)
     rag_rerank_enabled: bool = False
