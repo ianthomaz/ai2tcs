@@ -116,6 +116,30 @@ _OTHER_FORBIDDEN_PHRASES = re.compile(
 # Espaços duplos e pontuação órfã deixados por uma remoção no meio da frase.
 _DOUBLE_SPACE = re.compile(r"[ \t]{2,}")
 _ORPHAN_LEADING_PUNCT = re.compile(r"^[,\s]+")
+_ORPHAN_TRAILING_PUNCT = re.compile(r"[,;:\-–—]+\s*$")
+# Sobra que começa como continuação de frase (não artigo "a"/"o" — esses são
+# inícios válidos depois de tirar um prefixo meta: "o Bike Anjo faz X").
+_ORPHAN_LEADING_CONNECTOR = re.compile(
+    r"^(?:do|da|de|dos|das|na|no|nas|nos|mas|e|ou)\b",
+    re.IGNORECASE,
+)
+# "Para mais detalhes, do site." — vírgula + preposição órfã no meio.
+_DANGLING_COMMA_PREPOSITION = re.compile(
+    r",\s+(?:do|da|de|dos|das|na|no|nas|nos)\b",
+    re.IGNORECASE,
+)
+
+
+def _looks_mutilated(text: str) -> bool:
+    """True when phrase-stripping left a broken fragment better treated as silence."""
+    t = text.strip()
+    if not t:
+        return False
+    if _ORPHAN_LEADING_CONNECTOR.match(t):
+        return True
+    if _DANGLING_COMMA_PREPOSITION.search(t):
+        return True
+    return False
 
 
 def _sanitize_answer(answer: str) -> str:
@@ -123,6 +147,10 @@ def _sanitize_answer(answer: str) -> str:
 
     Rules are intentionally conservative — only well-identified patterns with
     context guards. Each rule logs when applied for observability.
+
+    If stripping a forbidden phrase leaves a mutilated remnant (orphan connector,
+    dangling ", do site"), return "" so /ask can report no_answer instead of
+    shipping broken Portuguese to WhatsApp.
     """
     original = answer
 
@@ -139,6 +167,7 @@ def _sanitize_answer(answer: str) -> str:
     # Limpar espaço duplo / pontuação órfã deixada por uma remoção no meio do texto
     answer = _DOUBLE_SPACE.sub(" ", answer)
     answer = _ORPHAN_LEADING_PUNCT.sub("", answer)
+    answer = _ORPHAN_TRAILING_PUNCT.sub("", answer)
 
     # 3. Fix "falecimento" typo only in contact context (regra original, preservada)
     if "falecimento" in answer:
@@ -153,6 +182,13 @@ def _sanitize_answer(answer: str) -> str:
             answer = answer.replace("informações sobre contatos para falecimento", "informações sobre contato / fale conosco")
 
     answer = answer.strip()
+
+    if answer != original and _looks_mutilated(answer):
+        logger.info(
+            "sanitize_answer discarded mutilated remnant (len %d → empty)",
+            len(original),
+        )
+        return ""
 
     if answer != original:
         logger.info("sanitize_answer applied corrections (len %d → %d)", len(original), len(answer))

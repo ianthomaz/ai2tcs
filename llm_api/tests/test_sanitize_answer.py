@@ -74,3 +74,28 @@ def test_falecimento_fix_still_works_and_is_unaffected_by_the_new_rules():
 def test_falecimento_death_context_is_preserved():
     answer = "Em caso de falecimento de um associado, contate o suporte."
     assert _sanitize_answer(answer) == answer
+
+
+def test_mutilated_recomendo_links_becomes_empty():
+    """Broken remnant after strip (e.g. dangling preposition) becomes empty."""
+    answer = "Para mais detalhes, recomendo consultar os links do site."
+    assert _sanitize_answer(answer) == ""
+
+
+def test_orphan_connector_after_strip_becomes_empty():
+    answer = "Não encontrei informação suficiente na base, mas temos evento em SP."
+    assert _sanitize_answer(answer) == ""
+
+
+def test_meta_prefix_with_useful_content_is_kept():
+    answer = "Com base no contexto fornecido, o Bike Anjo faz cicloturismo."
+    cleaned = _sanitize_answer(answer)
+    assert cleaned == "o Bike Anjo faz cicloturismo."
+
+
+def test_meta_then_useful_sentence_is_kept():
+    answer = "Olá! Não encontrei informação suficiente. Quer que eu te ajude de outro jeito?"
+    cleaned = _sanitize_answer(answer)
+    assert "Olá!" in cleaned
+    assert "Quer que eu te ajude" in cleaned
+    assert "não encontrei informação suficiente" not in cleaned.lower()
