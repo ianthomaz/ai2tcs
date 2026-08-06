@@ -186,33 +186,51 @@ def _split_by_separator(
     return chunks
 
 
-def iter_files(paths: list[str], extensions: set[str] | None = None) -> list[tuple[Path, str]]:
-    """Yield (path, text_content) for supported files under path. paths are folders."""
+def iter_files(
+    paths: list[str],
+    extensions: set[str] | None = None,
+    skipped_out: list[tuple[Path, str]] | None = None,
+) -> list[tuple[Path, str]]:
+    """Yield (path, text_content) for supported files under path. paths are folders.
+
+    A file whose extension is not in `extensions` (e.g. a .pdf/.docx in a project
+    library — the ingest pipeline has no parser for either) was dropped with no
+    trace: document_count/chunks in the ingest result never reflected the omission,
+    so "the bot doesn't know X" support cases could trace back to a silently
+    unindexed file. Pass `skipped_out` to collect (path, reason) for every file the
+    walk saw but did not index — "unsupported_extension" or "read_error".
+    """
     if extensions is None:
         extensions = {".txt", ".md", ".markdown", ".rst", ".json"}
     out: list[tuple[Path, str]] = []
+
+    def _try_read(f: Path) -> None:
+        try:
+            text = _read_file_text(f)
+            if text:
+                out.append((f, text))
+        except Exception:
+            if skipped_out is not None:
+                skipped_out.append((f, "read_error"))
+
     for base in paths:
         p = Path(base)
         if not p.exists():
             continue
         if p.is_file():
             if p.suffix.lower() in extensions:
-                try:
-                    text = _read_file_text(p)
-                    if text:
-                        out.append((p, text))
-                except Exception:
-                    pass
+                _try_read(p)
+            elif skipped_out is not None:
+                skipped_out.append((p, "unsupported_extension"))
             continue
         for f in p.rglob("*"):
-            if not f.is_file() or f.suffix.lower() not in extensions:
+            if not f.is_file():
                 continue
-            try:
-                text = _read_file_text(f)
-                if text:
-                    out.append((f, text))
-            except Exception:
-                pass
+            if f.suffix.lower() not in extensions:
+                if skipped_out is not None:
+                    skipped_out.append((f, "unsupported_extension"))
+                continue
+            _try_read(f)
     return out
 
 
