@@ -229,7 +229,10 @@ def _extract_prestador_supplier_fields(text: str) -> tuple[dict[str, Any], bool]
 def _to_float(value: str | None) -> float | None:
     if not value:
         return None
-    normalized = value.replace(".", "").replace(",", ".")
+    # Strip a currency prefix ("R$ 10,00") — XML/PDF-derived values never carry one,
+    # so this only ever helps the LLM-sourced path, never changes the heuristic one.
+    stripped = re.sub(r"^\s*r\$\s*", "", value, flags=re.IGNORECASE)
+    normalized = stripped.replace(".", "").replace(",", ".")
     try:
         return float(normalized)
     except ValueError:
@@ -927,6 +930,20 @@ async def run_extraction_pipeline(
             if normalized and normalized != pre_llm.get(key):
                 llm_touched.add(key)
             if normalized:
+                base[key] = normalized
+            continue
+        if key in ("amount", "amount_tax", "amount_deposit"):
+            # NFExtractResponse declares these float | None. The LLM can answer in
+            # BR format ("1.234,56") or free text; passed through unconverted, that
+            # string reaches NFExtractResponse(**result) and pydantic raises
+            # ValidationError with nothing catching it — 500 instead of a usable
+            # response. _to_float already handles BR format and returns None
+            # (never raises) on anything it can't parse — same coercion the
+            # heuristic XML/PDF path already applies to these same fields above.
+            normalized = _to_float(_normalize_nf_llm_value(value)) if isinstance(value, str) else value
+            if isinstance(normalized, (int, float)) and normalized != pre_llm.get(key):
+                llm_touched.add(key)
+            if isinstance(normalized, (int, float)):
                 base[key] = normalized
             continue
         normalized = _normalize_nf_llm_value(value)

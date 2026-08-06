@@ -11,6 +11,7 @@ import httpx
 
 from app.boletoextract.llm_client import enrich_boleto_with_local_llm
 from app.nfextract.parser import (
+    _to_float,
     detect_document_type,
     extract_pdf_text_with_fallbacks,
     read_document_from_path,
@@ -312,6 +313,16 @@ async def run_boleto_extraction_pipeline(
             d = _digits(str(value))
             if d and validate_digitable_line(d):
                 base[key] = d
+            continue
+        if key == "amount":
+            # BoletoExtractResponse declares amount float | None. A BR-formatted or
+            # free-text string from the LLM reached BoletoExtractResponse(**result)
+            # unconverted and pydantic raised ValidationError uncaught — 500 instead
+            # of a usable response. _to_float never raises; unparseable input just
+            # leaves amount unset rather than crashing the endpoint.
+            coerced = _to_float(str(value)) if isinstance(value, str) else value
+            if isinstance(coerced, (int, float)):
+                base[key] = coerced
             continue
         base[key] = value
 

@@ -170,9 +170,6 @@ def _sanitize_payment_nf_object(parsed: dict) -> str:
     return json.dumps(clean, ensure_ascii=False)
 
 
-    return json.dumps(clean, ensure_ascii=False)
-
-
 def _sanitize_payment_boleto_object(parsed: dict) -> str:
     if not parsed or not isinstance(parsed, dict):
         return "{}"
