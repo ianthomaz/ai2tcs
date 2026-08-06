@@ -430,6 +430,17 @@ async def route_message(
 
     finalized = _finalize_router_response(data)
 
+    if finalized.action == "answer_now" and finalized.answer:
+        # /ask runs every answer through sanitize + the per-project bleed/forbidden-terms
+        # guard (worker.py). answer_now skipped both — a router-generated reply could
+        # leak a banned meta-phrase or a forbidden term with no net at all.
+        from app.jobs.worker import _sanitize_answer
+        from app.rag.answer_guard import guard_answer_for_profile
+
+        cleaned = guard_answer_for_profile(_sanitize_answer(finalized.answer), project)
+        if cleaned != finalized.answer:
+            finalized = finalized.model_copy(update={"answer": cleaned})
+
     # Resolve specialist after finalization so answer_now→escalate (empty answer) gets a concrete model
     if finalized.action == "escalate" and (
         not finalized.escalate_to or finalized.escalate_to == "auto"

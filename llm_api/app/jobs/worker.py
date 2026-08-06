@@ -76,10 +76,13 @@ def _rerank_for_diversity(chunks: list[dict], max_per_doc: int = 2) -> list[dict
 # Cada regra corrige um desvio recorrente do modelo 7B/8B que o prompt base não consegue
 # eliminar de forma confiável. Regras são conservadoras: padrões específicos, com log.
 
-# Desvio: modelo abre resposta com meta-frases ("Com base no contexto fornecido, ...")
+# Desvio: modelo abre resposta com meta-frases ("Com base no contexto fornecido, ...").
 # Adicionado: março 2026. Exemplo: "Com base no contexto fornecido, a Mobi oferece..."
+# ago/2026: removido o anchor ^ e o count=1 — a mesma frase proibida (prompt.py
+# _CALIBRATION_BLOCK) escapava quando não era a primeira coisa da resposta, ou
+# quando aparecia mais de uma vez.
 _META_PHRASE_PREFIXES = re.compile(
-    r"^(?:"
+    r"(?:"
     r"Com base (?:no contexto fornecido|apenas na informação fornecida|nas informações (?:disponíveis|fornecidas)),?\s*"
     r"|Segundo o (?:conteúdo|contexto),?\s*"
     r"|De acordo com (?:o contexto|as informações (?:disponíveis|fornecidas)),?\s*"
@@ -95,6 +98,25 @@ _NEGATIVE_FILLER = re.compile(
     re.IGNORECASE,
 )
 
+# ago/2026: frases que _CALIBRATION_BLOCK também proíbe e que não tinham nenhuma
+# rede — nem como prefixo nem em qualquer posição. "não encontrei informação
+# suficiente" é mais curta que o texto exato de _NEGATIVE_FILLER (o incidente de
+# março), então a versão curta escapava sempre que o modelo não completava com
+# "na base de conhecimento para responder essa pergunta".
+_OTHER_FORBIDDEN_PHRASES = re.compile(
+    r"(?:"
+    r"não encontrei informação específica"
+    r"|não encontrei informação suficiente"
+    r"|não há informações que justifiquem ou desaconselhem"
+    r"|recomendo consultar os links"
+    r")\.?,?\s*",
+    re.IGNORECASE,
+)
+
+# Espaços duplos e pontuação órfã deixados por uma remoção no meio da frase.
+_DOUBLE_SPACE = re.compile(r"[ \t]{2,}")
+_ORPHAN_LEADING_PUNCT = re.compile(r"^[,\s]+")
+
 
 def _sanitize_answer(answer: str) -> str:
     """Apply minimal, targeted post-processing to fix known LLM generation errors.
@@ -104,11 +126,19 @@ def _sanitize_answer(answer: str) -> str:
     """
     original = answer
 
-    # 1. Remove meta-phrase prefixes (modelo 7B/8B ignora proibição do prompt ~20% das vezes)
-    answer = _META_PHRASE_PREFIXES.sub("", answer, count=1)
+    # 1. Remove meta-frases proibidas pelo prompt, em qualquer posição, todas as ocorrências
+    #    (modelo 7B/8B ignora a proibição ~20% das vezes, nem sempre só no início)
+    answer = _META_PHRASE_PREFIXES.sub("", answer)
 
-    # 2. Remove frase longa negativa de fallback
+    # 2. Remove frase longa negativa de fallback ANTES da versão curta genérica:
+    #    "não encontrei informação suficiente" é prefixo desta, então a versão curta
+    #    tem de correr depois, senão consome só o prefixo e deixa o resto solto.
     answer = _NEGATIVE_FILLER.sub("", answer)
+    answer = _OTHER_FORBIDDEN_PHRASES.sub("", answer)
+
+    # Limpar espaço duplo / pontuação órfã deixada por uma remoção no meio do texto
+    answer = _DOUBLE_SPACE.sub(" ", answer)
+    answer = _ORPHAN_LEADING_PUNCT.sub("", answer)
 
     # 3. Fix "falecimento" typo only in contact context (regra original, preservada)
     if "falecimento" in answer:
