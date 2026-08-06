@@ -142,9 +142,13 @@ class GeminiProvider(LLMProvider):
         if system_text:
             payload["systemInstruction"] = {"parts": [{"text": system_text}]}
 
-        url = f"{self._BASE}/{effective_model}:generateContent?key={self._api_key}"
+        # Key goes in a header, not the ?key= query param: httpx logs the request URL
+        # at INFO level (app/main.py sets logging.basicConfig(level=logging.INFO)),
+        # so a key in the URL lands in cleartext in every log line, every request.
+        # Google's Generative Language API accepts the key via x-goog-api-key too.
+        url = f"{self._BASE}/{effective_model}:generateContent"
         async with httpx.AsyncClient(timeout=120.0) as client:
-            resp = await client.post(url, json=payload)
+            resp = await client.post(url, json=payload, headers={"x-goog-api-key": self._api_key})
             resp.raise_for_status()
             data = resp.json()
         candidates = data.get("candidates") or []
