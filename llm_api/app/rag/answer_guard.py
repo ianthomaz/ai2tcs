@@ -5,6 +5,7 @@ import logging
 import re
 
 from app.rag.prompt import get_no_answer_fallback, get_prompt_profile
+from app.registry import get_rag_policies
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +58,18 @@ def _has_cross_project_bleed(answer: str, project_id: str, prompt_profile: str) 
     return any(p.search(answer) for p in _CROSS_PROJECT_BLEED_PATTERNS)
 
 
+def _guard_replacement(project: dict) -> str:
+    """What to hand back when a guard blocks the answer.
+
+    Projects with when_no_answer=no_answer (Bike Anjo WhatsApp) must get silence —
+    returning no_answer_fallback would ship a *prompt instruction* as the user-facing
+    answer. Projects that use a real user-facing fallback keep that text.
+    """
+    if get_rag_policies(project).get("when_no_answer") == "no_answer":
+        return ""
+    return get_no_answer_fallback(project)
+
+
 def guard_answer_for_profile(answer: str, project: dict) -> str:
     """Replace answers that bleed another project's sales voice with project fallback."""
     if not answer or not answer.strip():
@@ -74,15 +87,15 @@ def guard_answer_for_profile(answer: str, project: dict) -> str:
             ",".join(hits),
             len(answer),
         )
-        return get_no_answer_fallback(project)
+        return _guard_replacement(project)
 
     if not _has_cross_project_bleed(answer, project_id, prompt_profile):
         return answer
-    fallback = get_no_answer_fallback(project)
+    replacement = _guard_replacement(project)
     logger.info(
         "cross_project_bleed_corrected project=%s profile=%s len=%d",
         project_id,
         prompt_profile,
         len(answer),
     )
-    return fallback
+    return replacement

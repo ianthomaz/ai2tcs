@@ -75,7 +75,8 @@ def test_factual_project_without_terms_is_untouched():
 
 def test_creative_bleed_still_caught_without_any_config():
     answer = "A Mobi cuida disso para você."
-    assert guard_answer_for_profile(answer, _project(profile="creative")) == FALLBACK
+    # Default when_no_answer is no_answer → silence, not the prompt-instruction fallback.
+    assert guard_answer_for_profile(answer, _project(profile="creative")) == ""
 
 
 def test_estudosmobi_creative_still_exempt():
@@ -97,21 +98,37 @@ def test_factual_project_can_now_declare_its_own_terms():
     answer = "Recomendo procurar a mobicontabil para isso."
     project = _project(terms=["mobicontabil"])
     # factual profile: the hardcoded guard never fires here, only the config does.
-    assert guard_answer_for_profile(answer, project) == FALLBACK
+    # Default when_no_answer=no_answer → empty string (WhatsApp silence).
+    assert guard_answer_for_profile(answer, project) == ""
 
 
 def test_sales_project_can_declare_terms_too():
     answer = "Fale com o concorrente XPTO."
     project = _project(profile="sales", terms=["XPTO"])
-    assert guard_answer_for_profile(answer, project) == FALLBACK
+    assert guard_answer_for_profile(answer, project) == ""
 
 
 def test_configured_terms_win_for_a_project_the_hardcoded_guard_exempts():
     """estudosmobi is exempt from the mobi patterns, but not from its own list."""
     project = _project(project_id="estudosmobi", profile="creative", terms=["reembolso garantido"])
-    assert guard_answer_for_profile("Oferecemos reembolso garantido.", project) == FALLBACK
+    assert guard_answer_for_profile("Oferecemos reembolso garantido.", project) == ""
     # Its own brand still passes, as before.
     assert guard_answer_for_profile("A Mobi cuida disso.", project) == "A Mobi cuida disso."
+
+
+def test_user_facing_fallback_kept_when_when_no_answer_is_not_no_answer():
+    project = _project(terms=["telemóvel"], extra_policies={"when_no_answer": "allow_model"})
+    assert guard_answer_for_profile("Abra no telemóvel.", project) == FALLBACK
+
+
+def test_bikeanjo_forbidden_terms_become_silence():
+    project = _project(
+        project_id="bikeanjoall_2026",
+        terms=["telemóvel", "De nada", "posso ajudar em mais"],
+        extra_policies={"when_no_answer": "no_answer"},
+    )
+    assert guard_answer_for_profile("De nada! Qualquer coisa estou à disposição.", project) == ""
+    assert guard_answer_for_profile("Abra o link no telemóvel.", project) == ""
 
 
 def test_clean_answer_passes_with_terms_configured():

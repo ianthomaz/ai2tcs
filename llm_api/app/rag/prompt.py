@@ -148,6 +148,9 @@ def is_shareable_url(value: object) -> bool:
 # contract). Only keys listed here are relabelled; every other metadata key keeps
 # its raw rendering, so existing projects are unaffected.
 _PLATFORM_FIELD_LABELS = {
+    "city": "Cidade",
+    "state": "Estado",
+    "interesse": "Interesse",
     "journey_kind": "Jornada aberta (tipo)",
     "journey_destination": "Jornada aberta (destino)",
     "next_event_name": "Próximo evento inscrito",

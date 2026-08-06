@@ -41,8 +41,12 @@ Projeto Bike Anjo. Tom pragmático e direto: sem conversinha, sem entusiasmo, se
 Use action "answer_now" apenas quando a resposta couber em 1-2 frases curtas, já com o
 link vindo do contexto quando houver, e sem pedir dado que o site coleta. Na dúvida,
 prefira "escalate".
-Use cidade, interesse e próximo evento para escolher a rota — nunca repita esses dados
-no texto da resposta. Campo ausente = a plataforma não sabe; não invente.
+Use cidade, interesse, próximo evento e hora local para escolher a rota — nunca repita
+esses dados no texto da resposta. Campo ausente = a plataforma não sabe; não invente.
+Silêncio por defeito (Public_ROUTER): se a mensagem não tem "?" e não é pedido técnico
+claro (cadastro, evento/check-in, CEP), prefira escalate — não invente bate-papo.
+Lexicon BR: celular/telefone — nunca "telemóvel". Sem CTA de manutenção de conversa
+("De nada", "posso ajudar em mais alguma coisa?").
 """
 
 
@@ -73,7 +77,20 @@ async def main():
             json.dumps({
                 "chunking": {"chunk_size": 512, "chunk_overlap": 64, "separator": "\n\n"},
                 "embedding_model": "mxbai-embed-large",
-                "policies": {"prefer_cite_sources": True, "when_no_answer": "no_answer", "max_chunks_to_retrieve": 5},
+                "policies": {
+                    "prefer_cite_sources": True,
+                    "when_no_answer": "no_answer",
+                    "max_chunks_to_retrieve": 5,
+                    # Substring match at runtime (answer_guard) and in eval_rag.
+                    "forbidden_terms": [
+                        "telemóvel",
+                        "telemovel",
+                        "De nada",
+                        "posso ajudar em mais",
+                        "algo mais",
+                        "estou à disposição",
+                    ],
+                },
                 # Canal WhatsApp: resposta curta. Sem isto o projeto herda o default
                 # "medium" = 2 a 4 parágrafos, que nenhum corpus consegue encurtar.
                 "llm_options": {"tone_of_voice": "direct", "message_size": "short"},

@@ -99,6 +99,10 @@ class RouterRequest(BaseModel):
     journey_destination: str | None = Field(None, description="Open POfR destination: usually an internal reference the platform resolves, not a link")
     next_event_name: str | None = Field(None, description="Next enrolled event name")
     next_event_at: str | None = Field(None, description="Next enrolled event timestamp (ISO)")
+    current_time: str | None = Field(
+        None,
+        description="Client local time for the contact (e.g. America/Sao_Paulo wall clock)",
+    )
     last_messages: list[str] | None = Field(None, description="Last N messages (user/assistant) for context")
     model: str | None = Field(
         None,
@@ -382,6 +386,8 @@ async def route_message(
         user_parts.append(f"Próximo evento: {body.next_event_name}")
     if body.next_event_at:
         user_parts.append(f"Data do próximo evento: {body.next_event_at}")
+    if body.current_time:
+        user_parts.append(f"Hora local do contato agora: {body.current_time}")
     if body.last_messages:
         user_parts.append("Últimas mensagens:\n" + "\n".join(body.last_messages[:5]))
     user_parts.append("\nContexto do projeto (biblioteca + mapa de fluxos):\n" + context_text)
@@ -440,6 +446,20 @@ async def route_message(
         cleaned = guard_answer_for_profile(_sanitize_answer(finalized.answer), project)
         if cleaned != finalized.answer:
             finalized = finalized.model_copy(update={"answer": cleaned})
+        # Guard/sanitize may clear the text after finalize already ran. Mirror
+        # _finalize_router_response: empty answer_now becomes escalate (Zap silence path).
+        if not (finalized.answer or "").strip():
+            tail = "router: answer_now bloqueado pelo guard, escalado"
+            obs = finalized.obs
+            obs = f"{obs}; {tail}" if (obs and str(obs).strip()) else tail
+            finalized = finalized.model_copy(
+                update={
+                    "action": "escalate",
+                    "answer": None,
+                    "escalate_to": finalized.escalate_to or "auto",
+                    "obs": obs,
+                }
+            )
 
     # Resolve specialist after finalization so answer_now→escalate (empty answer) gets a concrete model
     if finalized.action == "escalate" and (

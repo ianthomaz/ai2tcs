@@ -51,11 +51,32 @@ async def test_answer_now_strips_banned_meta_phrase(client):
 
 @pytest.mark.asyncio
 async def test_answer_now_blocked_by_project_forbidden_terms(client):
+    """when_no_answer=no_answer (default) → silence via escalate, not prompt-instruction text."""
     project = {
         "project_id": "p1",
         "config_json": {
             "no_answer_fallback": "Fale com a equipe.",
-            "policies": {"forbidden_terms": ["concorrente xpto"]},
+            "policies": {"forbidden_terms": ["concorrente xpto"], "when_no_answer": "no_answer"},
+        },
+    }
+    llm_json = (
+        '{"action": "answer_now", "suggested_route": "ask", "confidence": 0.8, '
+        '"answer": "Recomendo procurar o concorrente XPTO para isso."}'
+    )
+    r = await _post_router(client, project=project, llm_json=llm_json)
+    assert r.status_code == 200
+    data = r.json()
+    assert data["action"] == "escalate"
+    assert data["answer"] is None
+
+
+@pytest.mark.asyncio
+async def test_answer_now_forbidden_terms_keep_fallback_when_allow_model(client):
+    project = {
+        "project_id": "p1",
+        "config_json": {
+            "no_answer_fallback": "Fale com a equipe.",
+            "policies": {"forbidden_terms": ["concorrente xpto"], "when_no_answer": "allow_model"},
         },
     }
     llm_json = (
