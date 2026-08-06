@@ -158,6 +158,81 @@ exposto, o que não se vê deste repo.
 - Dashboard e API estão atrás de Cloudflare Access? Existe rate limit no
   `POST /dashboard/login`? Não há nenhum no código, mas pode estar na borda.
 
+### 1.5 `status: "ok"` mesmo com a LLM totalmente indisponível
+
+**O que o código faz.** `llm_api/app/nfextract/llm_client.py:110-132`:
+quando `enrich_with_local_llm` esgota as tentativas (erro HTTP, timeout,
+qualquer excepção), devolve `({}, warnings)` — dict vazio, um aviso tipo
+`"LLM unavailable: ..."` em `warnings`. Em `llm_api/app/nfextract/parser.py:952`
+e `llm_api/app/boletoextract/parser.py:338`, `status` só vira `"error"` quando
+`errors` tem algo, e `errors` só recebe entradas de falha na extracção
+heurística (XML malformado, tipo de documento não suportado) — nunca de a LLM
+ter falhado por inteiro. `enrich_boleto_with_local_llm` segue o mesmo padrão.
+
+**O que acontece.** Um PDF com OCR fraco, onde os campos dependem sobretudo da
+LLM (`payment_receiver_document`, `service_recipient_code`, etc.), com a LLM
+indisponível: a resposta sai `status="ok"`, quase tudo `null`, e só quem lê
+`warnings` percebe a degradação total.
+
+**Dúvidas.** Isto é tocado propositadamente, sem certeza: a arquitectura
+distingue `warnings` (degradação leve) de `errors` (falha dura), e não sei se
+"a LLM não respondeu, mas a heurística devolveu o que conseguiu" foi desenhado
+como resultado aceitável — sujeito a revisão humana antes de qualquer pagamento
+(consistente com o §5 do [contrato Bike Anjo](../10d_ai2tcs_contrato_e_evolucao.md):
+a LLM nunca executa, só informa) — ou se é omissão. Mudar a semântica de
+`status` sem saber qual das duas é arriscado numa pipeline de dados financeiros;
+fica registado, não decidido.
+
+### 1.6 `nf_number` sem validação de formato
+
+**O que o código faz.** `llm_api/app/nfextract/parser.py:619-649`
+(`_sanitize_nf_number_field`): só substitui o valor da LLM se a regex sobre
+`extracted_text` encontrar um número; se não encontrar, mantém o que a LLM
+mandou, só filtrado por `_normalize_nf_llm_value` (remove placeholders tipo
+"não informado", não valida dígitos). O campo é `str | None` sem `pattern` no
+modelo (`app/models.py:332`).
+
+**Dúvidas.** Apertar a validação (rejeitar `nf_number` que não seja
+essencialmente dígitos/pontuação de nota fiscal) reduz recall em documentos
+legítimos com formatos incomuns — é o mesmo trade-off recall-vs-segurança que
+apareceu com o destino do POfR e o glossário de clearance nesta conversa:
+não é chamada para o código decidir sozinho.
+
+### 1.7 Sniff de formato de áudio nunca bloqueia
+
+**O que o código faz.** `llm_api/app/stt/audio_validate.py:77-79`: `sniff_format`
+compara os primeiros bytes contra assinaturas conhecidas; quando não reconhece
+nenhuma, só regista `logger.warning`, nunca rejeita. A única barreira real é a
+extensão do nome do ficheiro (controlada pelo cliente).
+
+**Dúvidas.** Enforcement bloqueante teria de cobrir primeiro `.webm`, que está
+em `_ALLOWED_EXT` (`audio_validate.py:14`) mas não tem assinatura nenhuma em
+`_MAGIC` (`audio_validate.py:17-24`) — hoje, um `.webm` legítimo já cai no
+ramo "formato desconhecido". Bloquear sem corrigir isso rejeitaria uploads
+válidos. Registado, não implementado.
+
+### 1.8 Ingest não lê PDF/DOCX (agora visível, ainda não suportado)
+
+Nesta sessão, `iter_files` passou a reportar ficheiros descartados por extensão
+não suportada (`llm_api/app/ingest/chunking.py`, `run_ingest` regista e loga —
+ver secção 2). Isso fecha o **silêncio**, não a lacuna: o parser de ingest
+continua sem suporte a `.pdf`/`.docx`, mesmo com `pypdf`/`pymupdf` já instalados
+para o pipeline de NF/boleto. Adicionar suporte real é funcionalidade nova, não
+correcção de bug — fica registado para decisão, não implementado aqui.
+
+### 1.9 Sem fallback entre providers LLM
+
+**O que o código faz.** `llm_api/app/llm/factory.py` selecciona um único
+provider por `config_json.llm_provider`; não há tentativa de trocar para outro
+em caso de falha. `_reflect_on_answer` (`worker.py`) reutiliza o mesmo
+`provider` da resposta principal — se esse provider estiver indisponível, a
+reflexão falha e degrada silenciosamente para a resposta original
+(comportamento já existente e correcto, só documentado aqui porque partilha o
+provider potencialmente já com problema).
+
+**Dúvidas.** Fallback entre providers é uma funcionalidade nova (que provider
+para qual, em que ordem, com que credenciais) — não um bug. Registado.
+
 ---
 
 ## 2. Já tratado — contexto para quem ler os commits
@@ -174,6 +249,23 @@ Alterado na branch de contexto rico, com o motivo:
 | `clearance` (NOIA) no prompt é sinal de autorização | ambos | Fora do prompt; ver §1.2 do [contrato](../10d_ai2tcs_contrato_e_evolucao.md) |
 | `journey_destination` tratado como caminho de URL, quando via de regra é referência interna | ambos | Só entra no prompt se já for URL absoluta; ver §1.3 do contrato |
 
+Alterado na segunda sessão (ago/2026), depois do merge do gap §1.1:
+
+| Achado | Onde | Tratamento |
+|---|---|---|
+| 3 das 10 meta-frases proibidas pelo prompt sem nenhuma rede; as demais só cobertas como prefixo, só na 1ª ocorrência | `app/jobs/worker.py` (`_sanitize_answer`) | Cobertura das 10, em qualquer posição, todas as ocorrências |
+| `/router` `answer_now` não passava por sanitize nem pelo guard anti-bleed, ao contrário do `/ask` | `app/api/message_router.py` | Ambos passam a correr sobre o texto de `answer_now` |
+| Anti-bleed cobria só `estudosmobi`/`prompt_profile: creative` | `app/rag/answer_guard.py` | `policies.forbidden_terms` opcional por projeto, qualquer profile; vazio (todos hoje) = comportamento igual |
+| API key da Gemini na query string da URL → vazava em texto puro nos logs (`logging.basicConfig(level=INFO)` sem silenciar o logger `httpx`) | `app/llm/external_provider.py` | Key movida para o header `x-goog-api-key` |
+| `provider.chat()` sem timeout — chamada pendurada bloqueava o worker daquele alias para sempre | `app/jobs/worker.py` | `_chat_or_timeout`, `LLM_CHAT_TIMEOUT_S` (120s) |
+| Resposta vazia da LLM reportada como `status="done"` sempre que havia chunks | `app/jobs/worker.py` | `_final_job_status`: vazio → mesmo caminho de `no_answer` |
+| `run_ingest` apagava a collection "docs" antes de reconstruir — excepção a meio do embedding esvaziava o índice até o próximo ingest bem-sucedido | `app/ingest/indexer.py` | Build numa collection `__staging`, swap só após sucesso; falha deixa o índice anterior intacto |
+| Ficheiro `.pdf`/`.docx` descartado do ingest sem nenhum rasto | `app/ingest/chunking.py`, `app/ingest/indexer.py` | `iter_files` reporta `skipped_out`; resultado do ingest inclui `skipped_files`/`skipped_file_extensions` |
+| Ficheiro de áudio órfão em disco se `job_create` falhasse depois do `write_bytes` | `app/api/audio.py` | Cleanup no caminho de falha |
+| `audio_max_bytes` só disparava depois do multipart já ter sido todo lido; `/ingest/upload` sem limite nenhum | `app/main.py` (novo middleware) | `Content-Length` rejeitado antes de qualquer parsing (`MAX_REQUEST_BODY_BYTES`) |
+| `amount`/`amount_tax`/`amount_deposit` da LLM em formato BR ou com prefixo "R$" crashava `NFExtractResponse`/`BoletoExtractResponse` (500) | `app/nfextract/parser.py`, `app/boletoextract/parser.py` | Coagidos via `_to_float` (nunca levanta); `_to_float` ganhou strip de prefixo de moeda |
+| `return` morto e inalcançável em `_sanitize_payment_nf_object` | `app/api/extract.py` | Removido |
+
 ---
 
 ## 3. As três perguntas que decidem o resto
@@ -183,3 +275,14 @@ Alterado na branch de contexto rico, com o motivo:
 2. **Para que serve o dedup?** Rajada do mesmo contato ou cache entre contatos são
    desenhos diferentes, e o comportamento actual só é defeito num deles.
 3. **A rerank devia cortar?** A docstring e o comentário no mesmo bloco discordam.
+
+Da segunda sessão (ago/2026):
+
+4. **`status="ok"` com a LLM totalmente indisponível é aceitável?** ([1.5](#15-status-ok-mesmo-com-a-llm-totalmente-indisponível))
+   Depende de haver sempre revisão humana antes de qualquer pagamento — coisa que
+   este repo não vê.
+5. **`nf_number` deve rejeitar o que não parece número de nota?** ([1.6](#16-nf_number-sem-validação-de-formato))
+   Troca recall por segurança; mesma família de decisão que o destino do POfR.
+6. **Vale a pena bloquear áudio de assinatura desconhecida?** ([1.7](#17-sniff-de-formato-de-áudio-nunca-bloqueia))
+   Só depois de `.webm` ganhar assinatura própria, senão quebra um formato hoje
+   suportado.
