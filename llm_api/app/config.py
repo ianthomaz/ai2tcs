@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     ollama_reasoner_model: str = "deepseek-r1:14b"
     # NF Extract: Ollama /api/chat read budget (s). Clients (e.g. ITCS_NF_EXTRACT_TIMEOUT_MS) should exceed this + ~30s.
     nf_extract_ollama_timeout_s: float = 120.0
+    # /ask and /router main chat call: without this, provider.chat() had no timeout
+    # at all — a hung Ollama call blocked its worker's job queue forever.
+    llm_chat_timeout_s: float = 120.0
     # /edu/chat: default to fast model for lower latency on short structured replies; override per-request with body.model or env.
     edu_chat_default_model_alias: str = "fast"
     edu_chat_num_predict: int = 512

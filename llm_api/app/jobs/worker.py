@@ -187,10 +187,13 @@ async def _reflect_on_answer(
     fast_model = settings.get_model_name("fast", default_alias="fast")
     fast_opts = {**llm_config, "temperature": 0.2, "num_predict": 512}
     try:
-        raw = await provider.chat(
-            model=fast_model,
-            messages=[{"role": "user", "content": prompt}],
-            options=fast_opts,
+        raw = await asyncio.wait_for(
+            provider.chat(
+                model=fast_model,
+                messages=[{"role": "user", "content": prompt}],
+                options=fast_opts,
+            ),
+            timeout=settings.llm_chat_timeout_s,
         )
         if "{" in raw and "}" in raw:
             blob = raw[raw.find("{") : raw.rfind("}") + 1]
@@ -303,6 +306,37 @@ async def _fire_job_callback(
         logger.warning("Callback failed for job %s: %s", job_id, exc)
 
 
+async def _chat_or_timeout(provider, *, model: str, messages: list[dict], options: dict) -> str:
+    """provider.chat() with a bound.
+
+    Without this, a hung provider call (network partition, stuck Ollama container)
+    blocked its job forever — and since a worker processes its alias queue
+    sequentially, every other job behind it too.
+    """
+    try:
+        return await asyncio.wait_for(
+            provider.chat(model=model, messages=messages, options=options),
+            timeout=settings.llm_chat_timeout_s,
+        )
+    except asyncio.TimeoutError as exc:
+        raise RuntimeError(f"LLM chat timed out after {settings.llm_chat_timeout_s}s") from exc
+
+
+def _final_job_status(answer: str | None, *, chunks: list[dict], rag_mode: str, policies: dict) -> str:
+    """"done" only when there is an actual answer to hand back.
+
+    An empty answer (dropped network response, provider bug, the guard blocking
+    everything) used to be reported as "done" as long as chunks existed — exactly
+    the invention-by-omission P6 rules out: "" is not silence, it is a blank
+    success. Route it through the same no_answer path as "no chunks found".
+    """
+    if not answer or not answer.strip():
+        return policies.get("when_no_answer", "no_answer")
+    if not chunks and rag_mode == "required":
+        return policies.get("when_no_answer", "no_answer")
+    return "done"
+
+
 async def run_rag_job(
     job_id: str,
     project_id: str,
@@ -409,7 +443,8 @@ async def run_rag_job(
 
         model_name = settings.get_model_name(model_alias, default_alias="smart")
         provider = get_provider(project)
-        answer = await provider.chat(
+        answer = await _chat_or_timeout(
+            provider,
             model=model_name,
             messages=[
                 {"role": "system", "content": system_msg},
@@ -445,10 +480,7 @@ async def run_rag_job(
             for c in chunks
         ]
         confidence = "high" if chunks else "low"
-        if not chunks and rag_mode == "required":
-            status = policies.get("when_no_answer", "no_answer")
-        else:
-            status = "done"
+        status = _final_job_status(answer, chunks=chunks, rag_mode=rag_mode, policies=policies)
         await db_module.job_update_status(
             job_id,
             status,
