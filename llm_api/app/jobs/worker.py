@@ -12,6 +12,7 @@ from app.config import settings
 from app.llm import get_provider
 from app.registry import (
     get_project,
+    get_rag_feature_flags,
     get_rag_mode,
     get_rag_policies,
     get_llm_config,
@@ -391,7 +392,7 @@ async def run_rag_job(
         answer = _sanitize_answer(answer)
         answer = guard_answer_for_profile(answer, project)
 
-        if settings.rag_reflection_enabled and chunks and answer:
+        if get_rag_feature_flags(project)["rag_reflection_enabled"] and chunks and answer:
             answer = await _reflect_on_answer(
                 provider=provider,
                 question=question,

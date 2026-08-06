@@ -142,7 +142,7 @@ Critério de pronto:
 - [ ] Definir limite de latência p95 por rota crítica
 - [ x ] Ativar logs com `request_id` e `duration_ms`
 - [ x ] Adicionar flags no `.env.example`
-- [ ] Implementar reranker sob flag
+- [ x ] Implementar reranker sob flag — `app/rag/rerank.py`, `RAG_RERANK_ENABLED`
 - [ x ] Implementar cache sob flag
 - [ x ] Implementar híbrido sob flag
 - [ ] Validar regressão com testes + smoke

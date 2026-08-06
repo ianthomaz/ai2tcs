@@ -242,9 +242,10 @@ Use este template para criar seu próprio projeto:
     },
     "embedding_model": "mxbai-embed-large",  # Mantém padrão
     "policies": {
-      "prefer_cite_sources": true,           # Sempre citar sources?
+      "prefer_cite_sources": true,           # SEM EFEITO hoje — ver nota abaixo
       "when_no_answer": "no_answer",         # "no_answer" ou "need_more_info"
-      "max_chunks_to_retrieve": 5            # 3-7, mais = mais contexto
+      "max_chunks_to_retrieve": 5,           # 3-7, mais = mais contexto
+      "forbidden_terms": []                  # termos que a resposta nunca pode conter
     },
     "llm_options": {
       "temperature": 0.5,                    # 0.2: preciso, 0.5: equilibrio, 0.7+: criativo
@@ -313,7 +314,7 @@ Use este template para criar seu próprio projeto:
 - `temperature: 0.3` — Baixa para respostas focadas e sem divagação; em projetos de venda, consistência > criatividade
 - `top_k: 25` — Conservador para evitar tokens inesperados
 - `repeat_penalty: 1.4` — Evita repetições sem prejudicar coerência
-- `max_chunk_distance: 0.9` — Mais restritivo que o padrão (1.2); filtra chunks vagamente relacionados que poluem o contexto e geram respostas fracas
+- `max_chunk_distance: 0.9` — Mais restritivo que o padrão (1.0, ver `app/registry.py`); filtra chunks vagamente relacionados que poluem o contexto e geram respostas fracas
 - `behavior_instruction_path` — Arquivo com mood de venda e proibições específicas do projeto
 
 **Nota sobre calibração:** Projetos de venda/serviços tendem a sofrer mais com meta-frases e tom neutro da LLM. Além dos params acima, é essencial ter um `instrucoes-llm.md` com regras de tom e proibições. Ver [07-llm-calibration.md](./07-llm-calibration.md) para desvios conhecidos.
@@ -474,6 +475,28 @@ Template **chat creative** (seed mínimo):
 ```
 
 Eval de regressão (incl. anti-bleed off-topic): `python3 scripts/eval_rag.py --project aiclaudia` — ver `forbidden_keywords` em `tests/eval/eval_questions.json`.
+
+### `forbidden_terms` — anti-bleed por projeto (ago/2026)
+
+`policies.forbidden_terms` é a versão runtime do `forbidden_keywords` do eval: se a
+resposta contiver algum destes termos, é substituída pelo `no_answer_fallback` do
+projeto e o bloqueio fica no log (`forbidden_terms_blocked`). Substring,
+case-insensitive — as mesmas regras do eval offline, para que o que reprova no
+`eval_rag.py` seja o que bloqueia em produção.
+
+```json
+"policies": { "forbidden_terms": ["mobicontabil", "concorrente xpto"] }
+```
+
+Vale para **qualquer** `prompt_profile`. Lista vazia (o caso de todos os projetos
+até agora) não muda nada: o guard hardcoded de `creative` continua a ser o único a
+disparar, como antes.
+
+### Chaves lidas mas sem efeito
+
+`prefer_cite_sources` aparece nos exemplos acima e em `get_rag_policies`, mas
+**nenhum código a consome** — não influencia prompt nem resposta. Mantida por
+compatibilidade dos configs existentes; não a use para decidir comportamento.
 
 ---
 

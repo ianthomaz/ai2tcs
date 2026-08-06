@@ -94,6 +94,14 @@ Plugar em `rag/retrieve.py` após o fetch do Chroma, antes de montar o prompt.
 
 ### 2.2 Hybrid Search (BM25 + Vetor)
 
+> **Estado (ago/2026):** o que está implementado **não é BM25**. `RAG_HYBRID_ENABLED`
+> liga um boost de keyword overlap em `app/rag/retrieve.py`:
+> `score = distância − 0.02 × nº de tokens da pergunta presentes no chunk`. Sem IDF,
+> sem normalização, sem `alpha`; `rank_bm25` não está nas dependências. O efeito
+> máximo numa pergunta de 5 tokens é 0.10 de distância, e quando o reranker está
+> ligado o cross-encoder reordena por cima e dissolve esse boost. O texto abaixo
+> continua a descrever o BM25 por implementar.
+
 BM25 é busca por palavras exatas — funciona bem para termos técnicos, siglas (NF-e, CNPJ, CEP), nomes próprios que os embeddings às vezes não capturam.
 
 ```python
@@ -497,21 +505,21 @@ Ver `scripts/llm_docker_autostart.sh` como base — adaptar para launchctl.
 ### Sprint 1 (impacto rápido, ~1 semana)
 - [ ] Trocar embedding por `mxbai-embed-large` (melhor PT-BR)
 - [ ] Adicionar `gemma3:12b` como `smart`
-- [ ] Implementar cache de embeddings com `lru_cache`
+- [ x ] Implementar cache de embeddings — LRU em `app/ingest/embeddings.py` (ligado por defeito)
 - [ ] Configurar `OLLAMA_KEEP_ALIVE=-1` para modelos principais
 
 ### Sprint 2 (qualidade RAG, ~2 semanas)
-- [ ] Adicionar reranker `cross-encoder/ms-marco-MiniLM-L-6-v2`
+- [ x ] Adicionar reranker `cross-encoder/ms-marco-MiniLM-L-6-v2` — `app/rag/rerank.py`, ligado em `retrieve.py`; desligado por defeito
 - [ ] Implementar streaming endpoint `/ask/stream`
-- [ ] Adicionar `callback_url` no job request
+- [ x ] Adicionar `callback_url` no job request — `app/api/ask.py`
 
 ### Sprint 3 (acessibilidade, ~2 semanas)
 - [ ] SDK Python simples em `llm_api/sdk/`
 - [ ] Endpoint OpenAI-compatible `/v1/chat/completions`
-- [ ] Script de evals automatizados
+- [ x ] Script de evals automatizados — `scripts/eval_rag.py` (+ `scripts/import_eval_set.py`)
 
 ### Sprint 4 (inteligência, ~1 mês)
-- [ ] Self-RAG / reflexão automática
+- [ x ] Self-RAG / reflexão automática — `_reflect_on_answer` em `app/jobs/worker.py`; desligado por defeito
 - [ ] Memória de longo prazo por usuário
 - [ ] Roteamento automático por complexidade
 - [ ] MCP Server para Claude Code

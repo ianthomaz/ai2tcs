@@ -1,0 +1,42 @@
+name: tests
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+# A newer push to the same branch makes the running job pointless.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: llm_api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            llm_api/requirements.txt
+            llm_api/requirements-dev.txt
+
+      # requirements pulls sentence-transformers (and torch), chromadb,
+      # faster-whisper and pymupdf. The tests import app.*, which imports those,
+      # so none of it can be trimmed without the suite failing to collect.
+      # First run is slow; the pip cache above carries later runs.
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Run tests
+        run: pytest -q

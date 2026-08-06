@@ -103,6 +103,7 @@ def get_rag_feature_flags(project: dict) -> dict:
     return {
         "rag_hybrid_enabled": _resolve("rag_hybrid_enabled", settings.rag_hybrid_enabled),
         "rag_rerank_enabled": _resolve("rag_rerank_enabled", settings.rag_rerank_enabled),
+        "rag_reflection_enabled": _resolve("rag_reflection_enabled", settings.rag_reflection_enabled),
     }
 
 

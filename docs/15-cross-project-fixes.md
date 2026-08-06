@@ -19,7 +19,7 @@ Ações **fora do repo ai2tcs** que completam o plano de melhorias. Implementaç
 Checklist pós-deploy:
 
 1. [ x ] Confirmar `prompt_profile: creative` e `rag_mode: disabled` no dashboard (seed ai2tcs).
-2. [ x ] Pergunta off-topic não deve mencionar Mobi — guard + prompt creative na API (`answer_guard.py`, eval `forbidden_keywords`).
+2. [ x ] Pergunta off-topic não deve mencionar Mobi — guard + prompt creative na API (`answer_guard.py`, eval `forbidden_keywords`). Âmbito: esse guard é hardcoded a `mobi`/`estudosmobi` e só dispara em `prompt_profile: creative`, ou seja cobre este projeto, não é anti-bleed geral. Para outros projetos, declarar `policies.forbidden_terms` ([08](./08-project-config.md)).
 3. [ x ] `SELECT COUNT(*) FROM rndbase` = 25 no Postgres do aiClaudia (validado 2026-06-27 via `load_rndbase` no startup).
 
 ---
