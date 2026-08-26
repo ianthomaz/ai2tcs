@@ -9,7 +9,7 @@ from app.config import settings
 
 DEFAULT_MODEL = "mxbai-embed-large"
 # Ollama embedding models have context limits; truncate to avoid 500
-MAX_PROMPT_CHARS = 4000
+MAX_PROMPT_CHARS = 1000
 RETRY_ATTEMPTS = 3
 RETRY_BASE_DELAY_SEC = 2
 # Pause every N requests to avoid overheating/OOM on Ollama
