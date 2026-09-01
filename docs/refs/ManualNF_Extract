@@ -165,15 +165,20 @@ curl -sS -m 180 "${PUBLIC_BASE}/nfExtract" \
 - `amount_tax`: valor de imposto retido, quando aplicável
 - `description`: texto extraído de descrição/discriminação/dados adicionais
 
-### 7.3 Dados de pagamento (sem redundância)
+### 7.3 Dados de pagamento (campos separados — sem `payment_info`)
 
-- `payment_pixCode`: chave/código PIX identificado
-- `payment_bank`: nome do banco identificado
-- `payment_bank_agency`: agência
-- `payment_bank_account`: conta
-- `payment_bank_account_type`: `corrente`, `poupanca` ou `unknown`
-- `payment_receiver_name`: favorecido identificado
-- `payment_receiver_document`: CPF/CNPJ do favorecido (quando identificado)
+O cliente (Bike Anjo) grava estes campos no **cadastro do fornecedor**; não concatene
+num único texto. Quando Pix e conta existirem juntos, preencha **ambos**.
+
+- `payment_pixCode`: chave PIX completa (email, telefone, CPF/CNPJ ou EVP)
+- `payment_bank`: preferir código COMPE de 3 dígitos (`"341"`, `"077"`, …); senão o nome (`"Itaú"`)
+- `payment_bank_agency`: agência (dígitos)
+- `payment_bank_account`: conta **com** dígito quando impresso (ex.: `"4183659-6"`)
+- `payment_bank_account_type`: `"Corrente"`, `"Poupança"` ou `null` (nunca `"unknown"`)
+- `payment_receiver_name`: titular/favorecido
+- `payment_receiver_document`: CPF/CNPJ do favorecido (só dígitos)
+- `payment_type`: `pix` | `boleto` | `transferencia` | `cartao_credito` | `dinheiro` | `null`
+  (com Pix presente → `pix`, mas mantenha os campos de banco preenchidos se existirem)
 
 ### 7.4 Qualidade e diagnóstico
 
@@ -201,12 +206,13 @@ curl -sS -m 180 "${PUBLIC_BASE}/nfExtract" \
   "amount_tax": null,
   "description": "Cartilhas BORA DE BIKE (12 páginas) - A3 (ab) e A4 (fec) - 4/4 - couche 170g - grampo e refile.",
   "payment_pixCode": "02.495.060/0001-58",
-  "payment_bank": "CAIXA",
+  "payment_bank": "104",
   "payment_bank_agency": "4623",
   "payment_bank_account": "13000302-0",
-  "payment_bank_account_type": "unknown",
+  "payment_bank_account_type": "Corrente",
   "payment_receiver_name": null,
   "payment_receiver_document": null,
+  "payment_type": "pix",
   "confidence": 0.6875,
   "confidence_by_field": {
     "supplier_name": 0.85,
@@ -253,7 +259,7 @@ curl -sS -m 180 "${PUBLIC_BASE}/nfExtract" \
   "payment_bank": null,
   "payment_bank_agency": null,
   "payment_bank_account": null,
-  "payment_bank_account_type": "unknown",
+  "payment_bank_account_type": null,
   "payment_receiver_name": null,
   "payment_receiver_document": null,
   "confidence": 0.0,

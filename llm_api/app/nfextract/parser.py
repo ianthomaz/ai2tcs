@@ -696,6 +696,28 @@ def _issue_date_prefix_line(issue_date: str | None) -> str | None:
 _VALID_PAYMENT_TYPES = frozenset({"pix", "boleto", "transferencia", "cartao_credito", "dinheiro"})
 
 
+def _normalize_payment_account_type(value: Any) -> str | None:
+    v = _normalize_nf_llm_value(value)
+    if not isinstance(v, str):
+        return None
+    s = (
+        v.strip()
+        .lower()
+        .replace("ç", "c")
+        .replace("ã", "a")
+        .replace("á", "a")
+    )
+    if s in ("unknown", "n/a", "na", "desconhecido", ""):
+        return None
+    if "poup" in s:
+        return "Poupança"
+    if "corrente" in s or s in ("cc", "c/c", "conta corrente"):
+        return "Corrente"
+    if v.strip() in ("Corrente", "Poupança"):
+        return v.strip()
+    return None
+
+
 def _normalize_payment_type_field(value: Any) -> str | None:
     v = _normalize_nf_llm_value(value)
     if not isinstance(v, str):
@@ -751,6 +773,9 @@ def apply_nf_extract_postprocess(base: dict[str, Any], extracted_text: str, warn
     """Infer payment_type, normalize description, sanitize tax ids / nf_number."""
     _sanitize_nf_number_field(base, extracted_text, warnings)
     base["service_recipient_code"] = _sanitize_service_recipient_value(base.get("service_recipient_code"))
+
+    acct_type = _normalize_payment_account_type(base.get("payment_bank_account_type"))
+    base["payment_bank_account_type"] = acct_type
 
     pt = _normalize_payment_type_field(base.get("payment_type"))
     if pt is None:
@@ -865,7 +890,7 @@ async def run_extraction_pipeline(
         "payment_bank": None,
         "payment_bank_agency": None,
         "payment_bank_account": None,
-        "payment_bank_account_type": "unknown",
+        "payment_bank_account_type": None,
         "payment_receiver_name": None,
         "payment_receiver_document": None,
         "service_recipient_code": None,
@@ -931,6 +956,12 @@ async def run_extraction_pipeline(
                 llm_touched.add(key)
             if normalized:
                 base[key] = normalized
+            continue
+        if key == "payment_bank_account_type":
+            normalized = _normalize_payment_account_type(value)
+            if normalized and normalized != pre_llm.get(key):
+                llm_touched.add(key)
+            base[key] = normalized
             continue
         if key in ("amount", "amount_tax", "amount_deposit"):
             # NFExtractResponse declares these float | None. The LLM can answer in

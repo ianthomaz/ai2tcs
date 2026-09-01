@@ -342,7 +342,10 @@ class NFExtractResponse(BaseModel):
     payment_bank: str | None = None
     payment_bank_agency: str | None = None
     payment_bank_account: str | None = None
-    payment_bank_account_type: str = "unknown"
+    payment_bank_account_type: str | None = Field(
+        default=None,
+        description='Corrente | Poupança | null — never "unknown".',
+    )
     payment_receiver_name: str | None = None
     payment_receiver_document: str | None = None
 
