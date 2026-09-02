@@ -584,6 +584,25 @@ def _extract_nf_number_from_text(text: str) -> str | None:
         if m:
             return _strip_leading_zeros_nf(m.group(1))
 
+    # SP NFS-e PDF/OCR: labels in a header row, values on following lines
+    # (Número da Nota / Data / Código → … → 00000005).
+    label_m = re.search(
+        r"(?is)(?:n[úu]mero\s+da\s+nota(?:\s+fiscal)?(?:\s+eletr[oô]nica)?|n[úu]mero\s+da\s+nfs-?e)\b",
+        text,
+    )
+    if label_m:
+        window = text[label_m.end() : label_m.end() + 280]
+        padded = re.findall(r"(?<!\d)(0{2,}\d{1,9})(?!\d)", window)
+        for raw in padded:
+            cand = _strip_leading_zeros_nf(raw)
+            if not cand:
+                continue
+            if series and cand == series:
+                continue
+            if len(cand) >= 8 and cand.startswith(("20", "19")):
+                continue
+            return cand
+
     for m in re.finditer(
         r"(?:n[úu]mero|n[ºo°])\s*[:#\-]?\s*0*(\d{1,11})\b",
         compact,
@@ -637,11 +656,14 @@ def _sanitize_nf_number_field(
         should_replace = True
     elif text_num and cur == "1" and text_num != "1":
         should_replace = True
+    # Prefer document heuristic over an LLM guess that disagrees (e.g. "14" vs 00000005).
+    elif text_num and cur and text_num != cur:
+        should_replace = True
 
     if should_replace and text_num:
         if cur and cur != text_num and warnings is not None:
             warnings.append(
-                f"nf_number corrected from {cur!r} to {text_num!r} (avoided série confusion)."
+                f"nf_number corrected from {cur!r} to {text_num!r} (document text preferred)."
             )
         base["nf_number"] = text_num
         return
@@ -650,6 +672,38 @@ def _sanitize_nf_number_field(
         warnings.append(
             f"nf_number {cur!r} equals document série; confirm manually — número da nota may be missing."
         )
+
+
+# Associação Bike Anjo — almost never the payee of a supplier NFS-e (it is the tomador).
+_NEVER_PAYEE_CNPJ = frozenset({"19515100000189"})
+
+
+def _sanitize_payment_receiver_not_tomador(
+    base: dict[str, Any], warnings: list[str] | None = None
+) -> None:
+    """Clear payment_receiver when it is the NFS-e tomador / Bike Anjo, not the favorecido."""
+    recv = _digits(str(base.get("payment_receiver_document") or ""))
+    tomador = _digits(str(base.get("service_recipient_code") or ""))
+    supplier = _digits(str(base.get("supplier_code") or ""))
+    if not recv:
+        # Name-only "ASSOCIACAO BIKE ANJO" with no payment rails is still wrong.
+        name = str(base.get("payment_receiver_name") or "").strip().lower()
+        if name and ("bike anjo" in name or "bikeanjo" in name.replace(" ", "")):
+            if warnings is not None:
+                warnings.append(
+                    "payment_receiver_name looked like Bike Anjo tomador; cleared."
+                )
+            base["payment_receiver_name"] = None
+        return
+    if supplier and recv == supplier:
+        return
+    if recv == tomador or recv in _NEVER_PAYEE_CNPJ:
+        if warnings is not None:
+            warnings.append(
+                "payment_receiver matched tomador/Bike Anjo; cleared (not favorecido)."
+            )
+        base["payment_receiver_name"] = None
+        base["payment_receiver_document"] = None
 
 
 def extract_from_text_heuristics(text: str) -> dict[str, Any]:
@@ -772,6 +826,7 @@ def _sanitize_service_recipient_value(raw: Any) -> str | None:
 def apply_nf_extract_postprocess(base: dict[str, Any], extracted_text: str, warnings: list[str] | None = None) -> None:
     """Infer payment_type, normalize description, sanitize tax ids / nf_number."""
     _sanitize_nf_number_field(base, extracted_text, warnings)
+    _sanitize_payment_receiver_not_tomador(base, warnings)
     base["service_recipient_code"] = _sanitize_service_recipient_value(base.get("service_recipient_code"))
 
     acct_type = _normalize_payment_account_type(base.get("payment_bank_account_type"))
