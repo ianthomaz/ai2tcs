@@ -495,7 +495,7 @@ async def run_boleto_extraction_pipeline(
         only = re.sub(r"\D", "", extracted_text)
         if (
             BIKE_ANJO_CNPJ in only
-            or re.search(r"(?is)bike\s*anjo|associa[cç][aã]o\s+bike", name_blob)
+            or re.search(r"(?is)bike[\s_-]*anjo|associa[cç][aã]o[\s_-]*bike", name_blob)
         ):
             base["payer_document"] = BIKE_ANJO_CNPJ
             if not base.get("payer_name"):
