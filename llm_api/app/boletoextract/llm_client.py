@@ -36,16 +36,31 @@ async def enrich_boleto_with_local_llm(
     extracted_text: str,
     timeout_s: float = 120.0,
     max_retries: int = 2,
+    is_guia: bool = False,
 ) -> tuple[dict[str, Any], list[str]]:
     warnings: list[str] = []
+    guia_rules = ""
+    if is_guia:
+        guia_rules = (
+            "This document is a Brazilian TAX COLLECTION slip (guia/DARF/ISS/DAS), NOT a supplier NFS-e.\n"
+            "Associação Bike Anjo CNPJ 19.515.100/0001-89 (19515100000189) is the PAYER (contribuinte), "
+            "never the beneficiary.\n"
+            "beneficiary_name = tax authority (e.g. Receita Federal – COFINS, Prefeitura de São Paulo – ISS).\n"
+            "beneficiary_document = null unless a real CNPJ of the authority is printed (usually null).\n"
+            "payer_document = 19515100000189 when that CNPJ appears on the form.\n"
+            "amount = Valor Total do Documento as a JSON number with cents (3062.04 not 306204).\n"
+            "digitable_line for arrecadação often starts with 85 and has 48 digits.\n"
+        )
     prompt = (
-        "You are a Brazilian bank slip (boleto) extraction assistant.\n"
+        "You are a Brazilian bank slip (boleto) and tax-slip (guia) extraction assistant.\n"
         "Return ONLY valid JSON with the exact same keys as input.\n"
         "Use JSON null when unknown.\n"
-        "beneficiary_document = CNPJ/CPF of who receives payment (cedente/beneficiário).\n"
-        "payer_document = CNPJ/CPF of who pays (sacado/pagador).\n"
+        "beneficiary_document = CNPJ/CPF of who receives payment (cedente/beneficiário / ente arrecadador).\n"
+        "payer_document = CNPJ/CPF of who pays (sacado/pagador/contribuinte).\n"
         "Never swap beneficiary and payer.\n"
         "digitable_line = digits only (47 or 48). barcode = 44 digits.\n"
+        "amount must be a JSON number using a decimal point for cents (e.g. 2014.50), never an integer of cents.\n"
+        f"{guia_rules}"
     )
     payload = {
         "model": model,
