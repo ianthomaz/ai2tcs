@@ -533,7 +533,12 @@ async def run_boleto_extraction_pipeline(
         if pre_llm["beneficiary_document"] != BIKE_ANJO_CNPJ:
             warnings.append("LLM changed beneficiary document; kept heuristic value.")
             base["beneficiary_document"] = pre_llm["beneficiary_document"]
-    if pre_llm.get("payer_document") and base.get("payer_document") != pre_llm.get("payer_document"):
+    # Do not reinstate a heuristic/LLM payer over a guia-corrected Bike Anjo payer.
+    if (
+        not guia
+        and pre_llm.get("payer_document")
+        and base.get("payer_document") != pre_llm.get("payer_document")
+    ):
         if pre_llm["payer_document"]:
             base["payer_document"] = pre_llm["payer_document"]
 
