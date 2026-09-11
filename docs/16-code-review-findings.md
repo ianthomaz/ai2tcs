@@ -3,7 +3,7 @@
 Achados levantados durante o trabalho de contexto rico do Bike Anjo (jul/2026). Separa
 o que foi tratado do que ficou em aberto, e regista as dúvidas que impedem decidir.
 
-**Anterior:** [15-cross-project-fixes.md](./15-cross-project-fixes.md) · **Seguinte:** [01-overview.md](./01-overview.md)
+**Anterior:** [15-cross-project-fixes.md](./15-cross-project-fixes.md) · **Seguinte:** [17-integration-backlog.md](./17-integration-backlog.md)
 
 ---
 

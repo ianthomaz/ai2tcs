@@ -9,3 +9,4 @@ Contribuições ao código e contratos: [../CONTRIBUTING.md](../CONTRIBUTING.md)
 
 
 - [13-optimization-execution-plan.md](13-optimization-execution-plan.md) — plano de execução incremental (sem quebra).
+- [17-integration-backlog.md](17-integration-backlog.md) — **integração com o hub ITCS e o canal WhatsApp**: superfícies que esta API já oferece, o que ainda não é consumido, backlog e perguntas em aberto.
