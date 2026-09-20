@@ -1,6 +1,6 @@
 # ai2tcs
 
-Hub ITCS: manifest `itcsManifest.yaml` — contrato em 0MM_ITCS `docs/21_project_hub_contract.md`
+Hub ITCS: manifest `itcsManifest.yaml` — contrato em 0MM_ITCS `docs/06_project_hub_contract.md`
 
 
 Repositório **público** do produto **LLM/API**: FastAPI com RAG multi-projeto, extração fiscal auxiliar (NF), dashboard, filas de jobs e documentação de **contratos HTTP** para integradores e para ferramentas (ex. IAs) lerem o desenho do sistema.

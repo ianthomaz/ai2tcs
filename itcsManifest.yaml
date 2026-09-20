@@ -1,5 +1,5 @@
 # itcsManifest.yaml — cartão de identidade (v1)
-# Contrato: 0MM_ITCS docs/21_project_hub_contract.md
+# Contrato: 0MM_ITCS docs/06_project_hub_contract.md
 
 apiVersion: itcs.io/v1
 kind: Project
