@@ -23,7 +23,8 @@ projeto, fontes (`{PROJECT_ID}_SOURCES`) apontando para pastas do repo cliente, 
 
 ## Fronteira de privilégio (decidido)
 
-O canal WhatsApp (`webplaceZap`) é público e de **baixo privilégio**; o canal Google Chat
+O canal WhatsApp (`webplaceZap`) é público e de **baixo privilégio** (entrada de qualquer
+pessoa; saída também para alertas ao dono, filtrados por telefone); o canal Google Chat
 -> Cursor (`zapCursorAgent`) é privado, do dono, e de privilégio máximo. A rota
 WhatsApp -> Cursor descrita em [14](./14-ian-zap-personal.md) está **arquivada, não
 pendente** — esse doc descreve história. O ai2tcs serve os dois lados como motor e não
