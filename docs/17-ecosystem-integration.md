@@ -21,6 +21,23 @@ Padrão já repetido: **chave por projeto** (`itcs_{project_id}_*`), `config_jso
 projeto, fontes (`{PROJECT_ID}_SOURCES`) apontando para pastas do repo cliente, `seed`
 + `ingest` para indexar.
 
+## Fronteira de privilégio (decidido)
+
+O canal WhatsApp (`webplaceZap`) é público e de **baixo privilégio**; o canal Google Chat
+-> Cursor (`zapCursorAgent`) é privado, do dono, e de privilégio máximo. A rota
+WhatsApp -> Cursor descrita em [14](./14-ian-zap-personal.md) está **arquivada, não
+pendente** — esse doc descreve história. O ai2tcs serve os dois lados como motor e não
+detém poder de canal nenhum.
+
+## Motores por cliente vêm aí (pedido futuro, não agendado)
+
+O zapzap quer expor ações de projeto a partir do WhatsApp — por exemplo: cliente manda um
+link de artigo, e o sistema extrai título, imagem principal e um resumo curto para
+publicar na página dele. Do lado deste repo isso é **uma rota nova da família `/extract`**
+(ler URL -> campos estruturados), com o `project_id` do cliente a decidir prompt e
+política — não um motor separado no zap. Registado para quando houver pedido concreto:
+`0MM_ITCS/docs/08_ecosystem_integration.md` §4.4.
+
 ## Ligações de infra menos óbvias
 
 - O **Cloudflare Tunnel desta conta** serve `llm.webplace.cc` **e** `gchat.webplace.cc`
