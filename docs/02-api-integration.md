@@ -102,12 +102,28 @@ Há **dois** tipos de token válidos (o servidor aceita qualquer um deles):
 
 | Modo | Valor no `Bearer` | Quando usar |
 |------|-------------------|-------------|
-| **Global (legado / admin)** | `LLM_API_TOKEN` do `.env` da API | Integrações já existentes; tens de enviar **`project_id` no corpo** (JSON ou form) quando o endpoint precisar dele. |
-| **Chave por projeto** | Chave mostrada uma vez no Dashboard (**Projetos → [projeto] → Chaves API**), formato `itcs_<project_id>_<hex>` | Novos clientes; o `project_id` fica associado à chave. Se enviares `project_id` no corpo, **tem de coincidir** com o da chave senão `403`. |
+| **Global (legado / admin)** | `LLM_API_TOKEN` do `.env` da API | Integrações ainda não migradas; tens de enviar **`project_id`** quando o endpoint precisar dele. Cada uso fica no log como `auth=global path=… projects=…`. |
+| **Chave por projeto** | Chave mostrada uma vez no Dashboard (**Projetos → [projeto] → Chaves API**), formato `itcs_<project_id>_<hex>` | O caminho de todo cliente. A chave só serve ao seu projeto: pedido que nomeie outro projeto — no corpo (`project_id`), no header `X-Project-Id`, no path ou na query — recebe `403`. |
 
 Boas práticas: guarde o token em **variável de ambiente** no cliente — nunca em código versionado.
 
-**Migração:** ver [`03-api-reintegration.md`](03-api-reintegration.md). Podes manter só o token global até migrares cada projeto à mão.
+### 2.1 Migração para chave por projeto (modo híbrido)
+
+O corte é projeto a projeto, sem quebrar quem ainda usa o global:
+
+1. O cliente do projeto passa a usar a chave `itcs_<project_id>_…` no `.env` dele.
+2. No `.env` da API, o projeto entra em `SCOPED_KEY_REQUIRED_PROJECTS` (lista separada
+   por vírgula). Daí em diante o token global que nomeie esse projeto recebe `403`.
+3. Os projetos fora da lista continuam aceitando o global. Quando o log não mostrar mais
+   `auth=global` para nenhum projeto, o global pode sair das integrações.
+
+Limite: o corte só alcança pedido que **nomeia** o projeto. Rota sem `project_id`
+(ex. `/nfExtract` sem `X-Project-Id`) chamada com o global não tem como ser atribuída.
+
+Rotas **exclusivas de um projeto** não aceitam o global em caso nenhum — hoje as do Bike
+Anjo ([18](./18-bikeanjo-ops-ports.md)).
+
+Histórico da migração: [`03-api-reintegration.md`](03-api-reintegration.md).
 
 ---
 
@@ -125,6 +141,7 @@ Boas práticas: guarde o token em **variável de ambiente** no cliente — nunca
 | **POST** | **`/nfExtract`** | **Extração de nota fiscal (itcsNFextract)** — corpo **somente** `multipart/form-data`; exatamente **um** campo: `file` (upload) **ou** `server_file_path` **ou** `document_url` (nomes fixos). Manual: [ManualNF_Extract](./refs/ManualNF_Extract) §3.1. |
 | **POST** | **`/boletoExtract`** | **Extração de boleto bancário** — mesmo contrato de fonte que `/nfExtract` (PDF/imagem). Campos: `beneficiary_document`, `payer_document`, `digitable_line`, `barcode`, `due_date`, `amount`, etc. |
 | **POST** | **`/nabilvideomap/qualify-caption`** | **Qualificação síncrona de legenda** (ex.: catálogo de conteúdo / nabilVideoMap) — JSON; auth § 2. Corpo e chaves de resposta: **§ 1.2**. Detalhe de prompts/RAG por ambiente: acordar com manutenção ou notas no clone privado. |
+| **POST** | **`/feedbackTriage`** · **`/healthNormalize`** · **`/replySuggest`** | **Exclusivas do Bike Anjo** — só a chave `bikeanjoall_2026`; token global ou outra chave → 403. JSON síncrono, erro de conteúdo em HTTP 200. Ver [18-bikeanjo-ops-ports.md](./18-bikeanjo-ops-ports.md). |
 | **POST** | **`/router`** | **Roteador de mensagem** — ver § 3.2 (orienta: biblioteca vs fluxo; decisão é do orquestrador) |
 | POST | `/ingest` | Indexar/reindexar biblioteca; cria projeto se não existir (com sources no body ou env) |
 | **POST** | **`/ingest/upload`** | **Upload multipart** de um ficheiro para o disco do projeto (ou biblioteca partilhada) + fila de ingest incremental — ver [`03-api-reintegration.md`](03-api-reintegration.md) §4 |

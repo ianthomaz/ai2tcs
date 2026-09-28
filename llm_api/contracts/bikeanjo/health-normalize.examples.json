@@ -1,0 +1,56 @@
+{
+  "description": "`build_input` é a entrada de buildHealthNormalizeRequest (sistemaBA); `request` é o que ela produz. `expected_storage` é o valor que a coluna recebe depois do pós-processo (`null` = coluna vazia). Teste: sistemaBA/src/lib/__tests__/ai2tcs-contracts.test.ts.",
+  "cases": [
+    {
+      "name": "resíduo com código novo",
+      "build_input": { "person": { "kind": "dependent", "id": "D_AABC4_A" }, "stored": "tea, outras: Epilepsia controlada, pressao alta as vezes" },
+      "request": {
+        "source": "health",
+        "person": { "kind": "dependent", "id": "D_AABC4_A" },
+        "locale": "pt-BR",
+        "known_codes": ["tea"],
+        "free_text": "epilepsia controlada, pressao alta as vezes"
+      },
+      "response_ok": {
+        "status": "ok",
+        "codes": ["hypertension"],
+        "outras": "epilepsia controlada",
+        "generic_statement": false,
+        "changed": true,
+        "confidence": 0.9,
+        "model": "exemplo",
+        "prompt_version": "health-v1"
+      },
+      "expected_storage": "tea, hypertension, outras: epilepsia controlada"
+    },
+    {
+      "name": "declaração genérica que a lista fixa não pega",
+      "build_input": { "person": { "kind": "user", "id": "AABC4" }, "stored": "outras: saude de ferro gracas a deus" },
+      "request": {
+        "source": "health",
+        "person": { "kind": "user", "id": "AABC4" },
+        "locale": "pt-BR",
+        "known_codes": [],
+        "free_text": "saude de ferro gracas a deus"
+      },
+      "response_ok": {
+        "status": "ok",
+        "codes": [],
+        "outras": null,
+        "generic_statement": true,
+        "changed": true,
+        "confidence": 0.93,
+        "model": "exemplo",
+        "prompt_version": "health-v1"
+      },
+      "expected_storage": null
+    }
+  ],
+  "no_request": [
+    { "stored": "nada_a_informar", "why": "valor de controle do gate" },
+    { "stored": "askAgain", "why": "valor de controle do gate" },
+    { "stored": "Nenhuma", "why": "ruído que a lista fixa já resolve" },
+    { "stored": "tea, tdah", "why": "só códigos conhecidos — nada a resolver" }
+  ],
+  "response_error": { "status": "error", "error": { "code": "timeout", "message": "tempo esgotado" } }
+}

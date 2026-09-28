@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bikeanjo/ai2tcs/boleto-extract/1",
+  "title": "POST /boletoExtract",
+  "description": "Leitura de boleto bancário e guia de arrecadação (em produção). Pedido multipart igual ao /nfExtract (file + project_id). Quem escolhe entre /nfExtract e /boletoExtract é o sistemaBA (payment-document-classify.ts — 10b § 1.1). Na guia, a Associação Bike Anjo é o pagador, nunca o beneficiário.",
+  "$defs": {
+    "request": {
+      "type": "object",
+      "required": [
+        "file"
+      ],
+      "properties": {
+        "file": {
+          "description": "PDF ou imagem"
+        },
+        "project_id": {
+          "type": "string"
+        }
+      }
+    },
+    "response_ok": {
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "const": "ok"
+        },
+        "beneficiary_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "beneficiary_document": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "payer_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "payer_document": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "digitable_line": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "barcode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "due_date": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "amount": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "exclusiveMinimum": 0
+        },
+        "bank_code": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "document_number": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "response_error": {
+      "$ref": "common.schema.json#/$defs/legacy_error"
+    }
+  }
+}

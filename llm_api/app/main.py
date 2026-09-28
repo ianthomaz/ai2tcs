@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from app.db import close_pool, get_pool
 from app.api import ask, audio, boleto_extract, extract, edu, health, ingest, jobs, message_router, nabil_qualify, nf_extract, projects, users
+from app.bikeanjo.routes import router as bikeanjo_router
 from app.dashboard.routes import router as dashboard_router, DashboardAuthMiddleware
 from app.jobs import worker as job_worker
 
@@ -142,6 +143,8 @@ app.include_router(nf_extract.router)
 app.include_router(boleto_extract.router)
 app.include_router(edu.router)
 app.include_router(users.router)
+# Bike Anjo ops ports — project-scoped (app/bikeanjo/)
+app.include_router(bikeanjo_router)
 
 # Dashboard (HTMX + Jinja2)
 app.include_router(dashboard_router)

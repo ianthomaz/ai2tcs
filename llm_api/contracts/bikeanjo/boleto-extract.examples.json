@@ -1,0 +1,40 @@
+{
+  "description": "`expected` é o que mapBoletoExtractToPaymentResult (sistemaBA) entrega ao formulário: beneficiário → fornecedor, pagador → tomador, type sempre boleto. Teste: ai2tcs-contracts.test.ts.",
+  "cases": [
+    {
+      "name": "guia de ISS paga pela Bike Anjo",
+      "document_kind": "guia_arrecadacao",
+      "response_ok": {
+        "status": "ok",
+        "beneficiary_name": "Prefeitura de São Paulo",
+        "beneficiary_document": "46.395.000/0001-39",
+        "payer_name": "Associação Bike Anjo",
+        "payer_document": "11.222.333/0001-81",
+        "digitable_line": "8162 0000 0012 3456",
+        "barcode": null,
+        "due_date": "10/10/2026",
+        "amount": "1.234,56",
+        "bank_code": null,
+        "document_number": "2026-0042",
+        "warnings": []
+      },
+      "expected": {
+        "supplier_name": "Prefeitura de São Paulo",
+        "supplier_code": "46395000000139",
+        "service_recipient_code": "11222333000181",
+        "nf_number": "2026-0042",
+        "amount": 1234.56,
+        "amount_type": "total",
+        "type": "boleto",
+        "payment_info": "Linha digitável: 8162000000123456",
+        "description": "Guia de arrecadação · nº 2026-0042 · venc. 10/10/2026 · linha 8162000000123456"
+      }
+    }
+  ],
+  "response_error": {
+    "status": "error",
+    "errors": [
+      "documento ilegível"
+    ]
+  }
+}

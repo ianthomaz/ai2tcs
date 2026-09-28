@@ -16,10 +16,13 @@ class OllamaProvider(LLMProvider):
             k: v for k, v in options.items()
             if k in {"temperature", "top_k", "top_p", "repeat_penalty", "num_predict", "num_ctx", "seed"}
         }
+        # "format": "json" makes Ollama constrain decoding to a JSON value.
+        extra = {"format": options["format"]} if options.get("format") else {}
         response = await asyncio.to_thread(
             ollama.chat,
             model=model,
             messages=messages,
             options=ollama_options,
+            **extra,
         )
         return (response.get("message") or {}).get("content") or ""

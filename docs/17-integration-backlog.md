@@ -24,7 +24,7 @@ Projetos com seed no repo (`llm_api/scripts/seed_*.py`):
 |---|---|
 | `webplacecc` | zapzap (WhatsApp webplace.cc) — consumidor mais pesado |
 | `ian_zap` | zap pessoal, rota `cursor` via bridge — ver `14-ian-zap-personal.md` |
-| `bikeanjoall_2026` | Bike Anjo (repo `bikeanjo2026all`; zap em `zapzap/flows.js`) |
+| `bikeanjoall_2026` | Bike Anjo (repo `bikeanjo2026all`; zap em `zapzap/flows.js`); portas exclusivas em [18](18-bikeanjo-ops-ports.md) |
 | `estudosmobi`, `aiclaudia`, `webplace`, `general` | restantes |
 
 **Consequência para integração:** qualquer projeto novo que queira LLM não precisa
@@ -121,6 +121,11 @@ com o que devia diagnosticar. Fica registado, não planeado.
 - [ ] Endpoint ou nota que liste `project_id` activos (hoje só se sabe pelos seeds)
 - [ ] Confirmar `spec.llm` do `webplacecc` com o dono do repo do zap
 - [ ] Rever `06-edu-contract.md` e `12-llm-fleet-rag-operations.md` face ao estado actual
+- [ ] Migrar cada projeto para a chave própria e pô-lo em `SCOPED_KEY_REQUIRED_PROJECTS`
+      ([02 § 2.1](02-api-integration.md)); o log `auth=global` diz quem falta. Bike Anjo é o
+      primeiro ([18 § 7](18-bikeanjo-ops-ports.md)); com todos migrados, o global sai das integrações
+- [ ] Porta genérica de triagem de texto (feedback, chamado, e-mail) multi-projeto —
+      [18 § 8](18-bikeanjo-ops-ports.md)
 
 ---
 
@@ -132,4 +137,4 @@ com o que devia diagnosticar. Fica registado, não planeado.
 
 ---
 
-**Anterior:** [16-code-review-findings.md](./16-code-review-findings.md)
+**Anterior:** [16-code-review-findings.md](./16-code-review-findings.md) · **Seguinte:** [18-bikeanjo-ops-ports.md](./18-bikeanjo-ops-ports.md)

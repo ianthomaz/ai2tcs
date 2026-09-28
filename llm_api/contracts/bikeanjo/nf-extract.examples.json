@@ -1,0 +1,93 @@
+{
+  "description": "`response_ok` é o corpo do serviço; `expected` é o que extractNfViaItcs (sistemaBA) entrega ao formulário. Teste: sistemaBA/src/lib/__tests__/ai2tcs-contracts.test.ts.",
+  "cases": [
+    {
+      "name": "NFS-e com Pix, sem retenção",
+      "response_ok": {
+        "status": "ok",
+        "supplier_name": "Empresa Prestadora Ltda",
+        "supplier_code": "12345678000195",
+        "nf_number": "1042",
+        "amount": 1500.0,
+        "amount_type": "total",
+        "amount_deposit": null,
+        "amount_tax": null,
+        "description": "NF emitida 05/mar/2026\nConsultoria em gestão de projetos",
+        "payment_pixCode": "chave@dominio.com.br",
+        "payment_bank": null,
+        "payment_bank_agency": null,
+        "payment_bank_account": null,
+        "payment_bank_account_type": null,
+        "payment_receiver_name": "Empresa Prestadora Ltda",
+        "payment_receiver_document": "12345678000195",
+        "service_recipient_code": "11222333000181",
+        "payment_type": "pix",
+        "warnings": [],
+        "errors": []
+      },
+      "expected": {
+        "supplier_name": "Empresa Prestadora Ltda",
+        "supplier_code": "12345678000195",
+        "service_recipient_code": "11222333000181",
+        "nf_number": "1042",
+        "amount": 1500.0,
+        "amount_type": "total",
+        "type": "pix",
+        "payment_pix_code": "chave@dominio.com.br"
+      }
+    },
+    {
+      "name": "imposto retido, forma pelo serviço",
+      "response_ok": {
+        "status": "ok",
+        "supplier_name": "Oficina Pedal ME",
+        "supplier_code": "98765432000110",
+        "nf_number": "000731",
+        "amount": 1000.0,
+        "amount_type": "imposto_retido",
+        "amount_deposit": 950.0,
+        "amount_tax": 50.0,
+        "description": "NF emitida 31/ago/2026\nManutenção de 20 bicicletas",
+        "payment_type": "boleto",
+        "service_recipient_code": null
+      },
+      "expected": {
+        "supplier_name": "Oficina Pedal ME",
+        "nf_number": "000731",
+        "amount": 1000.0,
+        "amount_type": "imposto_retido",
+        "amount_deposit": 950.0,
+        "amount_tax": 50.0,
+        "type": "boleto",
+        "payment_pix_code": null,
+        "service_recipient_code": null
+      }
+    },
+    {
+      "name": "placeholder vira null no cliente",
+      "response_ok": {
+        "status": "ok",
+        "supplier_name": "Fulano de Tal",
+        "supplier_code": "12345678909",
+        "nf_number": null,
+        "amount": 300.0,
+        "amount_type": "total",
+        "payment_pixCode": "não informado",
+        "payment_bank": "N/A"
+      },
+      "expected": {
+        "supplier_name": "Fulano de Tal",
+        "nf_number": null,
+        "type": null,
+        "payment_pix_code": null,
+        "payment_bank": null
+      }
+    }
+  ],
+  "response_error": {
+    "status": "error",
+    "errors": [
+      "Não foi possível processar o documento: formato não reconhecido."
+    ]
+  }
+}

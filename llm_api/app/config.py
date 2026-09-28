@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     api_host: str = "127.0.0.1"  # use "0.0.0.0" to accept tailnet IP access (no Funnel)
     api_port: int = 28471
     llm_api_token: str = ""
+    # Comma-separated project_ids that refuse the global token and accept only their own key
+    # (app/auth.py). Hybrid migration: a project enters the list once its clients use its key.
+    scoped_key_required_projects: str = ""
     ollama_host: str = "http://127.0.0.1:11434"  # use host.docker.internal in Docker
     ollama_chat_model: str = "gemma3:12b"  # legacy/fallback (aligned with smart)
     ollama_fast_model: str = "llama3:8b"
@@ -34,6 +37,16 @@ class Settings(BaseSettings):
     nabil_qualify_rag_context_max_chars: int = 8000
     # Ollama sampling: higher → less repetitive phrasing in theme notes / summary (JSON keys stay strict).
     nabil_qualify_temperature: float = 0.42
+    # Bike Anjo ops ports (/feedbackTriage, /healthNormalize, /replySuggest) — app/bikeanjo/.
+    # Comma-separated project_ids whose API key may call them. Project key only: the global
+    # token and any other project key get 403.
+    bikeanjo_ops_project_ids: str = "bikeanjoall_2026"
+    bikeanjo_ops_model_alias: str = "smart"
+    # Below the Bike Anjo client timeout (ITCS_FEEDBACK_TRIAGE_TIMEOUT_MS, default 60s).
+    bikeanjo_ops_timeout_s: float = 45.0
+    bikeanjo_ops_num_predict: int = 700
+    bikeanjo_ops_temperature: float = 0.1
+    bikeanjo_reply_rag_context_max_chars: int = 6000
     # Dashboard /usage: max GiB for Ollama memory bar (unified RAM / VRAM reference, e.g. 32 GB Mac)
     dashboard_ollama_memory_reference_gib: float = 32.0
     # Legacy HTML login (only if Google OAuth is not configured)
@@ -134,6 +147,12 @@ class Settings(BaseSettings):
     anthropic_default_model: str = "claude-haiku-4-5-20251001"
     gemini_api_key: str = ""
     gemini_default_model: str = "gemini-2.0-flash"
+
+    def scoped_key_required_project_set(self) -> set[str]:
+        return {p.strip() for p in self.scoped_key_required_projects.split(",") if p.strip()}
+
+    def bikeanjo_ops_project_id_set(self) -> set[str]:
+        return {p.strip() for p in self.bikeanjo_ops_project_ids.split(",") if p.strip()}
 
     def dashboard_google_oauth_configured(self) -> bool:
         return bool(

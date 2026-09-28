@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bikeanjo/ai2tcs/health-normalize/1",
+  "title": "POST /healthNormalize",
+  "description": "Higienização e padronização do texto de saúde que a taxonomia não resolveu. O serviço não julga saúde: não avalia gravidade nem relevância, não diagnostica. Contrato: docs/10f_health_normalize_api_contract.md.",
+  "$defs": {
+    "code": { "enum": ["diabetes", "hypertension", "asthma", "renal", "tdah", "tea", "t21"] },
+    "request": {
+      "type": "object",
+      "required": ["source", "person", "locale", "known_codes", "free_text"],
+      "properties": {
+        "source": { "const": "health" },
+        "person": {
+          "type": "object",
+          "required": ["kind", "id"],
+          "properties": {
+            "kind": { "enum": ["user", "dependent"] },
+            "id": { "type": "string", "pattern": "^([A-HJ-KM-NP-Z][A-HJ-KM-NP-Z2-9]{3}[2-9]|D_[A-HJ-KM-NP-Z][A-HJ-KM-NP-Z2-9]{3}[2-9]_[A-Z]+)$" }
+          }
+        },
+        "locale": { "const": "pt-BR" },
+        "known_codes": { "type": "array", "items": { "$ref": "#/$defs/code" }, "uniqueItems": true },
+        "free_text": { "type": "string", "minLength": 1, "maxLength": 500, "description": "Resíduo de `outras`, caixa baixa, sem contato ([contato]/[documento])." }
+      }
+    },
+    "response_ok": {
+      "type": "object",
+      "required": ["status", "codes", "outras", "generic_statement", "confidence", "model", "prompt_version"],
+      "properties": {
+        "status": { "const": "ok" },
+        "codes": { "type": "array", "items": { "$ref": "#/$defs/code" }, "uniqueItems": true },
+        "outras": { "type": ["string", "null"], "maxLength": 500, "description": "O que não virou código, no padrão de comparação: caixa baixa, grafia corrigida, itens separados por \", \", sem moldura de frase («tenho», «sou», «graças a deus»). null se tudo virou código." },
+        "generic_statement": { "type": "boolean", "description": "true só quando o texto é declaração genérica sobre a própria saúde («boa», «ótima», «tudo certo») e não escreve nenhuma condição, alergia, limitação ou remédio — ele sai da coluna. Na dúvida, false." },
+        "changed": { "type": "boolean" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "warnings": { "type": "array", "items": { "type": "string" } },
+        "model": { "type": "string" },
+        "prompt_version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "response_error": { "$ref": "common.schema.json#/$defs/error" }
+  }
+}

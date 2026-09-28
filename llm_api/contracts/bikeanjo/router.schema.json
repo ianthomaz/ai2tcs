@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bikeanjo/ai2tcs/router/1",
+  "title": "POST /router",
+  "description": "Triagem da mensagem do Zap (em produção, síncrono, ~15 s). Campo desconhecido é ignorado, nunca erro (10d P1). Contrato em prosa: docs/10d_ai2tcs_contrato_e_evolucao.md § 2. Cliente: zapzap/lib/llm-remote.js (askRouter, ROUTER_CONTEXT_KEYS).",
+  "$defs": {
+    "request": {
+      "type": "object",
+      "required": [
+        "message"
+      ],
+      "properties": {
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "project_id": {
+          "type": "string"
+        },
+        "user_name": {
+          "type": "string"
+        },
+        "current_flow": {
+          "type": "string"
+        },
+        "current_step": {
+          "type": "string"
+        },
+        "user_registered": {
+          "type": "boolean"
+        },
+        "onboarding_active": {
+          "type": "boolean"
+        },
+        "onboarding_completed": {
+          "type": "boolean"
+        },
+        "last_messages": {
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "type": "string",
+            "pattern": "^(user|assistant): "
+          }
+        },
+        "city": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "clearance": {
+          "type": "string",
+          "description": "lido pelo serviço, não vai ao modelo (decisão do serviço)"
+        },
+        "intended_clearance": {
+          "type": "string",
+          "description": "idem"
+        },
+        "interesse": {
+          "type": "string"
+        },
+        "journey_kind": {
+          "type": "string"
+        },
+        "journey_destination": {
+          "type": "string"
+        },
+        "next_event_name": {
+          "type": "string"
+        },
+        "next_event_at": {
+          "type": "string"
+        },
+        "current_time": {
+          "type": "string",
+          "description": "hora local America/Sao_Paulo"
+        }
+      }
+    },
+    "response_ok": {
+      "type": "object",
+      "description": "Sem `status`: o bot aceita a resposta se vier ao menos um de suggested_route, action, answer, obs. Corpo sem nenhum → trata como falha (null).",
+      "properties": {
+        "suggested_route": {
+          "type": "string",
+          "examples": [
+            "ask",
+            "cadastro",
+            "saudacao",
+            "escalar_humano",
+            "documento",
+            "status",
+            "agradecimento",
+            "cursor"
+          ],
+          "description": "lista viva = ZAPZAP_ROUTES no ai2tcs; ausente → o bot assume ask"
+        },
+        "action": {
+          "enum": [
+            "answer_now",
+            "escalate"
+          ]
+        },
+        "answer": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "só com answer_now, já no formato WhatsApp. O bot hoje só usa a rota."
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "número 0–1 (10d P5); o corte é do bot"
+        },
+        "obs": {
+          "type": "string",
+          "description": "nota para humano ler; vira `reason` no log de julgamento"
+        },
+        "escalate_to": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "task_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}
