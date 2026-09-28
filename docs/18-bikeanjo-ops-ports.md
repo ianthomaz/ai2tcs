@@ -133,7 +133,7 @@ Avaliado e mantido JSON:
 
 ## 7. Pôr no ar (mini62)
 
-1. Rebuild do container a partir **deste** checkout (`./scripts/deploy_llm.sh`). O `main` local pode estar à frente do GitHub; um `git pull` sozinho não traz o merge que ainda não foi enviado.
+1. `git pull` e `./scripts/deploy_llm.sh` neste checkout. Em 28 set 2026 o container no mini62 foi reconstruído a partir do `main`. Conferir com `python3 tests/test_live_smoke.py` ([12](./12-llm-fleet-rag-operations.md)).
 2. Smoke: `curl -X POST …/healthNormalize` com a chave do Bike Anjo e um `request` de
    `health-normalize.examples.json`; e com chave de outro projeto → 403.
 3. Eval: `LLM_API_TOKEN=itcs_bikeanjoall_2026_… python scripts/eval_bikeanjo_ops.py` —
@@ -173,7 +173,7 @@ Visto no código já mergeado no mini62 (pull request #7), antes de tratar isto 
 - [ ] **`/replySuggest` sem corpus `34` e `35`.** Sem re-ingest desses documentos no projeto `bikeanjoall_2026` (lado Bike Anjo), a porta responde `no_answer` com `no_context` e não chama o modelo.
 - [ ] **Ordem do corte do token global.** Não pôr `SCOPED_KEY_REQUIRED_PROJECTS=bikeanjoall_2026` no `.env` da API antes da chave estar em todos os `.env` do Bike Anjo e do deploy de lá. Invertido, o bot do Zap deixa de responder. Enquanto a variável estiver vazia, `/ask` e `/router` continuam a aceitar o token global. As três portas novas recusam o global em qualquer caso.
 - [ ] **Cópia do contrato e o clone local do Bike Anjo.** Esquemas, prompts e exemplos em `llm_api/contracts/bikeanjo/` batem com `BikeAnjo_Sistema2026/docs/contracts/ai2tcs/` neste mini62. `ORIGIN.md` cita o commit `b59656c`, que esse clone não tem. O `README` e o `CHECKLIST_AI2TCS.md` da cópia estão mais novos do que o `main` desse clone.
-- [ ] **Testes novos não corridos neste venv.** `llm_api/.venv` não tem pytest. A suíte citada na pull request (`test_auth_scoped_keys`, `test_bikeanjo_ops_rules`, `test_bikeanjo_ops_contract`) não foi executada aqui.
+- [ ] **Testes de unidade das portas não corridos neste venv.** `llm_api/.venv` não tem pytest. A suíte citada na pull request (`test_auth_scoped_keys`, `test_bikeanjo_ops_rules`, `test_bikeanjo_ops_contract`) não foi executada aqui. O QA ao vivo (`tests/test_live_smoke.py`) correu em 28 set 2026: ver [12](./12-llm-fleet-rag-operations.md).
 - [ ] **Código `unauthorized` no esquema e não no serviço.** `common.schema.json` lista `unauthorized`. Falha de token sai como HTTP 401 ou 403, sem esse `error.code` no corpo.
 
 A linha `Job.question` destas portas guarda um rótulo com id operacional (`feedbackTriage:{fonte}:{submission_id}`, `replySuggest:{canal}:{ticket_id}`, `healthNormalize:{kind}`). Não guarda o texto da pessoa nem o texto de saúde. O resumo em `answer` segue o § 5.

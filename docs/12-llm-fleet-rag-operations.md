@@ -60,6 +60,21 @@ Em regra **sem mudança** se usam aliases (`smart`, `reasoner`, …) e `project_
 - Índice Chroma: **disco** da instância; `git pull` não apaga ingest.
 - Trocar `embedding_model` ⇒ **dimensão diferente** ⇒ **re-ingest** desse projecto.
 - **Onde editar:** dashboard → projecto → *Modelo de embedding*; ou `PUT /projects/{id}` (`config_json`); ou BD. Não há env global que substitua o campo por projecto.
+- Default do código: `mxbai-embed-large` (1024). Um índice antigo de `nomic-embed-text` (768) não mistura. QA ao vivo em 28 set 2026: `POST /ask` e `POST /router` de `webplacecc` falham com `Collection expecting embedding with dimension of 768, got 1024`. Os outros projetos não passaram por essa busca. Correcção: re-ingest de `webplacecc` com o modelo actual. Ainda não feito.
+
+---
+
+## QA ao vivo
+
+Dentro de `llm_api/`, contra a API que está a correr (por defeito `http://127.0.0.1:28471`):
+
+```bash
+python3 tests/test_live_smoke.py
+```
+
+O token sai de `LLM_LIVE_TOKEN` ou de `LLM_API_TOKEN` no `.env`. O script não imprime o token. Percorre as rotas do OpenAPI sem token (401 na API, redirect no dashboard), confirma as três portas do Bike Anjo com 403 no token global, e faz um `/ask` e um `/router` curtos no `ian_zap` e no `webplacecc`. Não chama `POST /ingest` nem apaga projectos.
+
+Resultado em 28 set 2026, depois do deploy no mini62: 75 de 77. As duas falhas são o índice de `webplacecc` acima. `ian_zap` respondeu `Ok.` no `/ask` e `answer_now` no `/router`. `/health` estava `ok`.
 
 ---
 

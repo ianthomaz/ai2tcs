@@ -503,8 +503,8 @@ Ver `scripts/llm_docker_autostart.sh` como base — adaptar para launchctl.
 ## 8. Próximos Passos Sugeridos
 
 ### Sprint 1 (impacto rápido, ~1 semana)
-- [ ] Trocar embedding por `mxbai-embed-large` (melhor PT-BR)
-- [ ] Adicionar `gemma3:12b` como `smart`
+- [ x ] Trocar embedding por `mxbai-embed-large` — default em `app/ingest/embeddings.py`. Índice de 768 (nomic) não mistura com 1024; `webplacecc` ainda precisa de re-ingest (QA 28 set 2026, [12](./12-llm-fleet-rag-operations.md))
+- [ x ] Adicionar `gemma3:12b` como `smart` — default em `app/config.py` ([09](./09-model-upgrade.md))
 - [ x ] Implementar cache de embeddings — LRU em `app/ingest/embeddings.py` (ligado por defeito)
 - [ ] Configurar `OLLAMA_KEEP_ALIVE=-1` para modelos principais
 

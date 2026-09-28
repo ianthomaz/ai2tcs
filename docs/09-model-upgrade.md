@@ -7,7 +7,7 @@
 1. `ollama pull gemma3:12b && ollama pull deepseek-r1:14b && ollama pull mxbai-embed-large`
 2. Reiniciar stack da API (Docker ou script local conforme o teu deploy).
 3. Opcional: overrides `OLLAMA_SMART_MODEL`, `OLLAMA_REASONER_MODEL` no `.env`.
-4. Projetos existentes com `nomic-embed-text`: actualizar `config_json.embedding_model` **e** voltar a ingerir fontes.
+4. Projetos existentes com `nomic-embed-text`: actualizar `config_json.embedding_model` **e** voltar a ingerir fontes. QA de 28 set 2026: `webplacecc` ainda responde `Collection expecting embedding with dimension of 768, got 1024` — re-ingest pendente ([12](./12-llm-fleet-rag-operations.md)).
 
 ---
 

@@ -6,6 +6,8 @@ API FastAPI para LLM local com RAG multi-projeto. Porta **28471**. Planejamento 
 
 **Deploy em produção:** só nesta máquina, via **Docker Compose**. Na raiz deste repositório (ai2tcs): `./scripts/deploy_llm.sh` — corre `docker compose up -d --build api` em `llm_api/`. Não usar `run_api.sh` nem launchd para produção.
 
+**QA ao vivo** (API já a correr): `python3 tests/test_live_smoke.py`. Token em `LLM_API_TOKEN` no `.env`. Resultado e o índice de `webplacecc` (768 contra 1024): [`../docs/12-llm-fleet-rag-operations.md`](../docs/12-llm-fleet-rag-operations.md).
+
 **Autostart (Docker):** `docker-compose.yml` usa `restart: unless-stopped` em `postgres` e `api`. Ative no Docker Desktop *Open Docker Desktop when you sign in*. Opcional: `launchd/com.itcs.llmapi.docker.plist.example` + `scripts/llm_docker_autostart.sh` (sobe o stack no login; ver comentários no plist). Descarregue o plist antigo `com.itcs.llmapi.plist` se ainda usar uvicorn nativo — conflito na porta 28471.
 
 ## Pré-requisitos

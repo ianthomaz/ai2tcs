@@ -16,6 +16,7 @@ Motor principal em **`llm_api/`**; documentação de contratos em **`docs/`**; s
 | Manual NF Extract (rotas, payloads) | [`docs/refs/ManualNF_Extract`](docs/refs/ManualNF_Extract) |
 | Rede e valores locais | Pasta `local-only/` — [`docs/01-overview.md`](docs/01-overview.md) |
 | Deploy local (Docker) | `./scripts/deploy_llm.sh` |
+| QA ao vivo (rotas + uma pergunta curta) | `cd llm_api && python3 tests/test_live_smoke.py` — ver [`docs/12-llm-fleet-rag-operations.md`](docs/12-llm-fleet-rag-operations.md) |
 | Smoke NF Extract | `./scripts/nf_extract_smoke.py` |
 
 ## Desenvolvimento e autoria
