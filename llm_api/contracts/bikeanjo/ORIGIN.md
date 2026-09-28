@@ -5,7 +5,7 @@ dos dois lados, para `diff -r` servir de conferência.
 
 | | |
 |---|---|
-| origem | `bikeanjo2026all@e902f967a2178c873914475d63ab7a165d8a1e79` |
+| origem | `bikeanjo2026all@b59656c06085fa5d46009d58b4f132822dc635b5` |
 | copiado em | 2026-09-28 |
 
 **Vale o arquivo.** O serviço lê daqui, em tempo de execução, os system prompts

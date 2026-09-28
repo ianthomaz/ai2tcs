@@ -1,7 +1,7 @@
 """Bike Anjo ops ports: /feedbackTriage, /healthNormalize, /replySuggest.
 
-Only the Bike Anjo project key (settings.bikeanjo_ops_project_ids) or the operator's global
-token gets in; any other project key is 403. JSON sync: one call, one answer. Content errors
+Only the Bike Anjo project key (settings.bikeanjo_ops_project_ids) gets in; the global token
+and any other project key are 403. JSON sync: one call, one answer. Content errors
 are HTTP 200 with the common envelope; 401/403 are transport.
 """
 from __future__ import annotations

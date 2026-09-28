@@ -57,13 +57,29 @@ Outras rotas no serviço que **não** têm pasta aqui (fora do escopo Bike Anjo 
 
 ---
 
-## Acesso — portas exclusivas do Bike Anjo
+## Acesso — só a chave do projeto
 
-`/feedbackTriage`, `/healthNormalize` e `/replySuggest` **não** são superfície pública do
-ai2tcs. Entram só a chave do projeto (`itcs_bikeanjoall_2026_…`) e o token global do
-operador; chave de outro projeto recebe **403**. `BIKEANJO_OPS_ALLOW_GLOBAL_TOKEN=false`
-no ai2tcs passa a exigir a chave do projeto — o que pede `ITCS_FEEDBACK_TRIAGE_TOKEN` /
-`ITCS_HEALTH_NORMALIZE_TOKEN` (ou `LLM_API_TOKEN`) com a chave com escopo, e não a global.
+O ai2tcs dá a cada projeto uma chave `itcs_<project_id>_<24 hex>` que só serve a ele. O
+Bike Anjo usa **só** a chave `itcs_bikeanjoall_2026_…` — decisão do dono, 28/set/2026. O
+token global do serviço fica para os projetos que ainda não migraram.
+
+| Onde | O que vale |
+|---|---|
+| `/feedbackTriage`, `/healthNormalize`, `/replySuggest` | no ai2tcs: só a chave do projeto (global → 403). No cliente: `resolveBikeAnjoProjectKey` não chama sem ela (`token_not_project_key`) |
+| `/ask`, `/router`, `/extract`, `/nfExtract`, `/boletoExtract`, `/ingest` | no ai2tcs: global aceito até `SCOPED_KEY_REQUIRED_PROJECTS=bikeanjoall_2026`. No cliente: chama e avisa no log (`warnIfNotBikeAnjoProjectKey`, subida do `llm-remote.js`) |
+
+Porta única no código: `sistemaBA/src/lib/itcs-token.ts` · `zapzap/lib/itcs-token.js`.
+
+**`.env` que levam a chave** (sistemaBA prod/stage, `ignore/zapzap.env.prod`, `zapzap/.env`,
+env do `llm-ingest-bikeanjo.sh`): `LLM_API_TOKEN`, `ITCS_NF_EXTRACT_TOKEN` e, se
+definidos, `ITCS_FEEDBACK_TRIAGE_TOKEN` / `ITCS_HEALTH_NORMALIZE_TOKEN`.
+
+**Ordem do corte** (invertida, o bot do Zap para de responder):
+
+1. Gerar a chave no Dashboard do ai2tcs (Projetos → `bikeanjoall_2026` → Chaves API).
+2. Pôr a chave em todos os `.env` acima; deploy do Bike Anjo (o log para de avisar).
+3. No `.env` do ai2tcs: `SCOPED_KEY_REQUIRED_PROJECTS=bikeanjoall_2026` e restart.
+   Os outros projetos seguem híbridos (ai2tcs `docs/02-api-integration.md § 2.1`).
 
 ## Formato — JSON
 

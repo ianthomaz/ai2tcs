@@ -121,6 +121,11 @@ com o que devia diagnosticar. Fica registado, não planeado.
 - [ ] Endpoint ou nota que liste `project_id` activos (hoje só se sabe pelos seeds)
 - [ ] Confirmar `spec.llm` do `webplacecc` com o dono do repo do zap
 - [ ] Rever `06-edu-contract.md` e `12-llm-fleet-rag-operations.md` face ao estado actual
+- [ ] Migrar cada projeto para a chave própria e pô-lo em `SCOPED_KEY_REQUIRED_PROJECTS`
+      ([02 § 2.1](02-api-integration.md)); o log `auth=global` diz quem falta. Bike Anjo é o
+      primeiro ([18 § 7](18-bikeanjo-ops-ports.md)); com todos migrados, o global sai das integrações
+- [ ] Porta genérica de triagem de texto (feedback, chamado, e-mail) multi-projeto —
+      [18 § 8](18-bikeanjo-ops-ports.md)
 
 ---
 

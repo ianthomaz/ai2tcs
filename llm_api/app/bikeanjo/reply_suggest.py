@@ -32,7 +32,8 @@ PORT = "replySuggest"
 BOOST = 0.05
 DOWNRANK = 0.08
 
-ALLOWED_URL_HOSTS = frozenset({"bikeanjo.org", "www.bikeanjo.org", "cadastro.bikeanjo.org", "sistema.bikeanjo.org"})
+# bikeanjo.org and every subdomain of it; any other host blocks the suggestion.
+ALLOWED_URL_DOMAIN = "bikeanjo.org"
 ALLOWED_EMAILS = frozenset({"contato@bikeanjo.org"})
 
 _URL_RE = re.compile(r"(?:https?://|www\.)[^\s)>\]]+|\bbit\.ly/\S+", re.IGNORECASE)
@@ -155,7 +156,7 @@ def reply_violations(reply: str) -> list[str]:
         found.append("promise")
     for url in _URL_RE.findall(reply):
         host = re.sub(r"^(https?://)", "", url.lower()).split("/")[0].rstrip(".,;:!?")
-        if host not in ALLOWED_URL_HOSTS:
+        if host != ALLOWED_URL_DOMAIN and not host.endswith("." + ALLOWED_URL_DOMAIN):
             found.append("url_not_allowed")
             break
     if any(e.lower().rstrip(".,;:") not in ALLOWED_EMAILS for e in _EMAIL_RE.findall(reply)):

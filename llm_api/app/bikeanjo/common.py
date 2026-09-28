@@ -16,10 +16,9 @@ from pathlib import Path
 from typing import Any, Callable, Literal
 
 from fastapi import Depends, HTTPException, Request
-from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, ValidationError
 
-from app.auth import require_token, security
+from app.auth import require_token
 from app.config import settings
 from app.llm import get_provider
 
@@ -43,31 +42,15 @@ def error_body(code: ErrorCode, message: str) -> dict[str, Any]:
     return {"status": "error", "error": {"code": code, "message": message}}
 
 
-async def require_bikeanjo_project(
-    request: Request,
-    _: None = Depends(require_token),
-    credentials: HTTPAuthorizationCredentials | None = Depends(security),
-) -> str:
-    """Only Bike Anjo may call these ports: its scoped key, or the operator's global token.
+async def require_bikeanjo_project(request: Request, _: None = Depends(require_token)) -> str:
+    """Only the Bike Anjo project key gets in; returns the project_id the call runs under.
 
-    require_token already rejected missing/invalid tokens (401). Here a valid key of any
-    other project gets 403 — the ports are not a shared surface of the ai2tcs.
-    Returns the project_id the call runs under.
+    require_token already rejected missing/invalid tokens (401). The global token and a
+    key of any other project get 403 — the ports are not a shared surface of the ai2tcs.
     """
-    allowed = settings.bikeanjo_ops_project_id_set()
     scoped = getattr(request.state, "project_id", None)
-    if isinstance(scoped, str) and scoped:
-        if scoped in allowed:
-            return scoped
-        raise HTTPException(status_code=403, detail="API key not authorized for Bike Anjo ports")
-
-    is_global = bool(
-        credentials
-        and settings.llm_api_token
-        and credentials.credentials == settings.llm_api_token
-    )
-    if is_global and settings.bikeanjo_ops_allow_global_token and allowed:
-        return sorted(allowed)[0]
+    if isinstance(scoped, str) and scoped in settings.bikeanjo_ops_project_id_set():
+        return scoped
     raise HTTPException(status_code=403, detail="Bike Anjo ports require the Bike Anjo project key")
 
 

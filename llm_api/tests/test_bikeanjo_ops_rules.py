@@ -199,6 +199,8 @@ async def test_grave_ticket_never_reaches_the_model(cid):
         "Acesse https://bikeanjo.org/cadastro?magic=abc",
         "Inscreva-se em https://bit.ly/ba-sp",
         "Veja em https://inscricao-sp.com.br",
+        "Veja em https://bikeanjo.org.golpe.com/sp",
+        "Veja em https://naobikeanjo.org",
         "Escreva para fulano@gmail.com",
         "Ligue (11) 91234-5678",
     ],
@@ -215,6 +217,7 @@ def test_suggestion_that_promises_or_invents_is_blocked(reply):
     [
         "Obrigado pelo contato! As datas das aulas ficam em https://bikeanjo.org.",
         "Complete seu cadastro em https://cadastro.bikeanjo.org e escreva para contato@bikeanjo.org.",
+        "Veja a agenda em https://eventos.bikeanjo.org/sp.",
     ],
 )
 def test_canonical_links_are_allowed(reply):

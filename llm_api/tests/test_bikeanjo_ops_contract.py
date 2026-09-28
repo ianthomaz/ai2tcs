@@ -198,17 +198,10 @@ async def test_missing_token_is_401(client, route):
 
 
 @pytest.mark.asyncio
-async def test_global_token_runs_as_bikeanjo(client):
-    case = _cases("health-normalize")[0]
-    with _fake_chat(_model_output(case["response_ok"])):
-        r = await client.post("/healthNormalize", json=case["request"], headers=GLOBAL)
-    assert r.status_code == 200 and r.json()["status"] == "ok"
-
-
-@pytest.mark.asyncio
-async def test_global_token_can_be_turned_off(client):
-    with patch("app.config.settings.bikeanjo_ops_allow_global_token", False):
-        r = await client.post("/healthNormalize", json={}, headers=GLOBAL)
+@pytest.mark.parametrize("route", list(PORTS))
+async def test_global_token_is_forbidden(client, route):
+    """Project key only: the global token does not reach the Bike Anjo ports."""
+    r = await client.post(route, json=_cases(PORTS[route])[0]["request"], headers=GLOBAL)
     assert r.status_code == 403
 
 

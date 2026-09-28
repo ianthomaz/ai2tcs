@@ -102,10 +102,11 @@ Arquivos: `reply-suggest.*` · `prompts/reply-suggest-v1.md` · hints em `rag/`.
 
 **Depois no BA:** tabela `support_ticket_suggestions` + UI shadow — [10h §5.2](../../10h_ai2tcs_portas_de_texto.md).
 
-<!-- [needsReview] r07 do reply-suggest.eval.jsonl proíbe qualquer "https://", mas o
-     prompt reply-v1 e a trava do ai2tcs aceitam os domínios canônicos (bikeanjo.org,
-     cadastro., sistema.). Rascunho que cite https://bikeanjo.org reprova no eval e passa
-     na regra. Dono decide qual vale. -->
+<!-- [needsReview] a trava do ai2tcs aceita bikeanjo.org e qualquer subdomínio (dono,
+     28/set: medida média — todos os subdomínios cabem, outro domínio não); o r07 do
+     reply-suggest.eval.jsonl ainda proíbe qualquer "https://". Rascunho com
+     https://sistema.bikeanjo.org passa na trava e reprova no eval. Rever o r07 com o
+     eval rodando no mini62; o dono decide. -->
 
 ---
 
@@ -119,6 +120,7 @@ Os itens «Eval (pronto)» e «Smoke» acima medem o modelo vivo, então esperam
 3. Eval: `LLM_API_TOKEN=<chave bikeanjoall_2026> python llm_api/scripts/eval_bikeanjo_ops.py`
    — imprime caso a caso e dá **PRONTO** / **não pronto** por porta com os critérios acima.
 4. Só com **PRONTO**: lote de ensaio no sistemaBA (`--dry-run --limit=30`) — com ok explícito.
+5. Corte do token global para o Bike Anjo — ordem em [README](README.md) § Acesso.
 
 ---
 
