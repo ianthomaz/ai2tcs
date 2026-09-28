@@ -117,8 +117,11 @@ O corte é projeto a projeto, sem quebrar quem ainda usa o global:
 3. Os projetos fora da lista continuam aceitando o global. Quando o log não mostrar mais
    `auth=global` para nenhum projeto, o global pode sair das integrações.
 
-Limite: o corte só alcança pedido que **nomeia** o projeto. Rota sem `project_id`
-(ex. `/nfExtract` sem `X-Project-Id`) chamada com o global não tem como ser atribuída.
+Limite, ainda em aberto: a chave só é barrada quando o pedido **escreve o nome de outro projeto**. Se o endereço não traz projeto nenhum, qualquer chave válida entra, como se fosse o token global.
+
+Exemplo. A chave do Bike Anjo pede `POST /ask` com `"project_id": "webplacecc"` e recebe 403. A mesma chave pede `GET /result/{job_id}` e a rota busca o job só pelo id, sem olhar de qual projeto ele é. Se esse id for de uma resposta do zap da webplace, a chave do Bike Anjo lê o texto. O mesmo vale para `GET /status/{job_id}` e para `GET /projects`, que devolve a lista de todos os projetos.
+
+Isto já existia nas rotas antigas. A conferência nova (corpo, `X-Project-Id`, path, query) não fecha estas três, porque elas não perguntam o projeto. As portas do Bike Anjo em [18](./18-bikeanjo-ops-ports.md) fecham o caso delas: exigem a chave `bikeanjoall_2026` mesmo quando o corpo não repete o nome.
 
 Rotas **exclusivas de um projeto** não aceitam o global em caso nenhum — hoje as do Bike
 Anjo ([18](./18-bikeanjo-ops-ports.md)).
