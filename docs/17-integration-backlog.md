@@ -8,8 +8,8 @@ restante malha, o que dele ainda não é consumido, e que opções existem.
 tailnet. Referências de rede vivem em `local-only/` e nos repos privados.
 
 Documentos irmãos:
-- `0MM_ITCS/docs/23_integration_map.md` — visão do hub (mapa completo)
-- `webplaceZap/docs/12_integracao_hub_e_canais.md` — visão do canal
+- `0MM_ITCS/docs/08_ecosystem_integration.md` — visão do hub (cópia canónica)
+- `webplacecc/docs/14_integracao_ecossistema.md` — visão do canal WhatsApp
 
 ---
 
@@ -24,7 +24,7 @@ Projetos com seed no repo (`llm_api/scripts/seed_*.py`):
 |---|---|
 | `webplacecc` | zapzap (WhatsApp webplace.cc) — consumidor mais pesado |
 | `ian_zap` | zap pessoal, rota `cursor` via bridge — ver `14-ian-zap-personal.md` |
-| `bikeanjoall` | Bike Anjo |
+| `bikeanjoall_2026` | Bike Anjo (repo `bikeanjo2026all`; zap em `zapzap/flows.js`) |
 | `estudosmobi`, `aiclaudia`, `webplace`, `general` | restantes |
 
 **Consequência para integração:** qualquer projeto novo que queira LLM não precisa
@@ -39,7 +39,7 @@ isolado.
 | Superfície | O quê | Estado |
 |---|---|---|
 | `GET /health` | Checks reais: Ollama (+modelos), Postgres, disco livre. `status: ok\|degraded` | [ x ] |
-| `GET /metrics` | Jobs totais / 24h / por estado / por projeto / duração média; métricas STT | [ x ] |
+| `GET /metrics` | Texto no estilo Prometheus: totais, 24h, por estado, por projeto, duração média, STT. Se a base falha, o corpo é `llm_api_ready 0` e o HTTP continua 200 | [ x ] |
 | `POST /ask` | Pergunta com RAG, assíncrono com polling | [ x ] |
 | `POST /router` | Decisão de rota antes de responder | [ x ] |
 | `POST /extract` | Extração de campo a partir de texto livre | [ x ] |
@@ -76,7 +76,7 @@ serviço partido**.
 
 ## 4. `spec.llm` — o bloco que os filhos deviam declarar
 
-O contrato do hub (`0MM_ITCS/docs/21_project_hub_contract.md`) define um bloco
+O contrato do hub (`0MM_ITCS/docs/06_project_hub_contract.md`) define um bloco
 `spec.llm` para todo projeto que consome esta API:
 
 ```yaml
@@ -126,7 +126,7 @@ com o que devia diagnosticar. Fica registado, não planeado.
 
 ## 7. Perguntas em aberto
 
-- [ ] `/health` e `/metrics` devem ficar públicos (para o hub sondar sem chave) ou atrás de token?
+- [ ] `/health` e `/metrics` devem ficar públicos (para o hub sondar sem chave) ou atrás de token? Hoje os dois respondem sem Bearer; o middleware de sessão só cobre `/dashboard`.
 - [ ] O `degraded` do `/health` deve devolver `200` ou `503`? Hoje é `200` — decide se a sonda do hub precisa de ler o corpo.
 - [ ] A lista de projetos activos deve sair para o catálogo do hub, ou fica só aqui?
 
