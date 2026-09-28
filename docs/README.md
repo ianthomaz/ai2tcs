@@ -10,3 +10,4 @@ Contribuições ao código e contratos: [../CONTRIBUTING.md](../CONTRIBUTING.md)
 
 - [13-optimization-execution-plan.md](13-optimization-execution-plan.md) — plano de execução incremental (sem quebra).
 - [17-ecosystem-integration.md](17-ecosystem-integration.md) — papel do ai2tcs entre hub 0MM, zapzap e bridge Cursor.
+- [17-integration-backlog.md](17-integration-backlog.md) — superfícies que esta API já oferece, o que o hub ainda não consome, backlog e perguntas em aberto.
