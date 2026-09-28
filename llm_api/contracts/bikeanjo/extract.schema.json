@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bikeanjo/ai2tcs/extract/1",
+  "title": "POST /extract e POST /extract-multi",
+  "description": "Extração de campo(s) da resposta livre no Zap (em produção): onboarding e correção de pedido de pagamento. Cliente: zapzap/lib/llm-remote.js (extractFromReply, extractMultiField, extractPaymentNfCorrections). Sem valor extraído → null; o bot pergunta de novo.",
+  "$defs": {
+    "request_single": {
+      "type": "object",
+      "required": [
+        "task",
+        "step",
+        "question",
+        "userReply"
+      ],
+      "properties": {
+        "task": {
+          "const": "extract"
+        },
+        "step": {
+          "type": "string"
+        },
+        "question": {
+          "type": "string"
+        },
+        "userReply": {
+          "type": "string"
+        }
+      }
+    },
+    "response_single": {
+      "type": "object",
+      "properties": {
+        "extracted": {
+          "description": "string com o valor; no passo payment_nf_confirmation pode vir objeto ou JSON em string",
+          "type": [
+            "string",
+            "object",
+            "null"
+          ]
+        }
+      }
+    },
+    "request_multi": {
+      "type": "object",
+      "required": [
+        "task",
+        "userReply",
+        "fields"
+      ],
+      "properties": {
+        "task": {
+          "const": "extract_multi"
+        },
+        "userReply": {
+          "type": "string"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "label"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "example": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "context": {
+          "type": "object"
+        }
+      }
+    },
+    "response_multi": {
+      "type": "object",
+      "properties": {
+        "extracted": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

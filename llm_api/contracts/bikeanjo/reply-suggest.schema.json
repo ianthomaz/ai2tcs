@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bikeanjo/ai2tcs/reply-suggest/1",
+  "title": "POST /replySuggest",
+  "description": "Sugestão de resposta a chamado de suporte, em shadow: nunca é enviada. RAG no índice do bot (bikeanjoall_2026). docs/10h_ai2tcs_portas_de_texto.md § 5.2.",
+  "$defs": {
+    "request": {
+      "type": "object",
+      "required": ["source", "ticket_id", "channel", "subject", "message", "context"],
+      "properties": {
+        "source": { "const": "support_ticket" },
+        "ticket_id": { "type": "string" },
+        "channel": { "enum": ["platform", "visitor", "site"] },
+        "subject": { "type": "string", "minLength": 1, "description": "Sem contato ([contato]/[documento])" },
+        "message": { "type": "string", "minLength": 1, "description": "Sem contato ([contato]/[documento])" },
+        "context": {
+          "type": "object",
+          "required": ["has_account"],
+          "properties": {
+            "has_account": { "type": "boolean" },
+            "page_url": { "type": ["string", "null"], "description": "Só o caminho, sem query string" },
+            "city": { "type": ["string", "null"] },
+            "state": { "type": ["string", "null"] }
+          }
+        }
+      }
+    },
+    "response_ok": {
+      "type": "object",
+      "required": ["status", "suggested_reply", "no_answer", "confidence", "sources", "model", "prompt_version"],
+      "properties": {
+        "status": { "const": "ok" },
+        "suggested_reply": { "type": "string", "description": "Vazio quando no_answer" },
+        "no_answer": { "type": "boolean", "description": "Resposta válida quando o corpus não cobre — preferir a inventar" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "sources": { "type": "array", "items": { "type": "string" }, "description": "Documentos do corpus usados" },
+        "model": { "type": "string" },
+        "prompt_version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "response_error": { "$ref": "common.schema.json#/$defs/error" }
+  }
+}

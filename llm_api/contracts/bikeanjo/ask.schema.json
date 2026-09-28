@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bikeanjo/ai2tcs/ask/1",
+  "title": "POST /ask (+ GET /status/{job_id}, GET /result/{job_id})",
+  "description": "Resposta livre com RAG do projeto (em produção). Assíncrono: /ask devolve job_id; o bot consulta /status a cada 2,5 s até um estado final e busca /result. Silêncio (no_answer, answer vazio) é resultado válido (10d P6). Contrato em prosa: docs/10d § 3. Cliente: zapzap/lib/llm-remote.js (_ask, ASK_CONTEXT_KEYS, ASK_TERMINAL_STATUSES).",
+  "$defs": {
+    "request": {
+      "type": "object",
+      "required": [
+        "project_id",
+        "question"
+      ],
+      "properties": {
+        "project_id": {
+          "type": "string"
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1
+        },
+        "user_id": {
+          "type": "string"
+        },
+        "history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "role": {
+                "enum": [
+                  "user",
+                  "assistant"
+                ]
+              },
+              "text": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "system_prompt": {
+          "type": "string"
+        },
+        "user_context": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "birth_date": {
+              "type": "string"
+            },
+            "cep": {
+              "type": "string"
+            },
+            "city": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "health": {
+              "type": "string"
+            },
+            "current_time": {
+              "type": "string"
+            },
+            "interesse": {
+              "type": "string"
+            },
+            "clearance": {
+              "type": "string"
+            },
+            "intended_clearance": {
+              "type": "string"
+            },
+            "journey_kind": {
+              "type": "string"
+            },
+            "journey_destination": {
+              "type": "string"
+            },
+            "next_event_name": {
+              "type": "string"
+            },
+            "next_event_at": {
+              "type": "string"
+            },
+            "registered": {
+              "type": "boolean"
+            }
+          },
+          "description": "o bot só manda as chaves de ASK_CONTEXT_KEYS + registered; vazias não vão"
+        }
+      }
+    },
+    "job_created": {
+      "type": "object",
+      "required": [
+        "job_id"
+      ],
+      "properties": {
+        "job_id": {
+          "type": "string"
+        }
+      }
+    },
+    "job_status": {
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "qualquer outro valor = ainda rodando"
+        }
+      }
+    },
+    "terminal_status": {
+      "enum": [
+        "done",
+        "no_answer",
+        "need_more_info",
+        "failed",
+        "cancelled"
+      ]
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "answer": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "final, já no formato WhatsApp: curto, link-first, sem markdown, sem preâmbulo"
+        }
+      }
+    }
+  }
+}

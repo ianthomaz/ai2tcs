@@ -24,7 +24,7 @@ Projetos com seed no repo (`llm_api/scripts/seed_*.py`):
 |---|---|
 | `webplacecc` | zapzap (WhatsApp webplace.cc) — consumidor mais pesado |
 | `ian_zap` | zap pessoal, rota `cursor` via bridge — ver `14-ian-zap-personal.md` |
-| `bikeanjoall_2026` | Bike Anjo (repo `bikeanjo2026all`; zap em `zapzap/flows.js`) |
+| `bikeanjoall_2026` | Bike Anjo (repo `bikeanjo2026all`; zap em `zapzap/flows.js`); portas exclusivas em [18](18-bikeanjo-ops-ports.md) |
 | `estudosmobi`, `aiclaudia`, `webplace`, `general` | restantes |
 
 **Consequência para integração:** qualquer projeto novo que queira LLM não precisa
@@ -132,4 +132,4 @@ com o que devia diagnosticar. Fica registado, não planeado.
 
 ---
 
-**Anterior:** [16-code-review-findings.md](./16-code-review-findings.md)
+**Anterior:** [16-code-review-findings.md](./16-code-review-findings.md) · **Seguinte:** [18-bikeanjo-ops-ports.md](./18-bikeanjo-ops-ports.md)

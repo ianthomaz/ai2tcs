@@ -34,6 +34,17 @@ class Settings(BaseSettings):
     nabil_qualify_rag_context_max_chars: int = 8000
     # Ollama sampling: higher → less repetitive phrasing in theme notes / summary (JSON keys stay strict).
     nabil_qualify_temperature: float = 0.42
+    # Bike Anjo ops ports (/feedbackTriage, /healthNormalize, /replySuggest) — app/bikeanjo/.
+    # Comma-separated project_ids whose API key may call them; any other project key gets 403.
+    bikeanjo_ops_project_ids: str = "bikeanjoall_2026"
+    # The global LLM_API_TOKEN is the operator's master key; set false to require the scoped key.
+    bikeanjo_ops_allow_global_token: bool = True
+    bikeanjo_ops_model_alias: str = "smart"
+    # Below the Bike Anjo client timeout (ITCS_FEEDBACK_TRIAGE_TIMEOUT_MS, default 60s).
+    bikeanjo_ops_timeout_s: float = 45.0
+    bikeanjo_ops_num_predict: int = 700
+    bikeanjo_ops_temperature: float = 0.1
+    bikeanjo_reply_rag_context_max_chars: int = 6000
     # Dashboard /usage: max GiB for Ollama memory bar (unified RAM / VRAM reference, e.g. 32 GB Mac)
     dashboard_ollama_memory_reference_gib: float = 32.0
     # Legacy HTML login (only if Google OAuth is not configured)
@@ -134,6 +145,9 @@ class Settings(BaseSettings):
     anthropic_default_model: str = "claude-haiku-4-5-20251001"
     gemini_api_key: str = ""
     gemini_default_model: str = "gemini-2.0-flash"
+
+    def bikeanjo_ops_project_id_set(self) -> set[str]:
+        return {p.strip() for p in self.bikeanjo_ops_project_ids.split(",") if p.strip()}
 
     def dashboard_google_oauth_configured(self) -> bool:
         return bool(

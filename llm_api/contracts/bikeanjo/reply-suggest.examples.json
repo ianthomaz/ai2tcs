@@ -1,0 +1,46 @@
+{
+  "description": "Ainda sem cliente no sistemaBA; exemplos para o ai2tcs implementar e testar.",
+  "cases": [
+    {
+      "name": "dúvida coberta pelo corpus",
+      "request": {
+        "source": "support_ticket",
+        "ticket_id": "90",
+        "channel": "site",
+        "subject": "Quero aprender a pedalar",
+        "message": "Sou de Campinas, como faço para participar de uma aula?",
+        "context": { "has_account": false, "page_url": "/contato", "city": null, "state": null }
+      },
+      "response_ok": {
+        "status": "ok",
+        "suggested_reply": "Oi! Em Campinas a Escola Bike Anjo acontece em datas marcadas pela articulação local. A próxima data e a inscrição ficam em bikeanjo.org — é só procurar Campinas.",
+        "no_answer": false,
+        "confidence": 0.78,
+        "sources": ["17_eba_como_participar"],
+        "model": "exemplo",
+        "prompt_version": "reply-v1"
+      }
+    },
+    {
+      "name": "fora do corpus — no_answer",
+      "request": {
+        "source": "support_ticket",
+        "ticket_id": "91",
+        "channel": "platform",
+        "subject": "Reembolso",
+        "message": "Paguei a inscrição do evento pago duas vezes, podem devolver uma?",
+        "context": { "has_account": true, "page_url": "/eventos", "city": "São Paulo", "state": "SP" }
+      },
+      "response_ok": {
+        "status": "ok",
+        "suggested_reply": "",
+        "no_answer": true,
+        "confidence": 0.2,
+        "sources": [],
+        "model": "exemplo",
+        "prompt_version": "reply-v1"
+      }
+    }
+  ],
+  "response_error": { "status": "error", "error": { "code": "invalid_request", "message": "message vazio" } }
+}

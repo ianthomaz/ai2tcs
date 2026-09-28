@@ -1,0 +1,13 @@
+{"id":"h01","known_codes":[],"free_text":"diabete tipo 1","expect":{"codes":["diabetes"],"outras":null},"why":"variação ortográfica → código"}
+{"id":"h02","known_codes":[],"free_text":"pressão alta controlada com remédio","expect":{"codes":["hypertension"]},"why":"sinônimo com contexto"}
+{"id":"h03","known_codes":[],"free_text":"bronquite","expect":{"codes":[],"outras_contains":"bronquite"},"why":"bronquite ≠ asma — não inventar equivalência"}
+{"id":"h04","known_codes":["tea"],"free_text":"autista leve nivel 1","expect":{"codes":[],"generic_statement":false},"why":"já é tea; não duplica; sobra pode ir para outras ou sumir se só repete o código"}
+{"id":"h05","known_codes":[],"free_text":"saude de ferro gracas a deus","expect":{"codes":[],"generic_statement":true},"why":"declaração genérica → sai da coluna"}
+{"id":"h06","known_codes":[],"free_text":"nada nao, tudo certo comigo","expect":{"generic_statement":true},"why":"declaração genérica"}
+{"id":"h07","known_codes":[],"free_text":"alergia a dipirona","expect":{"codes":[],"generic_statement":false,"outras_contains":"dipirona"},"why":"alergia escrita, mesmo no campo errado, fica — não é declaração genérica"}
+{"id":"h08","known_codes":[],"free_text":"epilepsia","expect":{"codes":[],"outras_contains":"epilepsia"},"why":"fora da lista de códigos → outras, limpo"}
+{"id":"h09","known_codes":[],"free_text":"asmatico mas nao tenho crise ha anos","expect":{"codes":["asthma"]},"why":"sinônimo com contexto; na dúvida, manter texto"}
+{"id":"h10","known_codes":[],"free_text":"tomo remedio pra ansiedade","expect":{"generic_statement":false,"outras_contains":"ansiedade"},"why":"remédio escrito fica — nunca generic_statement"}
+{"id":"h11","known_codes":[],"free_text":"tenho epilepsia desde crianca","expect":{"codes":[],"generic_statement":false,"outras_contains":"epilepsia desde criança","outras_excludes":"tenho"},"why":"padrão de comparação: sem moldura de frase, grafia corrigida"}
+{"id":"h12","known_codes":[],"free_text":"saude otima, so uma rinite","expect":{"generic_statement":false,"outras_contains":"rinite","outras_excludes":"otima"},"why":"a parte genérica sai, a condição escrita fica — o serviço não avalia se rinite importa"}
+{"id":"h13","known_codes":[],"free_text":"labirintite, enxaqueca e labirintite","expect":{"outras_contains":"labirintite, enxaqueca"},"why":"padrão: cada item uma vez, separado por vírgula"}

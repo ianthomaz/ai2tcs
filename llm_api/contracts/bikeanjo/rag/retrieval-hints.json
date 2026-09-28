@@ -1,0 +1,151 @@
+{
+  "$comment": "Hints de retrieval bikeanjoall_2026. Apply boost/downrank on metadata.path after retrieve(). intent_clusters: optional second pass — if query matches keywords, boost those paths harder.",
+  "project_id": "bikeanjoall_2026",
+  "ports": {
+    "ask": {
+      "rag": true,
+      "top_k_suggest": 5,
+      "boost_path_substrings": [
+        "35_rag_prioridades_por_pergunta",
+        "24_instrucoes_resposta",
+        "31_zap_pragmatico_anti_promessa",
+        "32_shadow_licoes_silencio_e_local",
+        "33_transicao_sistema_e_calendario_local",
+        "16_identidade_assistente",
+        "23_whatsapp_canal_o_que_faz",
+        "17_exemplos_mensagens_whatsapp",
+        "02_como_funciona",
+        "03_faq_conheca_bike_anjo",
+        "28_sync_faq_institucional",
+        "04_mapa_quero_pedalar_cep",
+        "03_mapa_inbound_link_first",
+        "10_mapa_roteador_public_router_2026",
+        "27_fluxos_operacao_sistema_2026",
+        "06_operacao_usuario_novo",
+        "07_operacao_chegada_evento",
+        "09_operacao_recall_articulacao"
+      ],
+      "downrank_path_substrings": [
+        "22_estatuto",
+        "21_carta_valores",
+        "regimento-interno",
+        "00_INDEX",
+        "mapaFluxosLLM/README",
+        "25_campanha_",
+        "13_historico_rede",
+        "29_sync_our_story"
+      ],
+      "exclude_path_substrings": [],
+      "note": "Campanha 25 fica em downrank no ask genérico; sobe se o retrieve já a trouxer por similaridade. Pedivela sobe via intent_clusters.pedivela."
+    },
+    "feedbackTriage": {
+      "rag": false,
+      "note": "Few-shots no prompt. Dado de pessoa fora do índice."
+    },
+    "healthNormalize": {
+      "rag": false,
+      "note": "Allowlist no prompt."
+    },
+    "replySuggest": {
+      "rag": true,
+      "top_k_suggest": 6,
+      "query_from": ["subject", "message"],
+      "boost_path_substrings": [
+        "35_rag_prioridades_por_pergunta",
+        "34_suporte_chamados_rascunho",
+        "09_contato_e_parcerias",
+        "02_como_funciona",
+        "03_faq_conheca_bike_anjo",
+        "28_sync_faq_institucional",
+        "05_voluntariado_e_receba_ajuda",
+        "33_transicao_sistema_e_calendario_local",
+        "24_instrucoes_resposta",
+        "31_zap_pragmatico_anti_promessa",
+        "01_o_que_e_bike_anjo",
+        "19_sobre_bike_anjo"
+      ],
+      "downrank_path_substrings": [
+        "22_estatuto",
+        "21_carta_valores",
+        "regimento-interno",
+        "mapaFluxosLLM",
+        "16_identidade_assistente",
+        "23_whatsapp_canal",
+        "17_exemplos_mensagens_whatsapp",
+        "25_campanha_",
+        "26_campanha_",
+        "30_modos_whatsapp",
+        "00_INDEX"
+      ],
+      "exclude_path_substrings": [],
+      "preferred_sources_in_response": [
+        "34_suporte_chamados_rascunho",
+        "35_rag_prioridades_por_pergunta",
+        "09_contato_e_parcerias",
+        "02_como_funciona",
+        "28_sync_faq_institucional"
+      ],
+      "system_prompt_file": "prompts/reply-suggest-v1.md",
+      "prompt_version": "reply-v1"
+    }
+  },
+  "intent_clusters": {
+    "quero_pedalar_local": {
+      "keywords": ["quero pedalar", "aprender a pedalar", "cep", "eba", "aula", "próxima data", "proxima data", "tem bike anjo", "vaga", "calendário", "calendario"],
+      "boost_path_substrings": [
+        "04_mapa_quero_pedalar_cep",
+        "33_transicao_sistema_e_calendario_local",
+        "32_shadow_licoes_silencio_e_local",
+        "09_operacao_recall_articulacao",
+        "02_como_funciona",
+        "35_rag_prioridades_por_pergunta"
+      ],
+      "extra_downrank": ["22_estatuto", "21_carta_valores", "19_sobre_bike_anjo"]
+    },
+    "identidade_canal": {
+      "keywords": ["quem é você", "quem e voce", "o que você faz", "voce e humana", "é robô", "e robo"],
+      "boost_path_substrings": ["16_identidade_assistente", "23_whatsapp_canal_o_que_faz", "31_zap_pragmatico_anti_promessa"]
+    },
+    "cadastro_link": {
+      "keywords": ["cadastro", "cadastrar", "magic", "completar cadastro", "criar conta"],
+      "boost_path_substrings": [
+        "24_instrucoes_resposta",
+        "06_operacao_usuario_novo",
+        "03_mapa_inbound_link_first",
+        "23_whatsapp_canal_o_que_faz"
+      ]
+    },
+    "pedivela": {
+      "keywords": ["pedivela", "pendência", "pendencia", "vincular articulação", "vincular articulacao"],
+      "boost_path_substrings": ["26_campanha_pedivela1", "08_operacao_pedivela", "31_zap_pragmatico_anti_promessa"]
+    },
+    "parceria_contato": {
+      "keywords": ["parceria", "patrocínio", "patrocinio", "imprensa", "contato@"],
+      "boost_path_substrings": ["09_contato_e_parcerias", "34_suporte_chamados_rascunho", "18_bike_anjo_na_midia"]
+    },
+    "governanca_legal": {
+      "keywords": ["estatuto", "regimento", "assembleia", "ago", "diretoria", "conselho fiscal"],
+      "boost_path_substrings": ["19_sobre_bike_anjo", "22_estatuto", "21_carta_valores", "regimento-interno"],
+      "note": "Único cluster que sobe legal_downrank de propósito."
+    },
+    "silencio": {
+      "keywords": ["obrigado", "valeu", "obrigada", "👍", "ok"],
+      "boost_path_substrings": ["31_zap_pragmatico_anti_promessa", "32_shadow_licoes_silencio_e_local"],
+      "prefer_no_answer": true
+    }
+  },
+  "ingest": {
+    "sources_env": "BIKEANJOALL_2026_SOURCES",
+    "paths_canonical": ["bibliotecaConteudoLLM", "mapaFluxosLLM"],
+    "new_or_rewritten_this_pack": [
+      "bibliotecaConteudoLLM/34_suporte_chamados_rascunho.md",
+      "bibliotecaConteudoLLM/35_rag_prioridades_por_pergunta.md",
+      "bibliotecaConteudoLLM/27_fluxos_operacao_sistema_2026.md",
+      "mapaFluxosLLM/06_operacao_usuario_novo.md",
+      "mapaFluxosLLM/07_operacao_chegada_evento.md",
+      "mapaFluxosLLM/08_operacao_pedivela.md",
+      "mapaFluxosLLM/09_operacao_recall_articulacao.md"
+    ],
+    "note": "Commit + pull mini62 + llm-ingest-bikeanjo.sh. Todos os MD devem ter H1 '# Sobre: …' (metadata title)."
+  }
+}

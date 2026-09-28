@@ -1,0 +1,82 @@
+{
+  "description": "Exemplos do contrato. `build_input` é a entrada de buildFeedbackTriageRequest (sistemaBA); `request` é o que ela produz e o que o serviço recebe. Teste: sistemaBA/src/lib/__tests__/ai2tcs-contracts.test.ts.",
+  "cases": [
+    {
+      "name": "feedback EBA com histórico cruzado",
+      "build_input": {
+        "source": "eba-feedback",
+        "submissionId": "812",
+        "userId": "AABC4",
+        "dependentId": null,
+        "eventId": "C-AA002-A026",
+        "payload": {
+          "impressao_curta": "Muito acolhedor",
+          "recado_livre": "A Ana foi paciente o tempo todo. Sugiro mais bikes pequenas. Meu zap é (11) 91234-5678.",
+          "avaliacao_geral_1_5": 5,
+          "evolucao_hoje_1_5": "4"
+        },
+        "historicoPayload": { "mensagem_futuro_pedalar": "Você conseguiu!", "tentativas_antes_bike_anjo": "nunca_tentei" }
+      },
+      "request": {
+        "source": "eba-feedback",
+        "submission_id": "812",
+        "subject": { "user_id": "AABC4", "dependent_id": null },
+        "event_id": "C-AA002-A026",
+        "locale": "pt-BR",
+        "fields": {
+          "impressao_curta": "Muito acolhedor",
+          "recado_livre": "A Ana foi paciente o tempo todo. Sugiro mais bikes pequenas. Meu zap é [contato].",
+          "historico.mensagem_futuro_pedalar": "Você conseguiu!",
+          "historico.tentativas_antes_bike_anjo": "nunca_tentei"
+        },
+        "scales": { "avaliacao_geral_1_5": 5, "evolucao_hoje_1_5": 4 }
+      },
+      "response_ok": {
+        "status": "ok",
+        "scores": { "text_quality": 4, "information_value": 5, "answer_solidity": 4 },
+        "tags": ["construtiva", "elogio_pessoa"],
+        "urgency": "none",
+        "anchor_quote": "Sugiro mais bikes pequenas",
+        "named_people": ["Ana"],
+        "theme_free": null,
+        "confidence": 0.86,
+        "model": "exemplo",
+        "prompt_version": "triage-v1",
+        "warnings": []
+      }
+    },
+    {
+      "name": "chamado sem conta (contato do site)",
+      "build_input": {
+        "source": "support_ticket",
+        "submissionId": "77",
+        "userId": null,
+        "dependentId": null,
+        "eventId": null,
+        "payload": { "subject": "Link de inscrição não abre", "message": "Tentei 3 vezes e dá erro. Meu e-mail é maria@exemplo.com" }
+      },
+      "request": {
+        "source": "support_ticket",
+        "submission_id": "77",
+        "subject": { "user_id": null, "dependent_id": null },
+        "event_id": null,
+        "locale": "pt-BR",
+        "fields": { "subject": "Link de inscrição não abre", "message": "Tentei 3 vezes e dá erro. Meu e-mail é [contato]" },
+        "scales": {}
+      },
+      "response_ok": {
+        "status": "ok",
+        "scores": { "text_quality": 3, "information_value": 3, "answer_solidity": 3 },
+        "tags": ["bug_sistema"],
+        "urgency": "watch",
+        "anchor_quote": "Link de inscrição não abre",
+        "named_people": [],
+        "theme_free": null,
+        "confidence": 0.8,
+        "model": "exemplo",
+        "prompt_version": "triage-v1"
+      }
+    }
+  ],
+  "response_error": { "status": "error", "error": { "code": "model_error", "message": "modelo indisponível" } }
+}

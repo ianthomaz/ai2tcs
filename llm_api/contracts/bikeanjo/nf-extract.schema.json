@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bikeanjo/ai2tcs/nf-extract/1",
+  "title": "POST /nfExtract",
+  "description": "Leitura de nota fiscal para o pedido de pagamento (em produção). Pedido multipart, não JSON. Contrato em prosa: docs/10b_nf_extract_api_contract.md. Clientes: sistemaBA/src/lib/itcs-nf-extract.ts e zapzap/lib/nf-extract-zap.js.",
+  "$defs": {
+    "payment_type": {
+      "enum": [
+        "pix",
+        "boleto",
+        "transferencia",
+        "cartao_credito",
+        "dinheiro"
+      ]
+    },
+    "request": {
+      "description": "multipart/form-data — exatamente um de file | server_file_path | document_url; `model` e `project_id` opcionais.",
+      "type": "object",
+      "properties": {
+        "file": {
+          "description": "PDF, XML, JPG ou PNG; até 10 MB"
+        },
+        "server_file_path": {
+          "type": "string"
+        },
+        "document_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "model": {
+          "type": "string",
+          "description": "fast | smart | id do modelo no servidor"
+        },
+        "project_id": {
+          "type": "string",
+          "description": "se vier, tem de bater com o projeto do token"
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "file"
+          ]
+        },
+        {
+          "required": [
+            "server_file_path"
+          ]
+        },
+        {
+          "required": [
+            "document_url"
+          ]
+        }
+      ]
+    },
+    "response_ok": {
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "description": "Campo ausente ou incerto é null — nunca placeholder («não informado», «N/A», 0, \"\"). 10b § 4.",
+      "properties": {
+        "status": {
+          "const": "ok"
+        },
+        "supplier_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "supplier_code": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^(\\d{11}|\\d{14})$"
+        },
+        "nf_number": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "número da nota, nunca a série"
+        },
+        "amount": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "exclusiveMinimum": 0
+        },
+        "amount_type": {
+          "enum": [
+            "total",
+            "imposto_retido",
+            null
+          ]
+        },
+        "amount_deposit": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "exclusiveMinimum": 0
+        },
+        "amount_tax": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "exclusiveMinimum": 0
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^NF emitida \\d{2}/(jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)/\\d{4}\\n"
+        },
+        "payment_type": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/payment_type"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "payment_pixCode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "payment_bank": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "payment_bank_agency": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "payment_bank_account": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "payment_bank_account_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "payment_receiver_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "payment_receiver_document": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^(\\d{11}|\\d{14})$"
+        },
+        "service_recipient_code": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^(\\d{11}|\\d{14})$"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "ex.: «LLM unavailable: ReadTimeout» — o cliente tenta de novo uma vez (10b § 8)"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "response_error": {
+      "$ref": "common.schema.json#/$defs/legacy_error"
+    }
+  }
+}

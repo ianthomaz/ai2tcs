@@ -1,0 +1,41 @@
+{
+  "cases": [
+    {
+      "name": "pergunta com cidade e evento",
+      "request": {
+        "message": "tem pedal em belém esse mês?",
+        "project_id": "bikeanjoall_2026",
+        "user_name": "Ana",
+        "user_registered": true,
+        "city": "Belém",
+        "state": "PA",
+        "next_event_name": "EBA Belém",
+        "next_event_at": "2026-10-12T09:00:00-03:00",
+        "current_time": "2026-09-28T10:15:00-03:00",
+        "last_messages": [
+          "user: oi",
+          "assistant: Oi, Ana."
+        ]
+      },
+      "response_ok": {
+        "suggested_route": "ask",
+        "action": "escalate",
+        "confidence": 0.82,
+        "obs": "pergunta sobre evento na cidade dela"
+      }
+    },
+    {
+      "name": "agradecimento",
+      "request": {
+        "message": "obrigada!",
+        "project_id": "bikeanjoall_2026"
+      },
+      "response_ok": {
+        "suggested_route": "agradecimento",
+        "action": "escalate",
+        "confidence": 0.95,
+        "obs": "agradecimento — silêncio"
+      }
+    }
+  ]
+}

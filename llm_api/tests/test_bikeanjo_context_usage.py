@@ -47,8 +47,8 @@ def test_labels_make_platform_fields_readable() -> None:
     )
     assert "- Jornada aberta (tipo): pofr" in system
     assert "- Hora local do contato agora: 2026-07-31T09:00:00-03:00" in system
-    # Keys outside the platform set keep their original rendering.
-    assert "- city: Campinas" in system
+    assert "- Cidade: Campinas" in system
+    assert "- city:" not in system
 
 
 def test_internal_journey_reference_never_reaches_the_model() -> None:

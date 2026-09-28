@@ -1,0 +1,44 @@
+{
+  "cases": [
+    {
+      "name": "pergunta com contexto",
+      "request": {
+        "project_id": "bikeanjoall_2026",
+        "question": "como faço para ser bike anjo?",
+        "user_id": "5591900000000",
+        "user_context": {
+          "name": "Ana",
+          "city": "Belém",
+          "state": "PA",
+          "registered": true,
+          "current_time": "2026-09-28T10:15:00-03:00"
+        }
+      },
+      "job_created": {
+        "job_id": "job_123"
+      },
+      "job_status": {
+        "status": "done"
+      },
+      "result": {
+        "answer": "Para ser Bike Anjo, comece pelo cadastro:\nhttps://sistema.bikeanjo.org/cadastro"
+      }
+    },
+    {
+      "name": "sem resposta honesta → silêncio",
+      "request": {
+        "project_id": "bikeanjoall_2026",
+        "question": "qual o preço da bicicleta X?"
+      },
+      "job_created": {
+        "job_id": "job_124"
+      },
+      "job_status": {
+        "status": "no_answer"
+      },
+      "result": {
+        "answer": null
+      }
+    }
+  ]
+}

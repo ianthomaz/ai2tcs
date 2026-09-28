@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bikeanjo/ai2tcs/feedback-triage/1",
+  "title": "POST /feedbackTriage",
+  "description": "Triagem de texto livre de operação (feedback EBA, histórico, chamado). Contrato: docs/10g_feedback_triage_llm.md. Molde comum: docs/10h_ai2tcs_portas_de_texto.md § 1.",
+  "$defs": {
+    "tag": {
+      "enum": ["grave", "construtiva", "elogio_pessoa", "elogio_geral", "bug_sistema", "logistica", "aprendizado", "outro"]
+    },
+    "urgency": { "enum": ["none", "watch", "urgent"] },
+    "source": { "enum": ["eba-feedback", "historico-ciclista", "support_ticket"] },
+    "score": { "type": "integer", "minimum": 1, "maximum": 5 },
+    "request": {
+      "type": "object",
+      "required": ["source", "submission_id", "subject", "event_id", "locale", "fields", "scales"],
+      "properties": {
+        "source": { "$ref": "#/$defs/source" },
+        "submission_id": { "type": "string", "description": "form_submissions.submission_id ou support_tickets.id" },
+        "subject": {
+          "type": "object",
+          "required": ["user_id", "dependent_id"],
+          "properties": {
+            "user_id": { "type": ["string", "null"], "pattern": "^[A-HJ-KM-NP-Z][A-HJ-KM-NP-Z2-9]{3}[2-9]$", "description": "null em chamado sem conta" },
+            "dependent_id": { "type": ["integer", "null"] }
+          }
+        },
+        "event_id": { "type": ["string", "null"] },
+        "locale": { "const": "pt-BR" },
+        "fields": {
+          "type": "object",
+          "minProperties": 1,
+          "description": "Só textos não vazios, já sem e-mail, telefone e CPF ([contato] / [documento]). Chaves do histórico com prefixo `historico.`.",
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        },
+        "scales": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/score" }
+        }
+      }
+    },
+    "response_ok": {
+      "type": "object",
+      "required": ["status", "scores", "tags", "urgency", "anchor_quote", "named_people", "confidence", "model", "prompt_version"],
+      "properties": {
+        "status": { "const": "ok" },
+        "scores": {
+          "type": "object",
+          "required": ["text_quality", "information_value", "answer_solidity"],
+          "properties": {
+            "text_quality": { "$ref": "#/$defs/score" },
+            "information_value": { "$ref": "#/$defs/score" },
+            "answer_solidity": { "$ref": "#/$defs/score" }
+          }
+        },
+        "tags": { "type": "array", "items": { "$ref": "#/$defs/tag" }, "uniqueItems": true },
+        "urgency": { "$ref": "#/$defs/urgency" },
+        "anchor_quote": { "type": "string", "maxLength": 160, "description": "Trecho quase literal de algum fields.*" },
+        "named_people": { "type": "array", "items": { "type": "string" }, "maxItems": 5 },
+        "theme_free": { "type": ["string", "null"], "maxLength": 40 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "model": { "type": "string" },
+        "prompt_version": { "type": "string", "minLength": 1 },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "response_error": { "$ref": "common.schema.json#/$defs/error" }
+  }
+}
