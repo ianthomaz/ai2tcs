@@ -66,7 +66,7 @@ Arquivos: `feedback-triage.schema.json` · `.examples.json` · `.eval.jsonl` ·
 Arquivos: `health-normalize.*` · `prompts/health-normalize-v1.md`.
 
 - [x] Rota JSON sync
-- [x] Prompt = `prompts/health-normalize-v1.md`; `"prompt_version": "health-v1"`
+- [x] Prompt = `prompts/health-normalize-v1.md`; `"prompt_version": "health-v2"`
 - [x] Few-shots = `prompts/health-normalize-fewshots.md` (sem RAG)
 - [x] Códigos só da allowlist do esquema; resto em `outras` (padrão de comparação)
 - [x] **Proibido:** marcar `generic_statement: true` quando o texto escreve condição,

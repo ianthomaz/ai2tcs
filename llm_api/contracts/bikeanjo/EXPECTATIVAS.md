@@ -93,7 +93,7 @@ O cliente BA (`normalizeFeedbackTriageResponse`) **descarta** erro — não grav
   "changed": true,
   "confidence": 0.9,
   "model": "…",
-  "prompt_version": "health-v1",
+  "prompt_version": "health-v2",
   "warnings": []
 }
 ```

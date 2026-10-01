@@ -19,7 +19,7 @@
         "changed": true,
         "confidence": 0.9,
         "model": "exemplo",
-        "prompt_version": "health-v1"
+        "prompt_version": "health-v2"
       },
       "expected_storage": "tea, hypertension, outras: epilepsia controlada"
     },
@@ -41,7 +41,7 @@
         "changed": true,
         "confidence": 0.93,
         "model": "exemplo",
-        "prompt_version": "health-v1"
+        "prompt_version": "health-v2"
       },
       "expected_storage": null
     }

@@ -119,7 +119,7 @@ modelo. Detalhe: `ai2tcs/docs/18-bikeanjo-ops-ports.md` § 6.
 - **`*.eval.jsonl`** — uma linha por caso (`expect` + `why`). Calibração de prompt; não é
   teste determinístico — mede taxa. Critérios de pronto: [CHECKLIST](CHECKLIST_AI2TCS.md).
 - **`prompts/*-v1.md`** — system prompt sugerido; a string `prompt_version` na resposta
-  (`triage-v1`, `health-v1`, `reply-v1`) tem de bater com o arquivo usado.
+  (`triage-v1`, `health-v2`, `reply-v1`) tem de bater com o arquivo usado.
 
 ---
 

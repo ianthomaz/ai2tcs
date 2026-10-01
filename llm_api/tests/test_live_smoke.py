@@ -156,13 +156,35 @@ def run_qa(base: str, token: str) -> list[tuple[str, str, str]]:
 
     code, body = _call(base, "POST", "/nfExtract", token=token, body={})
     nf = _json(body)
-    nf_ok = code == 200 and nf.get("status") == "error" and bool(nf.get("errors"))
-    _record(rows, "POST /nfExtract sem ficheiro", nf_ok, f"http {code} status={nf.get('status')}")
+    nf_err = nf.get("error") if isinstance(nf.get("error"), dict) else {}
+    nf_ok = (
+        code == 200
+        and nf.get("status") == "error"
+        and bool(nf.get("errors"))
+        and nf_err.get("message") == (nf.get("errors") or [None])[0]
+    )
+    _record(
+        rows,
+        "POST /nfExtract sem ficheiro",
+        nf_ok,
+        f"http {code} status={nf.get('status')} error={nf_err.get('code')}",
+    )
 
     code, body = _call(base, "POST", "/boletoExtract", token=token, body={})
     boleto = _json(body)
-    boleto_ok = code == 200 and boleto.get("status") == "error"
-    _record(rows, "POST /boletoExtract sem ficheiro", boleto_ok, f"http {code} status={boleto.get('status')}")
+    boleto_err = boleto.get("error") if isinstance(boleto.get("error"), dict) else {}
+    boleto_ok = (
+        code == 200
+        and boleto.get("status") == "error"
+        and bool(boleto.get("errors"))
+        and boleto_err.get("message") == (boleto.get("errors") or [None])[0]
+    )
+    _record(
+        rows,
+        "POST /boletoExtract sem ficheiro",
+        boleto_ok,
+        f"http {code} status={boleto.get('status')} error={boleto_err.get('code')}",
+    )
 
     def ask(project_id: str) -> None:
         question = f"QA {uuid.uuid4().hex[:8]}. Responda apenas a palavra ok."

@@ -175,6 +175,7 @@ Visto no código já mergeado no mini62 (pull request #7), antes de tratar isto 
 - [ ] **Cópia do contrato e o clone local do Bike Anjo.** Esquemas, prompts e exemplos em `llm_api/contracts/bikeanjo/` batem com `BikeAnjo_Sistema2026/docs/contracts/ai2tcs/` neste mini62. `ORIGIN.md` cita o commit `b59656c`, que esse clone não tem. O `README` e o `CHECKLIST_AI2TCS.md` da cópia estão mais novos do que o `main` desse clone.
 - [ ] **Testes de unidade das portas não corridos neste venv.** `llm_api/.venv` não tem pytest. A suíte citada na pull request (`test_auth_scoped_keys`, `test_bikeanjo_ops_rules`, `test_bikeanjo_ops_contract`) não foi executada aqui. O QA ao vivo (`tests/test_live_smoke.py`) correu em 28 set 2026: ver [12](./12-llm-fleet-rag-operations.md).
 - [ ] **Código `unauthorized` no esquema e não no serviço.** `common.schema.json` lista `unauthorized`. Falha de token sai como HTTP 401 ou 403, sem esse `error.code` no corpo.
+- [ x ] **Envelope NF/boleto `error` + `errors`.** O parser já montava `error`, mas o response model descartava a chave. Corrigido em `DocumentExtractError` + validator nos models (1/out/2026). Early returns da rota passam a preencher `error` via o mesmo validator.
 
 A linha `Job.question` destas portas guarda um rótulo com id operacional (`feedbackTriage:{fonte}:{submission_id}`, `replySuggest:{canal}:{ticket_id}`, `healthNormalize:{kind}`). Não guarda o texto da pessoa nem o texto de saúde. O resumo em `answer` segue o § 5.
 

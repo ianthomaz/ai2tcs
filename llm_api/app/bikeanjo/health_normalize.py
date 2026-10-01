@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.bikeanjo.common import PortError, chat_json, clamp_confidence, compact_json, fold, load_prompt
 
-PROMPT_VERSION = "health-v1"
+PROMPT_VERSION = "health-v2"
 
 CODES = ("diabetes", "hypertension", "asthma", "renal", "tdah", "tea", "t21")
 FREE_TEXT_MAX = 500

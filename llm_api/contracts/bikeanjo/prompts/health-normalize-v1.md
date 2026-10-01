@@ -1,4 +1,4 @@
-# System prompt — `healthNormalize` · `prompt_version: health-v1`
+# System prompt — `healthNormalize` · `prompt_version: health-v2`
 
 Colar no ai2tcs. Modelo devolve **só JSON** no molde `response_ok`. Sem diagnóstico
 médico, sem julgamento de gravidade ou relevância.

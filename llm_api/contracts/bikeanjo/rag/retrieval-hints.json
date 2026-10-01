@@ -47,7 +47,7 @@
       "rag": false,
       "system_prompt_file": "prompts/health-normalize-v1.md",
       "fewshots_file": "prompts/health-normalize-fewshots.md",
-      "prompt_version": "health-v1",
+      "prompt_version": "health-v2",
       "note": "Sem índice vetorial. Conhecimento = allowlist + prompt + few-shots + pós-processo no BA. Nunca ingerir texto de saúde de pessoa."
     },
     "replySuggest": {

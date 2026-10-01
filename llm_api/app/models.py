@@ -1,5 +1,7 @@
 """Pydantic models for API request/response."""
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
+
+from app.extract_envelope import extract_error_dict
 
 
 class IngestRequest(BaseModel):
@@ -321,6 +323,13 @@ class JobStatsResponse(BaseModel):
 # --- NF Extract ---
 
 
+class DocumentExtractError(BaseModel):
+    """Bike Anjo / zap prefer error.message; errors[] stays for legacy clients."""
+
+    code: str
+    message: str
+
+
 class NFExtractResponse(BaseModel):
     status: str = "ok"
     source_type: str | None = None
@@ -362,9 +371,18 @@ class NFExtractResponse(BaseModel):
     confidence_by_field: dict[str, float] = Field(default_factory=dict)
     warnings: list[str] = Field(default_factory=list)
     errors: list[str] = Field(default_factory=list)
+    error: DocumentExtractError | None = None
     raw_text_excerpt: str | None = None
 
     model_config = {"populate_by_name": True}
+
+    @model_validator(mode="after")
+    def _fill_error_envelope(self) -> "NFExtractResponse":
+        if (self.status or "").lower() == "error" and self.errors and self.error is None:
+            body = extract_error_dict(self.errors)
+            if body:
+                self.error = DocumentExtractError(**body)
+        return self
 
 
 class BoletoExtractResponse(BaseModel):
@@ -394,7 +412,17 @@ class BoletoExtractResponse(BaseModel):
     confidence_by_field: dict[str, float] = Field(default_factory=dict)
     warnings: list[str] = Field(default_factory=list)
     errors: list[str] = Field(default_factory=list)
+    error: DocumentExtractError | None = None
     raw_text_excerpt: str | None = None
+
+    @model_validator(mode="after")
+    def _fill_error_envelope(self) -> "BoletoExtractResponse":
+        if (self.status or "").lower() == "error" and self.errors and self.error is None:
+            body = extract_error_dict(self.errors)
+            if body:
+                self.error = DocumentExtractError(**body)
+        return self
+
 
 # --- Educational API ---
 

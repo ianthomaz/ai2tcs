@@ -10,6 +10,7 @@ from xml.etree import ElementTree as ET
 
 import httpx
 
+from app.extract_envelope import extract_error_dict
 from app.nfextract.llm_client import enrich_with_local_llm
 
 # Strings the LLM sometimes returns instead of JSON null; orchestrators expect real null.
@@ -1064,7 +1065,7 @@ async def run_extraction_pipeline(
         "raw_text_excerpt": extracted_text[:1200] if extracted_text else None,
     }
     # Additive envelope (Bike Anjo clients read error.message first, then errors[0]).
-    if errors:
-        msg = errors[0] if isinstance(errors[0], str) else str(errors[0])
-        result["error"] = {"code": "invalid_request", "message": msg}
+    envelope = extract_error_dict(errors)
+    if envelope:
+        result["error"] = envelope
     return result
