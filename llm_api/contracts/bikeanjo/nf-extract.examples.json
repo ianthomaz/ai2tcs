@@ -89,5 +89,15 @@
     "errors": [
       "Não foi possível processar o documento: formato não reconhecido."
     ]
+  },
+  "response_error_with_error": {
+    "status": "error",
+    "error": {
+      "code": "timeout",
+      "message": "O modelo não respondeu a tempo. Tente de novo."
+    },
+    "errors": [
+      "LLM unavailable: ReadTimeout"
+    ]
   }
 }

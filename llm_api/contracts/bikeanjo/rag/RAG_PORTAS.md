@@ -18,10 +18,17 @@
 |---|---|---|
 | `/ask` | sim | boost Zap (24/31/32/33/16/23 + mapas CEP/router); downrank estatuto/regimento/INDEX |
 | `/feedbackTriage` | **não** | few-shots |
-| `/healthNormalize` | **não** | allowlist |
-| `/replySuggest` | sim | boost `34`/`35`/FAQ/contato; **downrank** `mapaFluxosLLM` e identidade do bot |
+| `/healthNormalize` | **não** | allowlist + `health-normalize-v1.md` + `health-normalize-fewshots.md` |
+| `/replySuggest` | sim | boost `34`/`35`/FAQ/contato; **downrank** `mapaFluxosLLM` e identidade do bot. A UI de `/admin/suporte` não lista as fontes. |
 
 **Nunca** ingerir feedback, saúde ou texto de chamado.
+
+### Por que saúde não tem RAG
+
+O índice `bikeanjoall_2026` é conteúdo institucional/ops. Texto de saúde de pessoa é
+dado sensível e **fora** do ingest. A memória da porta é: allowlist + prompt + few-shots
++ pós-processo no BA. Melhorar “RAG de saúde” = melhorar **esse pacote** e o
+`health-normalize.eval.jsonl` — não acrescentar MD na biblioteca.
 
 ---
 

@@ -23,7 +23,8 @@
         "27_fluxos_operacao_sistema_2026",
         "06_operacao_usuario_novo",
         "07_operacao_chegada_evento",
-        "09_operacao_recall_articulacao"
+        "09_operacao_recall_articulacao",
+        "36_sync_articulacoes_locais"
       ],
       "downrank_path_substrings": [
         "22_estatuto",
@@ -44,7 +45,10 @@
     },
     "healthNormalize": {
       "rag": false,
-      "note": "Allowlist no prompt."
+      "system_prompt_file": "prompts/health-normalize-v1.md",
+      "fewshots_file": "prompts/health-normalize-fewshots.md",
+      "prompt_version": "health-v1",
+      "note": "Sem índice vetorial. Conhecimento = allowlist + prompt + few-shots + pós-processo no BA. Nunca ingerir texto de saúde de pessoa."
     },
     "replySuggest": {
       "rag": true,
@@ -58,6 +62,7 @@
         "03_faq_conheca_bike_anjo",
         "28_sync_faq_institucional",
         "05_voluntariado_e_receba_ajuda",
+        "36_sync_articulacoes_locais",
         "33_transicao_sistema_e_calendario_local",
         "24_instrucoes_resposta",
         "31_zap_pragmatico_anti_promessa",
@@ -98,7 +103,8 @@
         "32_shadow_licoes_silencio_e_local",
         "09_operacao_recall_articulacao",
         "02_como_funciona",
-        "35_rag_prioridades_por_pergunta"
+        "35_rag_prioridades_por_pergunta",
+        "36_sync_articulacoes_locais"
       ],
       "extra_downrank": ["22_estatuto", "21_carta_valores", "19_sobre_bike_anjo"]
     },
@@ -144,7 +150,8 @@
       "mapaFluxosLLM/06_operacao_usuario_novo.md",
       "mapaFluxosLLM/07_operacao_chegada_evento.md",
       "mapaFluxosLLM/08_operacao_pedivela.md",
-      "mapaFluxosLLM/09_operacao_recall_articulacao.md"
+      "mapaFluxosLLM/09_operacao_recall_articulacao.md",
+      "bibliotecaConteudoLLM/36_sync_articulacoes_locais.md"
     ],
     "note": "Commit + pull mini62 + llm-ingest-bikeanjo.sh. Todos os MD devem ter H1 '# Sobre: …' (metadata title)."
   }

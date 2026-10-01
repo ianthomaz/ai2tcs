@@ -58,6 +58,8 @@ def has_substance(text: str) -> bool:
 def system_prompt() -> str:
     return (
         load_prompt("health-normalize-v1.md")
+        + "\n\n"
+        + load_prompt("health-normalize-fewshots.md")
         + "\n\nResponda com UM objeto JSON com as chaves codes, outras, generic_statement, "
         "changed, confidence — nada fora dele."
     )

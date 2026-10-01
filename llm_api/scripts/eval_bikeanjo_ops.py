@@ -97,6 +97,17 @@ def check(expect: dict, out: dict) -> list[str]:
             fails.append(f"reply contains {s!r}")
     if "max_chars" in expect and len(reply) > expect["max_chars"]:
         fails.append(f"reply longer than {expect['max_chars']}")
+    # url_hosts (r07): every http(s) URL in the draft must be bikeanjo.org / subdomain
+    hosts = expect.get("url_hosts") or []
+    if hosts:
+        import re
+        from urllib.parse import urlparse
+        for m in re.findall(r"https?://\S+", out.get("suggested_reply") or ""):
+            url = m.rstrip(".,);]>")
+            host = (urlparse(url).hostname or "").lower()
+            ok = any(host == h or host.endswith("." + h) for h in hosts)
+            if not ok:
+                fails.append(f"url host {host!r} not in {hosts}")
     return fails
 
 
@@ -119,6 +130,7 @@ PORTS = {
 def run_port(client: httpx.Client, port: str) -> bool:
     stem, build = PORTS[port]
     hard_fail, soft_total, soft_ok = 0, 0, 0
+    prefer_total, prefer_ok = 0, 0
     versions: set[str] = set()
     for c in _cases(stem):
         r = client.post(f"/{port}", json=build(c))
@@ -133,11 +145,20 @@ def run_port(client: httpx.Client, port: str) -> bool:
         if not hard:
             soft_total += 1
             soft_ok += not fails
+        prefer = c["expect"].get("prefer_contains") or []
+        if prefer:
+            raw = out.get("suggested_reply") or ""
+            prefer_total += 1
+            if any(s in raw for s in prefer):
+                prefer_ok += 1
         mark = "ok " if not fails else ("HARD" if hard else "miss")
         print(f"  {mark} {c['id']}  {'; '.join(fails) or c.get('why', '')}")
     rate = soft_ok / soft_total if soft_total else 1.0
     ready = hard_fail == 0 and rate >= RATE
-    print(f"{port} {'/'.join(sorted(versions))}: hard failures {hard_fail} · rate {rate:.0%} → {'PRONTO' if ready else 'não pronto'}\n")
+    extra = ""
+    if prefer_total:
+        extra = f" · prefer_contains {prefer_ok}/{prefer_total}"
+    print(f"{port} {'/'.join(sorted(versions))}: hard failures {hard_fail} · rate {rate:.0%}{extra} → {'PRONTO' if ready else 'não pronto'}\n")
     return ready
 
 

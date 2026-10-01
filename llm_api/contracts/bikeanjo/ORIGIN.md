@@ -5,8 +5,8 @@ dos dois lados, para `diff -r` servir de conferência.
 
 | | |
 |---|---|
-| origem | `bikeanjo2026all@b59656c06085fa5d46009d58b4f132822dc635b5` |
-| copiado em | 2026-09-28 |
+| origem | `bikeanjo2026all@e78f801c` (main local pós-merge #212+#213+#214, 1/out/2026) |
+| copiado em | 2026-10-01 |
 
 **Vale o arquivo.** O serviço lê daqui, em tempo de execução, os system prompts
 (`prompts/*-v1.md`) e os hints de RAG (`rag/retrieval-hints.json`); os testes

@@ -546,7 +546,7 @@ async def run_boleto_extraction_pipeline(
         k: _confidence_for_boleto_field(k, v, pre_llm) for k, v in base.items()
     }
     populated = sum(1 for s in confidence_by_field.values() if s > 0)
-    return {
+    result = {
         "status": "error" if errors else "ok",
         "source_type": source_type,
         "document_type": doc_type,
@@ -558,3 +558,8 @@ async def run_boleto_extraction_pipeline(
         "errors": errors,
         "raw_text_excerpt": extracted_text[:1200] if extracted_text else None,
     }
+    # Additive envelope (Bike Anjo clients read error.message first, then errors[0]).
+    if errors:
+        msg = errors[0] if isinstance(errors[0], str) else str(errors[0])
+        result["error"] = {"code": "invalid_request", "message": msg}
+    return result

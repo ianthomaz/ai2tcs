@@ -12,6 +12,7 @@ discordarem, **vale o arquivo**.
 | [`prompts/`](prompts/) | rascunho de system prompt (`prompt_version`) + few-shots de triagem |
 | [`rag/`](rag/RAG_PORTAS.md) | manifest do corpus, boost/downrank, intent clusters, docs `34`/`35` |
 | Prosa | [10h](../../10h_ai2tcs_portas_de_texto.md) (molde) · [10g](../../10g_feedback_triage_llm.md) · [10f](../../10f_health_normalize_api_contract.md) · [10b](../../10b_nf_extract_api_contract.md) · [10d](../../10d_ai2tcs_contrato_e_evolucao.md) |
+| Ensaios / lotes | [`runs/`](runs/README.md) — resultados versionados (ex. [2026-09-28 mini62](runs/2026-09-28-mini62-batch/NOTES.md): timeouts, fila calma) |
 
 ---
 
@@ -31,10 +32,10 @@ publicadas** no mini62 — o serviço vivo segue sem elas até o deploy e o eval
 | `POST /ask` (+ status/result) | esquema + exemplos | **produção** (`api/ask.py`) | idem |
 | `POST /extract` · `/extract-multi` | esquema | **produção** (`api/extract.py`) | zap |
 | `GET /health` | — | **produção** | smoke |
-| `POST /feedbackTriage` | esquema + exemplos + eval + prompt | **implementada, não publicada** | `itcs-feedback-triage.ts` (sem chamador) |
-| `POST /healthNormalize` | esquema + exemplos + eval + prompt | **implementada, não publicada** | `itcs-health-normalize.ts` (sem chamador) |
-| `POST /replySuggest` | esquema + exemplos + eval + prompt | **implementada, não publicada** | ainda sem cliente |
-| erro comum | `common.schema.json` | NF/boleto usam `errors:[]` (legado) | novos clientes leem `error` |
+| `POST /feedbackTriage` | esquema + exemplos + eval + prompt | **implementada, não publicada** | `itcs-feedback-triage.ts` (fila `feedback_triage`) |
+| `POST /healthNormalize` | esquema + exemplos + eval + prompt | **implementada, não publicada** | `itcs-health-normalize.ts` (fila `health_normalize`) |
+| `POST /replySuggest` | esquema + exemplos + eval + prompt | **implementada, não publicada** | `itcs-reply-suggest.ts` (`/admin/suporte` → Responder) |
+| erro comum | `common.schema.json` | NF/boleto mandam `errors:[]`; `error` ao lado é aceito | todos os clientes leem `error.message`, depois `errors[0]` |
 
 Outras rotas no serviço que **não** têm pasta aqui (fora do escopo Bike Anjo ops):
 `/edu/*`, `/audio/*`, `/nabilvideomap/qualify-caption`, `/ingest/*`, dashboard.
@@ -65,8 +66,9 @@ token global do serviço fica para os projetos que ainda não migraram.
 
 | Onde | O que vale |
 |---|---|
-| `/feedbackTriage`, `/healthNormalize`, `/replySuggest` | no ai2tcs: só a chave do projeto (global → 403). No cliente: `resolveBikeAnjoProjectKey` não chama sem ela (`token_not_project_key`) |
-| `/ask`, `/router`, `/extract`, `/nfExtract`, `/boletoExtract`, `/ingest` | no ai2tcs: global aceito até `SCOPED_KEY_REQUIRED_PROJECTS=bikeanjoall_2026`. No cliente: chama e avisa no log (`warnIfNotBikeAnjoProjectKey`, subida do `llm-remote.js`) |
+| Todas as portas no cliente Bike Anjo | `resolveBikeAnjoProjectKey` — sem a chave do projeto **não chama** (`token_missing` / `token_not_project_key`) |
+| `/feedbackTriage`, `/healthNormalize`, `/replySuggest` no ai2tcs | só a chave do projeto (global → 403) |
+| `/ask`, `/router`, `/extract`, `/nfExtract`, `/boletoExtract`, `/ingest` no ai2tcs | global ainda aceito até `SCOPED_KEY_REQUIRED_PROJECTS=bikeanjoall_2026` — o cliente já não envia global |
 
 Porta única no código: `sistemaBA/src/lib/itcs-token.ts` · `zapzap/lib/itcs-token.js`.
 
@@ -74,11 +76,29 @@ Porta única no código: `sistemaBA/src/lib/itcs-token.ts` · `zapzap/lib/itcs-t
 env do `llm-ingest-bikeanjo.sh`): `LLM_API_TOKEN`, `ITCS_NF_EXTRACT_TOKEN` e, se
 definidos, `ITCS_FEEDBACK_TRIAGE_TOKEN` / `ITCS_HEALTH_NORMALIZE_TOKEN`.
 
+**Estado (28/set/2026):** a chave `itcs_bikeanjoall_2026_…` já está nos `ignore/env.*`,
+`ignore/zapzap.env.*`, `sistemaBA/.env.local` e `zapzap/.env.local` **neste Mac e no
+mini62**. Os **servidores** (Hetzner stage / `baOracle3a` prod) ainda têm o token global
+até o próximo `sync-env`.
+
+**CRITICAL — no próximo deploy (stage ou prod):**
+
+1. Confirmar que `ignore/env.stage` / `ignore/env.prod` e os `zapzap.env.*` no mini62
+   já trazem `itcs_bikeanjoall_2026_…` (não o token global de 48 hex).
+2. Rodar `./start.sh sync-env-stage --zap` ou `sync-env-prod --zap` **antes** (ou junto)
+   do rsync de código — senão o PM2 sobe com código novo e token velho.
+3. Depois do sync: PM2 precisa reler o `.env` (restart do processo). Só editar o arquivo
+   no disco do servidor **não** basta.
+4. Só então, no ai2tcs: `SCOPED_KEY_REQUIRED_PROJECTS=bikeanjoall_2026` e restart.
+   Sem o sync-env do Bike Anjo antes, o corte no ai2tcs derruba Zap / NF / boleto.
+
 **Ordem do corte** (invertida, o bot do Zap para de responder):
 
-1. Gerar a chave no Dashboard do ai2tcs (Projetos → `bikeanjoall_2026` → Chaves API).
-2. Pôr a chave em todos os `.env` acima; deploy do Bike Anjo (o log para de avisar).
-3. No `.env` do ai2tcs: `SCOPED_KEY_REQUIRED_PROJECTS=bikeanjoall_2026` e restart.
+1. Gerar a chave no Dashboard do ai2tcs (Projetos → `bikeanjoall_2026` → Chaves API) —
+   já feita (label `sistemaBA-env-2026-09`; raw em `ignore/itcs-bikeanjoall-key.local`).
+2. Pôr a chave em todos os `.env` locais / `ignore/` — **feito** Mac + mini62.
+3. **No próximo deploy:** `sync-env` stage/prod + restart PM2 (passo CRITICAL acima).
+4. No `.env` do ai2tcs: `SCOPED_KEY_REQUIRED_PROJECTS=bikeanjoall_2026` e restart.
    Os outros projetos seguem híbridos (ai2tcs `docs/02-api-integration.md § 2.1`).
 
 ## Formato — JSON
@@ -99,7 +119,7 @@ modelo. Detalhe: `ai2tcs/docs/18-bikeanjo-ops-ports.md` § 6.
 - **`*.eval.jsonl`** — uma linha por caso (`expect` + `why`). Calibração de prompt; não é
   teste determinístico — mede taxa. Critérios de pronto: [CHECKLIST](CHECKLIST_AI2TCS.md).
 - **`prompts/*-v1.md`** — system prompt sugerido; a string `prompt_version` na resposta
-  (`triage-v1`, `health-v1`, `reply-v1`) tem de bater com o ficheiro usado.
+  (`triage-v1`, `health-v1`, `reply-v1`) tem de bater com o arquivo usado.
 
 ---
 
@@ -123,8 +143,9 @@ o velho sai.
 
 **Convergência futura (aditiva):**
 
-1. NF/boleto: devolver `error: { code, message }` **ao lado** de `errors`; clientes leem
-   `error.message ?? errors[0]`; `errors` sai depois.
+1. NF/boleto: devolver `error: { code, message }` **ao lado** de `errors`. Os clientes
+   (sistemaBA `itcsDocumentErrorMessage`, Zap `nfErrorMessage`) já leem
+   `error.message` e, sem ele, `errors[0]`; falta o serviço mandar. `errors` sai depois.
 2. NF/boleto/router: passar a devolver `prompt_version`.
 3. Router: `confidence` só número (já coerente no serviço desde abr/2026).
 

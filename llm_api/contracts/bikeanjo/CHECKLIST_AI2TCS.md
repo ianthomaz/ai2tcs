@@ -30,6 +30,9 @@ implementar lá. Ordem pensada para uma sessão; não pular o critério de «pro
 - [x] Campo desconhecido no JSON: **ignorar**, nunca 400
 - [x] Teste genérico: carrega `*.examples.json` e valida `request` / `response_ok` com
       jsonschema
+- [x] NF/boleto: mandar `error: {code, message}` **ao lado** de `errors` (aditivo). Os
+      clientes do BA e do Zap já leem `error.message` primeiro — ver
+      `response_error_with_error` nos examples
 
 ---
 
@@ -52,8 +55,9 @@ Arquivos: `feedback-triage.schema.json` · `.examples.json` · `.eval.jsonl` ·
   - `anchor_quote` ≤ 160 chars e substrato de algum `fields.*` (sem `[contato]`)
 - [ ] Smoke: `curl` com Bearer do projeto `bikeanjoall_2026` + um `request` do examples
 
-**O que o Bike Anjo faz depois (não bloqueia a rota):** CLI lote + tabela
-`form_submission_triages` + digest — [10g](../../10g_feedback_triage_llm.md).
+**O que o Bike Anjo faz depois (não bloqueia a rota):** CLI lote + tabelas
+`form_submission_triages` / `support_ticket_triages` + cron + digest + UI —
+[10g](../../10g_feedback_triage_llm.md).
 
 ---
 
@@ -63,6 +67,7 @@ Arquivos: `health-normalize.*` · `prompts/health-normalize-v1.md`.
 
 - [x] Rota JSON sync
 - [x] Prompt = `prompts/health-normalize-v1.md`; `"prompt_version": "health-v1"`
+- [x] Few-shots = `prompts/health-normalize-fewshots.md` (sem RAG)
 - [x] Códigos só da allowlist do esquema; resto em `outras` (padrão de comparação)
 - [x] **Proibido:** marcar `generic_statement: true` quando o texto escreve condição,
       alergia, limitação ou remédio — apagar o que a pessoa disse é o erro que não pode
@@ -71,7 +76,8 @@ Arquivos: `health-normalize.*` · `prompts/health-normalize-v1.md`.
       acima; demais ≥ 80%
 - [ ] Smoke curl
 
-**Depois no BA:** CLI + gravação com log antes/depois — [10f](../../10f_health_normalize_api_contract.md).
+**Depois no BA:** CLI `health-normalize-cli.ts` (`probe`/`sample`/`csv`) + fila em
+update + evidence gate — [10f](../../10f_health_normalize_api_contract.md).
 
 ---
 
@@ -98,15 +104,18 @@ Arquivos: `reply-suggest.*` · `prompts/reply-suggest-v1.md` · hints em `rag/`.
 - [x] `no_answer: true` é sucesso válido (não forçar texto)
 - [ ] **Eval (pronto):** nenhum caso promete ação já feita («já excluí», «vou te enviar»)
       nem inventa URL; caso grave (assédio/violência) → sempre `no_answer`
+- [ ] `eval_bikeanjo_ops.py` entende `url_hosts` (r07): toda URL do rascunho tem host
+      `bikeanjo.org` ou subdomínio — a mesma medida da trava. Link é permitido e bem-vindo
+      (dono, 30/set)
+- [ ] `eval_bikeanjo_ops.py` entende `prefer_contains` (r01): conta quantos rascunhos
+      trazem o link da articulação da cidade (`36_sync_articulacoes_locais`); é taxa,
+      não reprova o caso
+- [ ] Re-ingest com `36_sync_articulacoes_locais.md` (link da página de cada articulação)
 - [x] Contrato examples aceitos
 
-**Depois no BA:** tabela `support_ticket_suggestions` + UI shadow — [10h §5.2](../../10h_ai2tcs_portas_de_texto.md).
-
-<!-- [needsReview] a trava do ai2tcs aceita bikeanjo.org e qualquer subdomínio (dono,
-     28/set: medida média — todos os subdomínios cabem, outro domínio não); o r07 do
-     reply-suggest.eval.jsonl ainda proíbe qualquer "https://". Rascunho com
-     https://sistema.bikeanjo.org passa na trava e reprova no eval. Rever o r07 com o
-     eval rodando no mini62; o dono decide. -->
+**Depois no BA:** tabela `support_ticket_suggestions` (com `final_text` / `edited` /
+authorize, igual ao Zap) + UI no modal de `/admin/suporte` — [10h §5.2](../../10h_ai2tcs_portas_de_texto.md).
+Fontes RAG entram no JSON da porta; a tela de suporte **não** as mostra (shadow).
 
 ---
 
@@ -116,7 +125,8 @@ Os itens «Eval (pronto)» e «Smoke» acima medem o modelo vivo, então esperam
 
 1. `git pull` do ai2tcs + rebuild (`./scripts/deploy_llm.sh`).
 2. Smoke: `curl` com a chave `bikeanjoall_2026` num `request` dos examples → `status: ok`;
-   com chave de outro projeto → 403.
+   com chave de outro projeto → 403. No Bike Anjo: `node HARD-TESTS/run-llm-surface.cjs`
+   (L05–L07 passam a exigir envelope quando a rota deixar de ser 404).
 3. Eval: `LLM_API_TOKEN=<chave bikeanjoall_2026> python llm_api/scripts/eval_bikeanjo_ops.py`
    — imprime caso a caso e dá **PRONTO** / **não pronto** por porta com os critérios acima.
 4. Só com **PRONTO**: lote de ensaio no sistemaBA (`--dry-run --limit=30`) — com ok explícito.
@@ -126,7 +136,6 @@ Os itens «Eval (pronto)» e «Smoke» acima medem o modelo vivo, então esperam
 
 ## 6. Não fazer nesta leva (evitar escopo)
 
-- Migrar NF/boleto para `error: {code,message}` (só documentado; aditivo depois)
 - Ingerir feedback/saúde no índice vetorial (dado pessoal **fora** do RAG)
 - Ligar cron/CLI do sistemaBA sem ok explícito do dono (API externa paga/cota)
 
