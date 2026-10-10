@@ -54,9 +54,9 @@ async def test_extract_multi_rejects_empty_fields(client):
 
 
 @pytest.mark.asyncio
-async def test_extract_payment_nf_confirmation_returns_json_string(client):
+async def test_extract_reply_intent_returns_code(client):
     async def fake_to_thread(_func, *_a, **_kw):
-        return {"message": {"content": '{"supplier_name": "Padaria LTDA", "payment_freeform": "copiar: fin@bikeanjo.org"}'}}
+        return {"message": {"content": "confirm_presence"}}
 
     with patch.object(extract_module.asyncio, "to_thread", side_effect=fake_to_thread), patch(
         "app.api.extract.log_sync_llm_job", new_callable=AsyncMock
@@ -65,17 +65,31 @@ async def test_extract_payment_nf_confirmation_returns_json_string(client):
             "/extract",
             json={
                 "task": "extract",
-                "step": "payment_nf_confirmation",
-                "question": "Current_nf JSON: {}",
-                "userReply": "o emissor é Padaria LTDA copiar: fin@bikeanjo.org",
+                "step": "reply_intent",
+                "question": "Codes: confirm_presence, decline, none",
+                "userReply": "pode contar comigo",
             },
             headers=HEADERS,
         )
     assert r.status_code == 200
-    data = r.json()
-    assert data["extracted"] is not None
-    assert "Padaria LTDA" in data["extracted"]
-    assert "fin@bikeanjo.org" in data["extracted"]
+    assert r.json()["extracted"] == "confirm_presence"
+
+
+@pytest.mark.asyncio
+async def test_extract_payment_nf_confirmation_is_unknown_step(client):
+    with patch("app.api.extract.log_sync_llm_job", new_callable=AsyncMock):
+        r = await client.post(
+            "/extract",
+            json={
+                "task": "extract",
+                "step": "payment_nf_confirmation",
+                "question": "Current_nf JSON: {}",
+                "userReply": "o emissor é Padaria LTDA",
+            },
+            headers=HEADERS,
+        )
+    assert r.status_code == 200
+    assert r.json()["extracted"] is None
 
 
 @pytest.mark.asyncio

@@ -27,28 +27,8 @@ STEP_INSTRUCTIONS = {
     "email": "Return only a valid email address. If not found, return NULL.",
     "nascimento": "Return only the birth date as dd/mm/yyyy (e.g. 15/03/1990). If not found or invalid, return NULL.",
     "cep": "Return only 8 digits (Brazilian postal code). If not found or invalid, return NULL.",
+    "reply_intent": "Return only one code from the list in the Question, exactly as written (lowercase, with underscores). If you are not sure, return none.",
 }
-
-# POST /extract step payment_nf_confirmation — JSON keys allowed in response
-PAYMENT_NF_ALLOWED_KEYS = frozenset(
-    {
-        "supplier_name",
-        "supplier_code",
-        "amount",
-        "nf_number",
-        "payment_type",
-        "payment_info",
-        "payment_freeform",
-        "pix_key",
-        "contact_email",
-        "bank_name",
-        "bank_agency",
-        "bank_account",
-        "internal_reference",
-        "context_notes",
-        "notes",
-    }
-)
 
 PAYMENT_BOLETO_ALLOWED_KEYS = frozenset(
     {
@@ -148,28 +128,6 @@ def _parse_llm_json_object(content: str) -> dict:
         return {}
 
 
-def _sanitize_payment_nf_object(parsed: dict) -> str:
-    """Build JSON string for ExtractResponse; '{}' when nothing valid."""
-    if not parsed or not isinstance(parsed, dict):
-        return "{}"
-    clean: dict[str, str] = {}
-    for k, v in parsed.items():
-        kid = str(k).strip().lower()
-        if kid not in PAYMENT_NF_ALLOWED_KEYS:
-            continue
-        if v is None:
-            continue
-        s = str(v).strip()
-        if kid == "contact_email":
-            s = _normalize_email_value(s) or ""
-        elif kid == "amount":
-            s = re.sub(r"^\s*r\$\s*", "", s, flags=re.IGNORECASE).strip()
-        if not s or s.upper() == "NULL":
-            continue
-        clean[kid] = s
-    return json.dumps(clean, ensure_ascii=False)
-
-
 def _sanitize_payment_boleto_object(parsed: dict) -> str:
     if not parsed or not isinstance(parsed, dict):
         return "{}"
@@ -262,62 +220,6 @@ async def _extract_payment_boleto_confirmation(req: Request, request: ExtractReq
         return out
 
 
-async def _extract_payment_nf_confirmation(req: Request, request: ExtractRequest) -> ExtractResponse:
-    """Zapzap payment flow: free-text corrections after NF read → JSON object string in extracted."""
-    system = (
-        "You extract structured corrections for a Brazilian NGO WhatsApp payment request "
-        "(invoice data was already read). Reply with ONE JSON object only, no markdown. "
-        "Use ONLY these string keys when the user mentioned them: "
-        "supplier_name, amount, nf_number, payment_type, payment_info, payment_freeform, "
-        "pix_key, contact_email, bank_name, bank_agency, bank_account, internal_reference, context_notes, notes. "
-        "supplier_code: CNPJ or CPF of the supplier when the user corrects it. "
-        "payment_type must be one of: pix, transferencia, boleto, dinheiro, cartao_credito (lowercase). "
-        "amount: string in Brazilian form (e.g. 1234,56). "
-        "If the user gave several payment hints in one message, set payment_info to one clear synthesized line "
-        "and use payment_freeform for literal lines like 'copiar: email@...'. "
-        "Omit keys you cannot infer. If nothing applies, return exactly {}."
-    )
-    user_content = f"Server context:\n{request.question}\n\nUser message:\n{request.user_reply}\n"
-    try:
-        response = await asyncio.to_thread(
-            ollama.chat,
-            model=settings.get_model_name(request.model, default_alias="smart"),
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user_content},
-            ],
-            options={"temperature": 0.1, "num_predict": 900},
-        )
-        content = (response.get("message") or {}).get("content") or ""
-        parsed = _parse_llm_json_object(content)
-        out = ExtractResponse(extracted=_sanitize_payment_nf_object(parsed))
-        await log_sync_llm_job(
-            req,
-            project_id_explicit=request.project_id,
-            job_kind=EXTRACT_JOB_KIND,
-            question=f"extract:payment_nf_confirmation\n{request.user_reply[:8000]}",
-            status="done",
-            model_alias=settings.get_model_name(request.model, default_alias="smart"),
-            answer=out,
-            user_context={"endpoint": "/extract", "step": "payment_nf_confirmation"},
-        )
-        return out
-    except Exception:
-        out = ExtractResponse(extracted=None)
-        await log_sync_llm_job(
-            req,
-            project_id_explicit=request.project_id,
-            job_kind=EXTRACT_JOB_KIND,
-            question=f"extract:payment_nf_confirmation\n{request.user_reply[:8000]}",
-            status="failed",
-            model_alias=settings.get_model_name(request.model, default_alias="smart"),
-            answer=out,
-            error_message="ollama_or_parse_failed",
-            user_context={"endpoint": "/extract", "step": "payment_nf_confirmation"},
-        )
-        return out
-
-
 def _normalize_field_value(field_id: str, raw: object) -> str | None:
     if raw is None or (isinstance(raw, str) and raw.lower() in ("null", "none", "")):
         return None
@@ -342,26 +244,12 @@ async def extract_multi(req: Request, request: ExtractMultiRequest, _: None = De
             ensure_ascii=False,
         )
 
-    ctx_hint = ""
-    try:
-        ctx_obj = json.loads(ctx_block) if ctx_block else {}
-        if isinstance(ctx_obj, dict) and (
-            ctx_obj.get("step") == "payment_nf_confirmation" or ctx_obj.get("current_nf") is not None
-        ):
-            ctx_hint = (
-                " This may be payment-request corrections after an invoice was read: use current_nf in context "
-                "and fill every field the user clearly changed or added (including copiar:, PIX, bank data)."
-            )
-    except json.JSONDecodeError:
-        pass
-
     system = (
         "You extract structured fields from a WhatsApp user message (onboarding or payment-request corrections). "
         "Reply with ONE JSON object only. Keys must be a subset of these ids: "
         f"{field_ids}. "
         "Use string values only; omit keys you cannot extract confidently. "
         "Do not wrap in markdown."
-        + ctx_hint
     )
     user_content = (
         f"User message:\n{request.user_reply}\n\n"
@@ -426,8 +314,6 @@ async def extract_multi(req: Request, request: ExtractMultiRequest, _: None = De
 async def extract(req: Request, request: ExtractRequest, _: None = Depends(require_token)):
     """Synchronous extract: one Ollama call, return { extracted: value } or { extracted: null }."""
     step = (request.step or "").strip().lower()
-    if step == "payment_nf_confirmation":
-        return await _extract_payment_nf_confirmation(req, request)
     if step == "payment_boleto_confirmation":
         return await _extract_payment_boleto_confirmation(req, request)
 
