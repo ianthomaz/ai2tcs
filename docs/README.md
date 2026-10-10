@@ -12,3 +12,4 @@ Contribuições ao código e contratos: [../CONTRIBUTING.md](../CONTRIBUTING.md)
 - [17-ecosystem-integration.md](17-ecosystem-integration.md) — papel do ai2tcs entre hub 0MM, zapzap e bridge Cursor.
 - [17-integration-backlog.md](17-integration-backlog.md) — superfícies que esta API já oferece, o que o hub ainda não consome, backlog e perguntas em aberto.
 - [18-bikeanjo-ops-ports.md](18-bikeanjo-ops-ports.md) — portas exclusivas do Bike Anjo: triagem de feedback/chamados, higienização de saúde e sugestão de resposta (shadow).
+- [19-optimization-review.md](19-optimization-review.md) — revisão de otimização da LLM (out/2026): achados medidos, plano em ondas sem mudar contrato, decisões em aberto.

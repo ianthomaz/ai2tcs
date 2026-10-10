@@ -166,6 +166,8 @@ Avaliado e mantido JSON:
 
 ## 9. Revisão de 28 set 2026 — problemas e pendências
 
+- [ ] **`triage-v2` só no mini62.** O Bike Anjo registra `triage-v2` publicado aqui em 2/out (AC8); a `main` deste repositório serve `triage-v1` e não tem `prompts/feedback-triage-v2.md`. Deploy a partir da `main` volta a triagem para v1. Ver [19 § A1](./19-optimization-review.md).
+
 Visto no código já mergeado no mini62 (pull request #7), antes de tratar isto como serviço pronto. Nada disto foi corrigido nesta anotação.
 
 - [ ] **Eval `r07` contra a trava de link.** `reply-suggest.eval.jsonl` caso `r07` proíbe qualquer `http://` e `https://` na resposta. A trava do serviço aceita `bikeanjo.org` e subdomínios (decisão de 28 set: medida média). Um rascunho com `https://sistema.bikeanjo.org` passa na trava e faz `scripts/eval_bikeanjo_ops.py` marcar `/replySuggest` como não pronto. Alinhar o `r07` ou a trava antes de usar esse eval como portão.
@@ -181,4 +183,4 @@ A linha `Job.question` destas portas guarda um rótulo com id operacional (`feed
 
 ---
 
-**Anterior:** [17-integration-backlog.md](./17-integration-backlog.md)
+**Anterior:** [17-integration-backlog.md](./17-integration-backlog.md) · **Seguinte:** [19-optimization-review.md](./19-optimization-review.md)
