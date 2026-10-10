@@ -64,7 +64,7 @@ You must reply with a single valid JSON object (no markdown fences, no prose out
 }
 
 Rules:
-- If action is "answer_now", "answer" must be a non-empty friendly Portuguese string; set escalate_to null.
+- If action is "answer_now", "answer" must be a non-empty {answer_style} Portuguese string; set escalate_to null.
 - If action is "escalate", set answer null and set escalate_to (use "auto" if unsure).
 - "confidence" must be a number between 0 and 1 (not the words high/medium/low).
 
@@ -79,6 +79,24 @@ Heuristics for suggested_route (ZAPZAP):
 - cursor: delegate to Cursor SDK agent on Mac (owner only; zapzap calls bridge, not /ask).
 
 Always include "suggested_route" in the JSON object."""
+
+
+# Style of an answer_now reply, from the project's declared llm_options.tone_of_voice.
+# A project that declares no tone keeps "friendly".
+_ROUTER_ANSWER_STYLE = {
+    "informal": "short, informal",
+    "friendly": "friendly",
+    "technical": "precise, technical",
+    "sales": "service-oriented",
+    "direct": "short, direct (no small talk, no enthusiasm)",
+}
+
+
+def router_system_prompt(project: dict | None) -> str:
+    cfg = (project or {}).get("config_json") or {}
+    tone = ((cfg.get("llm_options") or {}) if isinstance(cfg, dict) else {}).get("tone_of_voice")
+    style = _ROUTER_ANSWER_STYLE.get(str(tone or "").strip().lower(), "friendly")
+    return ROUTER_SYSTEM.replace("{answer_style}", style)
 
 
 class RouterRequest(BaseModel):
@@ -402,13 +420,14 @@ async def route_message(
     user_parts.append("\nContexto do projeto (biblioteca + mapa de fluxos):\n" + context_text)
     user_content = "\n".join(user_parts)
 
-    system_prompt = ROUTER_SYSTEM
+    base_system = router_system_prompt(project)
+    system_prompt = base_system
     router_cfg = get_router_config(project)
     extra_block = (router_cfg.get("extra_system_block") or "").strip()
     if extra_block:
-        system_prompt = ROUTER_SYSTEM + "\n\n" + extra_block
+        system_prompt = base_system + "\n\n" + extra_block
     elif body.project_id == IAN_ZAP_PROJECT_ID:
-        system_prompt = ROUTER_SYSTEM + ROUTER_SYSTEM_IAN_ZAP
+        system_prompt = base_system + ROUTER_SYSTEM_IAN_ZAP
 
     call_metrics: dict = {}
     num_ctx = get_num_ctx(project)
