@@ -56,6 +56,33 @@ def _parse_sources(raw: str | None) -> list[dict]:
         return []
 
 
+def _parse_config_json(raw: object) -> dict | None:
+    """asyncpg may return jsonb as dict or as a JSON string; callers need a dict."""
+    if raw is None:
+        return None
+    if isinstance(raw, dict):
+        return raw
+    if isinstance(raw, str):
+        try:
+            parsed = json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            return None
+        return parsed if isinstance(parsed, dict) else None
+    return None
+
+
+def _project_row(row) -> dict:
+    return {
+        "id": row["id"],
+        "project_id": row["project_id"],
+        "name": row["name"],
+        "sources": list(row["sources"]) if row["sources"] else [],
+        "config_json": _parse_config_json(row["config_json"]),
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+    }
+
+
 # --- Project ---
 
 
@@ -71,15 +98,7 @@ async def project_get(project_id: str) -> dict | None:
         )
         if not row:
             return None
-        return {
-            "id": row["id"],
-            "project_id": row["project_id"],
-            "name": row["name"],
-            "sources": list(row["sources"]) if row["sources"] else [],
-            "config_json": row["config_json"],
-            "created_at": row["created_at"],
-            "updated_at": row["updated_at"],
-        }
+        return _project_row(row)
 
 
 async def project_get_themes(project_id: str) -> list[str]:
@@ -684,18 +703,7 @@ async def project_list_all() -> list[dict]:
         rows = await conn.fetch(
             'SELECT id, project_id, name, sources, config_json, created_at, updated_at FROM "Project" ORDER BY created_at DESC'
         )
-        return [
-            {
-                "id": r["id"],
-                "project_id": r["project_id"],
-                "name": r["name"],
-                "sources": list(r["sources"]) if r["sources"] else [],
-                "config_json": r["config_json"],
-                "created_at": r["created_at"],
-                "updated_at": r["updated_at"],
-            }
-            for r in rows
-        ]
+        return [_project_row(r) for r in rows]
 
 
 async def project_create(
@@ -719,15 +727,7 @@ async def project_create(
             sources or [],
             cfg,
         )
-        return {
-            "id": row["id"],
-            "project_id": row["project_id"],
-            "name": row["name"],
-            "sources": list(row["sources"]) if row["sources"] else [],
-            "config_json": row["config_json"],
-            "created_at": row["created_at"],
-            "updated_at": row["updated_at"],
-        }
+        return _project_row(row)
 
 
 async def project_update(
@@ -756,15 +756,7 @@ async def project_update(
             f'UPDATE "Project" SET {", ".join(updates)} WHERE project_id = $1 RETURNING id, project_id, name, sources, config_json, created_at, updated_at',
             *args,
         )
-        return {
-            "id": row["id"],
-            "project_id": row["project_id"],
-            "name": row["name"],
-            "sources": list(row["sources"]) if row["sources"] else [],
-            "config_json": row["config_json"],
-            "created_at": row["created_at"],
-            "updated_at": row["updated_at"],
-        }
+        return _project_row(row)
 
 
 async def project_delete(project_id: str) -> None:

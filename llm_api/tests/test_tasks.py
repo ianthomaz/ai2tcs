@@ -10,7 +10,8 @@ import pytest
 from app.auth import hash_key
 from app.llm.base import LLMProvider
 from app.tasks import executor
-from app.tasks.registry import file_task
+from app.tasks.registry import file_task, project_task_config
+from app.db import _parse_config_json
 
 GLOBAL = {"Authorization": "Bearer test-token"}
 WEB_KEY = {"Authorization": "Bearer itcs_webplacecc_x"}
@@ -63,6 +64,25 @@ def _model_says(*answers: dict):
             return json.dumps(next(replies), ensure_ascii=False), {"prompt_tokens": 300}
 
     return patch("app.tasks.engine.get_provider", return_value=_P()), seen
+
+
+def test_parse_config_json_accepts_dict_or_json_string():
+    """asyncpg often returns jsonb as a string; /task must still see tasks.*."""
+    assert _parse_config_json({"tasks": {"text_triage": {}}}) == {"tasks": {"text_triage": {}}}
+    assert _parse_config_json('{"tasks": {"text_triage": {"categories": ["a"]}}}') == {
+        "tasks": {"text_triage": {"categories": ["a"]}}
+    }
+    assert _parse_config_json(None) is None
+    assert _parse_config_json("not-json") is None
+
+
+def test_project_task_config_reads_string_config_json():
+    entry = {"categories": ["parceria"]}
+    as_dict = {"config_json": {"tasks": {"text_triage": entry}}}
+    as_str = {"config_json": json.dumps({"tasks": {"text_triage": entry}})}
+    assert project_task_config(as_dict, "text_triage") == entry
+    assert project_task_config(as_str, "text_triage") == entry
+    assert project_task_config({"config_json": {}}, "text_triage") is None
 
 
 def test_text_triage_spec_examples_validate():

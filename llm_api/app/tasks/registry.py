@@ -98,6 +98,11 @@ def task_prompt(prompt_file: str) -> str:
 def project_task_config(project: dict | None, task_id: str) -> dict[str, Any] | None:
     """The project's entry for a file task (config_json.tasks.<task_id>); None = not enabled."""
     cfg = (project or {}).get("config_json") or {}
+    if isinstance(cfg, str):
+        try:
+            cfg = json.loads(cfg)
+        except (json.JSONDecodeError, TypeError):
+            return None
     tasks = cfg.get("tasks") if isinstance(cfg, dict) else None
     entry = tasks.get(task_id) if isinstance(tasks, dict) else None
     return entry if isinstance(entry, dict) else None
