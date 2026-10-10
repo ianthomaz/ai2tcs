@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "bikeanjo/ai2tcs/extract/1",
   "title": "POST /extract e POST /extract-multi",
-  "description": "Extração de campo(s) da resposta livre no Zap (em produção): onboarding e correção de pedido de pagamento. Cliente: zapzap/lib/llm-remote.js (extractFromReply, extractMultiField, extractPaymentNfCorrections). Sem valor extraído → null; o bot pergunta de novo.",
+  "description": "Extração de campo(s) da resposta livre no Zap (em produção): onboarding, reply_intent e correção de boleto. Cliente: zapzap/lib/llm-remote.js (extractFromReply, extractMultiField). Sem valor extraído → null; o bot pergunta de novo.",
   "$defs": {
     "request_single": {
       "type": "object",
@@ -17,7 +17,8 @@
           "const": "extract"
         },
         "step": {
-          "type": "string"
+          "type": "string",
+          "description": "Known steps: interesse, nome, cpf, email, nascimento, cep, reply_intent, payment_boleto_confirmation. Unknown step → extracted null."
         },
         "question": {
           "type": "string"
@@ -31,7 +32,7 @@
       "type": "object",
       "properties": {
         "extracted": {
-          "description": "string com o valor; no passo payment_nf_confirmation pode vir objeto ou JSON em string",
+          "description": "string com o valor extraído (código reply_intent, campo de onboarding, ou JSON string no passo payment_boleto_confirmation)",
           "type": [
             "string",
             "object",

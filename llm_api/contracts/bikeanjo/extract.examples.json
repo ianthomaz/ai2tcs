@@ -1,0 +1,53 @@
+{
+  "description": "Wire examples for POST /extract. Schema: extract.schema.json.",
+  "cases": [
+    {
+      "name": "onboarding_cep",
+      "request": {
+        "task": "extract",
+        "step": "cep",
+        "question": "Qual o seu CEP?",
+        "userReply": "moro perto do metrô Sé, CEP 01310-100"
+      },
+      "response_ok": {
+        "extracted": "01310100"
+      }
+    },
+    {
+      "name": "reply_intent_confirm",
+      "request": {
+        "task": "extract",
+        "step": "reply_intent",
+        "question": "Codes: confirm_presence, decline, none",
+        "userReply": "pode contar comigo"
+      },
+      "response_ok": {
+        "extracted": "confirm_presence"
+      }
+    },
+    {
+      "name": "reply_intent_unsure",
+      "request": {
+        "task": "extract",
+        "step": "reply_intent",
+        "question": "Codes: confirm_presence, decline, none",
+        "userReply": "talvez depois eu vejo"
+      },
+      "response_ok": {
+        "extracted": "none"
+      }
+    },
+    {
+      "name": "unknown_step",
+      "request": {
+        "task": "extract",
+        "step": "step_inexistente_xyz",
+        "question": "?",
+        "userReply": "oi"
+      },
+      "response_ok": {
+        "extracted": null
+      }
+    }
+  ]
+}

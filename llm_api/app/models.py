@@ -190,7 +190,7 @@ class ExtractRequest(BaseModel):
     task: str = Field("extract", description="Must be 'extract'")
     step: str = Field(
         ...,
-        description="Step id: interesse, nome, cpf, email, nascimento, cep, or payment_nf_confirmation (JSON object string)",
+        description="Step id: interesse, nome, cpf, email, nascimento, cep, reply_intent, or payment_boleto_confirmation (JSON object string)",
     )
     question: str = Field(..., description="Question that was asked to the user")
     user_reply: str = Field(..., description="User's free-text reply", alias="userReply")
@@ -219,9 +219,9 @@ class ExtractMultiFieldSpec(BaseModel):
 
 
 class ExtractMultiContext(BaseModel):
-    """Optional context for extract-multi (onboarding or payment NF confirmation).
+    """Optional context for extract-multi (onboarding or payment corrections).
 
-    Extra keys (e.g. current_nf, instruction, step) are kept for zapzap payment flow.
+    Extra keys (e.g. instruction, step) are kept for zapzap payment flow.
     """
 
     model_config = ConfigDict(populate_by_name=True, extra="allow")

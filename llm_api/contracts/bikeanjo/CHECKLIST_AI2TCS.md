@@ -134,6 +134,17 @@ Os itens «Eval (pronto)» e «Smoke» acima medem o modelo vivo, então esperam
 
 ---
 
+## 5b. `POST /extract` — `reply_intent` (Zap shadow)
+
+- [x] Step `reply_intent` em `STEP_INSTRUCTIONS` (`app/api/extract.py`): um código da
+      lista em `question` (lowercase + underscores) ou `none`
+- [x] Contrato: `extract.schema.json` lista o step; `extract.examples.json` cobre
+      confirm / none / unknown
+- [x] Sem step órfão de confirmação de NF em `/extract` (correção de boleto segue
+      `payment_boleto_confirmation`; NF via `/nfExtract`)
+
+---
+
 ## 6. Não fazer nesta leva (evitar escopo)
 
 - Ingerir feedback/saúde no índice vetorial (dado pessoal **fora** do RAG)

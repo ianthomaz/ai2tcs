@@ -30,7 +30,7 @@ publicadas** no mini62 — o serviço vivo segue sem elas até o deploy e o eval
 | `POST /boletoExtract` | esquema + exemplos | **produção** (`api/boleto_extract.py`) | `itcs-boleto-extract.ts` |
 | `POST /router` | esquema + exemplos | **produção** (`api/message_router.py`) | `zapzap/lib/llm-remote.js` |
 | `POST /ask` (+ status/result) | esquema + exemplos | **produção** (`api/ask.py`) | idem |
-| `POST /extract` · `/extract-multi` | esquema | **produção** (`api/extract.py`) | zap |
+| `POST /extract` · `/extract-multi` | esquema + exemplos | **produção** (`api/extract.py`); steps: onboarding + `reply_intent` + `payment_boleto_confirmation` | zap |
 | `GET /health` | — | **produção** | smoke |
 | `POST /feedbackTriage` | esquema + exemplos + eval + prompt | **implementada, não publicada** | `itcs-feedback-triage.ts` (fila `feedback_triage`) |
 | `POST /healthNormalize` | esquema + exemplos + eval + prompt | **implementada, não publicada** | `itcs-health-normalize.ts` (fila `health_normalize`) |
@@ -50,7 +50,7 @@ Outras rotas no serviço que **não** têm pasta aqui (fora do escopo Bike Anjo 
 | `/boletoExtract` | `boleto-extract.schema.json` | `boleto-extract.examples.json` | — | (já no serviço) |
 | `/router` | `router.schema.json` | `router.examples.json` | shadow → eval set | (já no serviço) |
 | `/ask` | `ask.schema.json` | `ask.examples.json` | idem | (já no serviço) |
-| `/extract` | `extract.schema.json` | — | — | (já no serviço) |
+| `/extract` | `extract.schema.json` | `extract.examples.json` | — | (já no serviço) |
 | `/feedbackTriage` | `feedback-triage.schema.json` | `feedback-triage.examples.json` | `feedback-triage.eval.jsonl` | `prompts/feedback-triage-v1.md` |
 | `/healthNormalize` | `health-normalize.schema.json` | `health-normalize.examples.json` | `health-normalize.eval.jsonl` | `prompts/health-normalize-v1.md` |
 | `/replySuggest` | `reply-suggest.schema.json` | `reply-suggest.examples.json` | `reply-suggest.eval.jsonl` | `prompts/reply-suggest-v1.md` |
