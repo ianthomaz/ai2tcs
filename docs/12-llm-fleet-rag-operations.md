@@ -69,6 +69,17 @@ Em regra **sem mudança** se usam aliases (`smart`, `reasoner`, …) e `project_
 `grep llm_heavy` no log da API, ou `llm_calls_heavy_24h` / `llm_calls_near_ctx_limit_24h` no
 `/metrics`. Critérios, campos gravados e a consulta SQL: [19 § 6](./19-optimization-review.md).
 
+## Portão de avaliação
+
+Antes de trocar prompt, modelo ou `llm_options` de um projeto:
+
+```bash
+python3 scripts/eval_gate.py --project bikeanjoall_2026 --save-baseline   # uma vez, com o que está no ar
+python3 scripts/eval_gate.py --project bikeanjoall_2026                   # depois da mudança
+```
+
+Sai `PORTÃO: APROVADO` ou `REPROVADO` (código 1) com a lista do que passava e agora falha.
+
 ## QA ao vivo
 
 Dentro de `llm_api/`, contra a API que está a correr (por defeito `http://127.0.0.1:28471`):

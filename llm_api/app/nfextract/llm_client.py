@@ -8,6 +8,7 @@ from typing import Any
 
 import httpx
 
+from app.config import settings
 from app.llm import metrics as llm_metrics
 
 
@@ -112,6 +113,8 @@ async def enrich_with_local_llm(
         "options": {"temperature": 0.1, "num_predict": 1200},
         "stream": False,
     }
+    if settings.ollama_keep_alive:
+        payload["keep_alive"] = settings.ollama_keep_alive
     timeout_cfg = httpx.Timeout(
         connect=min(20.0, max(5.0, timeout_s * 0.1)),
         read=timeout_s,

@@ -1,10 +1,10 @@
 """GET /jobs, GET /jobs/stats, POST /jobs/{job_id}/cancel."""
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app import db as db_module
-from app.auth import require_token
+from app.auth import ensure_job_visible, key_project_id, require_operator, require_token
 from app.models import JobListResponse, JobResponse, JobStatsResponse, UserSourceRef
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
@@ -31,13 +31,14 @@ def _job_to_response(job: dict) -> JobResponse:
 
 
 @router.get("/stats", response_model=JobStatsResponse)
-async def job_stats(_: None = Depends(require_token)):
+async def job_stats(_: None = Depends(require_operator)):
     stats = await db_module.job_stats()
     return JobStatsResponse(**stats)
 
 
 @router.get("", response_model=JobListResponse)
 async def list_jobs(
+    request: Request,
     project_id: str | None = None,
     status: str | None = None,
     limit: int = 50,
@@ -45,7 +46,8 @@ async def list_jobs(
     _: None = Depends(require_token),
 ):
     jobs, total = await db_module.job_list(
-        project_id=project_id,
+        # A project key lists only its own project (auth already refused another project_id).
+        project_id=key_project_id(request) or project_id,
         status=status,
         limit=min(limit, 200),
         offset=offset,
@@ -59,10 +61,8 @@ async def list_jobs(
 
 
 @router.post("/{job_id}/cancel", status_code=200)
-async def cancel_job(job_id: str, _: None = Depends(require_token)):
-    job = await db_module.job_get(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="job not found")
+async def cancel_job(job_id: str, request: Request, _: None = Depends(require_token)):
+    job = ensure_job_visible(request, await db_module.job_get(job_id))
     if job["status"] != "queued":
         raise HTTPException(status_code=409, detail=f"cannot cancel job with status '{job['status']}'")
     ap = job.get("audio_path")

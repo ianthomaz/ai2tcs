@@ -702,6 +702,12 @@ async def _maybe_run_maintenance() -> None:
             logger.info("conversation maintenance (madrugada): %s", stats)
     except Exception as e:
         logger.exception("conversation maintenance failed: %s", e)
+    try:
+        from app.jobs.retention import purge_old_job_text
+
+        await purge_old_job_text()
+    except Exception as e:
+        logger.exception("job text retention failed: %s", e)
 
 
 async def speculative_warmup(model_alias: str) -> None:
@@ -714,7 +720,7 @@ async def speculative_warmup(model_alias: str) -> None:
             _ollama.generate,
             model=model_name,
             prompt="",
-            keep_alive="5m",
+            keep_alive=settings.ollama_keep_alive or "5m",
         )
     except Exception as e:
         logger.warning("Warm-up failed for %s: %s", model_alias, e)

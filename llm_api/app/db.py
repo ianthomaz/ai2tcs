@@ -301,6 +301,44 @@ async def llm_heavy_counts_24h() -> dict[str, dict[str, int]]:
     return {r["project_id"]: {"heavy": r["heavy"], "near_limit": r["near_limit"]} for r in rows}
 
 
+async def job_purge_text(project_id: str, older_than_days: int) -> int:
+    """Drop the text of a project's jobs older than N days; keep status, kind, metrics, signals.
+
+    question becomes "[purged]" (the column is NOT NULL); answer, sources, transcript go to
+    NULL; user_context_json keeps only __metrics and __signals. Returns rows changed.
+    """
+    if older_than_days <= 0:
+        return 0
+    async with (await get_pool()).acquire() as conn:
+        status = await conn.execute(
+            """
+            UPDATE "Job" SET
+                question = '[purged]',
+                question_hash = NULL,
+                answer = NULL,
+                sources_json = NULL,
+                transcript = NULL,
+                user_context_json = CASE
+                    WHEN jsonb_typeof(user_context_json) = 'object'
+                    THEN jsonb_strip_nulls(jsonb_build_object(
+                        '__metrics', user_context_json->'__metrics',
+                        '__signals', user_context_json->'__signals'))
+                    ELSE NULL END,
+                updated_at = NOW()
+            WHERE project_id = $1
+              AND created_at < NOW() - make_interval(days => $2)
+              AND question <> '[purged]'
+              AND status NOT IN ('queued', 'working')
+            """,
+            project_id,
+            older_than_days,
+        )
+    try:
+        return int(str(status).split()[-1])
+    except (ValueError, IndexError):
+        return 0
+
+
 async def job_merge_user_context(job_id: str, extra: dict) -> None:
     """Merge keys into Job.user_context_json (e.g. `__metrics`). Never raises: metrics are optional."""
     if not extra:

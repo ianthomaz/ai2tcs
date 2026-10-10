@@ -81,3 +81,26 @@ async def require_token(
         return
 
     raise HTTPException(status_code=401, detail="Invalid or revoked token")
+
+
+def key_project_id(request: Request) -> str | None:
+    """Project of the API key that authenticated the request; None for the global token."""
+    pid = getattr(request.state, "project_id", None)
+    return pid if isinstance(pid, str) and pid else None
+
+
+async def require_operator(request: Request, _: None = Security(require_token)) -> None:
+    """Operator surfaces (create/delete projects, global stats, maintenance): global token only.
+
+    A project key is scoped to its own project; these act on every project.
+    """
+    if key_project_id(request):
+        raise HTTPException(status_code=403, detail="This endpoint requires the operator token")
+
+
+def ensure_job_visible(request: Request, job: dict | None) -> dict:
+    """404 for a missing job and for a job of another project (a key never sees it exists)."""
+    pid = key_project_id(request)
+    if not job or (pid and job.get("project_id") != pid):
+        raise HTTPException(status_code=404, detail="job not found")
+    return job

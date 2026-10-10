@@ -126,6 +126,15 @@ Isto já existia nas rotas antigas. A conferência nova (corpo, `X-Project-Id`, 
 Rotas **exclusivas de um projeto** não aceitam o global em caso nenhum — hoje as do Bike
 Anjo ([18](./18-bikeanjo-ops-ports.md)).
 
+### 2.2 O que uma chave de projeto enxerga
+
+| Rota | Chave de projeto | Token global |
+|---|---|---|
+| `GET /status/{id}`, `GET /result/{id}`, `POST /jobs/{id}/cancel` | só job do próprio projeto; de outro → 404 (não revela que existe) | qualquer job |
+| `GET /jobs` | só o próprio projeto | todos, ou o `project_id` pedido |
+| `GET /projects` | só o próprio projeto | todos |
+| `POST /projects`, `DELETE /projects/{id}`, `GET /jobs/stats`, `POST /users/conversation/maintenance` | 403 | sim |
+
 Histórico da migração: [`03-api-reintegration.md`](03-api-reintegration.md).
 
 ---

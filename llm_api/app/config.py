@@ -38,6 +38,13 @@ class Settings(BaseSettings):
     # Context window sent to Ollama (num_ctx) when the project does not set llm_options.num_ctx.
     # 0 = do not send: Ollama uses its own default (llm_context_reference_tokens).
     ollama_num_ctx: int = 0
+    # How long Ollama keeps a model in memory after a call ("30m", "2h", "-1" = forever).
+    # Empty = Ollama's own default (5m). Raise it when llm_call shows high load_ms.
+    ollama_keep_alive: str = ""
+    # Days a Job keeps its text (question, answer, sources, transcript, client context).
+    # Older rows keep only counts, status, metrics and signals. 0 = keep forever.
+    # Per project: config_json.policies.text_retention_days (wins over this).
+    job_text_retention_days: int = 0
     # /edu/chat: default to fast model for lower latency on short structured replies; override per-request with body.model or env.
     edu_chat_default_model_alias: str = "fast"
     edu_chat_num_predict: int = 512

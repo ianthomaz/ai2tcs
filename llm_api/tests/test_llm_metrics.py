@@ -272,3 +272,22 @@ async def test_router_returns_signals_and_sends_the_project_window(client):
     assert sent["num_ctx"] == 8192
     assert body["signals"]["best_distance"] == 0.3 and body["signals"]["chunks_kept"] == 1
     assert body["signals"]["prompt_tokens"] == 900 and body["confidence"] == 0.9
+
+
+# ---------------------------------------------------------------- L3: keep_alive
+
+
+@pytest.mark.asyncio
+async def test_keep_alive_is_sent_only_when_configured():
+    from app.llm import direct
+    from app.llm.ollama_provider import OllamaProvider
+
+    with patch("ollama.chat", return_value=_OLLAMA) as chat:
+        await OllamaProvider().chat_with_metrics(model="m", messages=[], options={})
+        await direct.ollama_chat("edu_chat", None, model="m", messages=[])
+    assert all("keep_alive" not in c.kwargs for c in chat.call_args_list)
+
+    with patch("app.config.settings.ollama_keep_alive", "30m"), patch("ollama.chat", return_value=_OLLAMA) as chat:
+        await OllamaProvider().chat_with_metrics(model="m", messages=[], options={})
+        await direct.ollama_chat("edu_chat", None, model="m", messages=[])
+    assert [c.kwargs["keep_alive"] for c in chat.call_args_list] == ["30m", "30m"]

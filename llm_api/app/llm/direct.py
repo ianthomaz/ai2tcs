@@ -19,6 +19,8 @@ async def ollama_chat(kind: str, project_id: str | None, *, timeout_s: float | N
 
     Raises asyncio.TimeoutError on the bound; the caller keeps its own failure path.
     """
+    if settings.ollama_keep_alive and "keep_alive" not in kwargs:
+        kwargs["keep_alive"] = settings.ollama_keep_alive
     response = await asyncio.wait_for(
         asyncio.to_thread(ollama.chat, **kwargs),
         timeout=timeout_s if timeout_s is not None else settings.llm_chat_timeout_s,

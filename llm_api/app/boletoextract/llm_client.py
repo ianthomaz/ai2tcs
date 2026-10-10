@@ -8,6 +8,7 @@ from typing import Any
 
 import httpx
 
+from app.config import settings
 from app.llm import metrics as llm_metrics
 
 
@@ -79,6 +80,8 @@ async def enrich_boleto_with_local_llm(
         "options": {"temperature": 0.1, "num_predict": 900},
         "stream": False,
     }
+    if settings.ollama_keep_alive:
+        payload["keep_alive"] = settings.ollama_keep_alive
     url = f"{ollama_host.rstrip('/')}/api/chat"
     timeout_cfg = httpx.Timeout(connect=20.0, read=timeout_s, write=20.0, pool=20.0)
     last_error: str | None = None

@@ -4,6 +4,7 @@ import logging
 
 import ollama
 
+from app.config import settings
 from app.llm.base import LLMProvider
 from app.llm.metrics import from_ollama
 
@@ -23,6 +24,8 @@ class OllamaProvider(LLMProvider):
         }
         # "format": "json" makes Ollama constrain decoding to a JSON value.
         extra = {"format": options["format"]} if options.get("format") else {}
+        if settings.ollama_keep_alive:
+            extra["keep_alive"] = settings.ollama_keep_alive
         response = await asyncio.to_thread(
             ollama.chat,
             model=model,

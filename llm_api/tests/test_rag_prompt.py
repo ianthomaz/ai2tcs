@@ -107,3 +107,28 @@ def test_system_prompt_includes_rich_user_metadata() -> None:
     assert "- next_event_name: EBA Centro" in system
     assert "- current_time: 2026-07-29T23:00:00-03:00" in system
     assert "Name: Ana" in system
+
+
+def test_static_first_puts_the_profile_after_the_project_instruction():
+    from app.rag.prompt import build_system_prompt
+
+    profile = {"display_name": "Ana", "metadata": {"city": "Campinas"}}
+    base = {"project_id": "p", "name": "P"}
+    default = build_system_prompt({**base, "config_json": {}}, user_profile=profile, extra_system_instruction="REGRA DO PROJETO")
+    static = build_system_prompt(
+        {**base, "config_json": {"prompt_order": "static_first"}},
+        user_profile=profile,
+        extra_system_instruction="REGRA DO PROJETO",
+    )
+    assert default.index("Ana") < default.index("REGRA DO PROJETO")
+    assert static.index("REGRA DO PROJETO") < static.index("Ana")
+    # Same content, only the order changes.
+    assert sorted(default.split()) == sorted(static.split())
+    # Two contacts share the whole fixed prefix.
+    other = build_system_prompt(
+        {**base, "config_json": {"prompt_order": "static_first"}},
+        user_profile={"display_name": "Bia", "metadata": {"city": "Belém"}},
+        extra_system_instruction="REGRA DO PROJETO",
+    )
+    prefix = static[: static.index("REGRA DO PROJETO") + len("REGRA DO PROJETO")]
+    assert other.startswith(prefix)
