@@ -58,7 +58,7 @@ async def test_extract_reply_intent_returns_code(client):
     async def fake_to_thread(_func, *_a, **_kw):
         return {"message": {"content": "confirm_presence"}}
 
-    with patch.object(extract_module.asyncio, "to_thread", side_effect=fake_to_thread), patch(
+    with patch("app.llm.direct.asyncio.to_thread", side_effect=fake_to_thread), patch(
         "app.api.extract.log_sync_llm_job", new_callable=AsyncMock
     ):
         r = await client.post(
@@ -114,7 +114,7 @@ async def test_extract_multi_accepts_payment_context_and_extra_keys(client):
     async def fake_to_thread(_func, *_a, **_kw):
         return {"message": {"content": '{"supplier_name": "Novo Emissor SA"}'}}
 
-    with patch.object(extract_module.asyncio, "to_thread", side_effect=fake_to_thread), patch(
+    with patch("app.llm.direct.asyncio.to_thread", side_effect=fake_to_thread), patch(
         "app.api.extract.log_sync_llm_job", new_callable=AsyncMock
     ):
         r = await client.post(
@@ -229,3 +229,58 @@ async def test_ask_stores_rich_user_context_fields(client):
     assert ctx.get("current_time") == "2026-07-29T23:00:00-03:00"
     assert ctx.get("interesse") == "passeio"
     assert "future_ignored" not in ctx
+
+
+# --- POST /extract reply_intent against contracts/bikeanjo/extract.examples.json ---------
+
+import json as _json
+from pathlib import Path as _Path
+
+from app.api.extract import normalize_reply_intent, reply_intent_codes
+
+_EXTRACT_EXAMPLES = _json.loads(
+    (_Path(__file__).resolve().parents[1] / "contracts" / "bikeanjo" / "extract.examples.json").read_text(
+        encoding="utf-8"
+    )
+)["cases"]
+_REPLY_CASES = [c for c in _EXTRACT_EXAMPLES if c["request"]["step"] == "reply_intent"]
+
+
+def test_reply_intent_codes_read_from_the_zap_question():
+    q = _REPLY_CASES[0]["request"]["question"]
+    assert reply_intent_codes(q) == ["confirm_presence", "release_slot", "escalate_human", "none"]
+    assert reply_intent_codes("Codes: confirm_presence, decline") == ["confirm_presence", "decline", "none"]
+    assert reply_intent_codes("Qual o seu CEP?") == []
+
+
+@pytest.mark.parametrize("case", _REPLY_CASES, ids=[c["name"] for c in _REPLY_CASES])
+def test_reply_intent_examples_normalize(case):
+    assert normalize_reply_intent(case["model_says"], case["request"]["question"]) == case["response_ok"]["extracted"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("case", _REPLY_CASES, ids=[c["name"] for c in _REPLY_CASES])
+async def test_reply_intent_examples_through_the_route(client, case):
+    async def fake_to_thread(_func, *_a, **_kw):
+        return {"message": {"content": case["model_says"]}}
+
+    with patch("app.llm.direct.asyncio.to_thread", side_effect=fake_to_thread), patch(
+        "app.api.extract.log_sync_llm_job", new_callable=AsyncMock
+    ):
+        r = await client.post("/extract", json=case["request"], headers=HEADERS)
+    assert r.status_code == 200
+    assert r.json()["extracted"] == case["response_ok"]["extracted"]
+
+
+@pytest.mark.asyncio
+async def test_extract_model_timeout_returns_null(client):
+    import asyncio as _asyncio
+
+    async def slow(_func, *_a, **_kw):
+        await _asyncio.sleep(1)
+
+    with patch("app.llm.direct.asyncio.to_thread", side_effect=slow), patch(
+        "app.config.settings.extract_timeout_s", 0.01
+    ), patch("app.api.extract.log_sync_llm_job", new_callable=AsyncMock):
+        r = await client.post("/extract", json=_REPLY_CASES[0]["request"], headers=HEADERS)
+    assert r.status_code == 200 and r.json()["extracted"] is None

@@ -90,6 +90,14 @@ CONVERSATION_ENTRY = "[{role}]: {content}\n"
 CONVERSATION_SEPARATOR = "\n---\n\n"
 
 
+def get_prompt_order(project: dict) -> str:
+    """config_json.prompt_order: "static_first" puts the contact's profile after the project's
+    fixed instructions; anything else keeps the profile before them."""
+    cfg = project.get("config_json") or {}
+    order = (cfg.get("prompt_order") if isinstance(cfg, dict) else None) or ""
+    return "static_first" if str(order).strip().lower() == "static_first" else "profile_first"
+
+
 def get_prompt_profile(project: dict) -> str:
     """Return prompt profile: factual | sales | creative."""
     cfg = project.get("config_json") or {}
@@ -274,9 +282,19 @@ def build_system_prompt(
         sales_rule=sales_rule,
     )
 
-    system = f"{opening}\n\n{calibration}\n{rules}\n{profile_block}"
-    if extra_system_instruction and extra_system_instruction.strip():
-        system = system.rstrip() + "\n\n" + extra_system_instruction.strip() + "\n"
+    extra = extra_system_instruction.strip() if extra_system_instruction and extra_system_instruction.strip() else ""
+    if get_prompt_order(project) == "static_first":
+        # Fixed text first, the contact's profile last: Ollama reuses the processed prefix
+        # across contacts of the same project (docs/19, A6).
+        system = f"{opening}\n\n{calibration}\n{rules}"
+        if extra:
+            system = system.rstrip() + "\n\n" + extra + "\n"
+        if profile_block.strip():
+            system = system.rstrip() + "\n\n" + profile_block
+    else:
+        system = f"{opening}\n\n{calibration}\n{rules}\n{profile_block}"
+        if extra:
+            system = system.rstrip() + "\n\n" + extra + "\n"
     if client_system_prompt_prefix and client_system_prompt_prefix.strip():
         system = client_system_prompt_prefix.strip() + "\n\n" + system
     return system

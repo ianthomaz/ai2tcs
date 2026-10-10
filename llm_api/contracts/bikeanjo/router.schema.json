@@ -130,6 +130,54 @@
             "string",
             "null"
           ]
+        },
+        "signals": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "O que o serviço sabe da resposta — não é opinião do modelo. Aditivo: cliente que não lê não muda. ai2tcs docs/19 § 7 (L1).",
+          "properties": {
+            "best_distance": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "distância do melhor trecho da base (menor = mais perto)"
+            },
+            "chunks_kept": {
+              "type": "integer",
+              "description": "trechos que passaram do limiar"
+            },
+            "sanitize_hit": {
+              "type": "boolean",
+              "description": "a limpeza de frase proibida mexeu no texto"
+            },
+            "guard_hit": {
+              "type": "boolean",
+              "description": "a trava do projeto (forbidden_terms) mexeu no texto"
+            },
+            "reflection_changed": {
+              "type": "boolean",
+              "description": "só /ask: a revisão de fundamentação trocou o texto"
+            },
+            "answer_chars": {
+              "type": "integer"
+            },
+            "prompt_tokens": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "near_ctx_limit": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "o prompt chegou a 90% da janela de contexto"
+            }
+          }
         }
       }
     }

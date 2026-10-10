@@ -56,6 +56,33 @@ def _parse_sources(raw: str | None) -> list[dict]:
         return []
 
 
+def _parse_config_json(raw: object) -> dict | None:
+    """asyncpg may return jsonb as dict or as a JSON string; callers need a dict."""
+    if raw is None:
+        return None
+    if isinstance(raw, dict):
+        return raw
+    if isinstance(raw, str):
+        try:
+            parsed = json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            return None
+        return parsed if isinstance(parsed, dict) else None
+    return None
+
+
+def _project_row(row) -> dict:
+    return {
+        "id": row["id"],
+        "project_id": row["project_id"],
+        "name": row["name"],
+        "sources": list(row["sources"]) if row["sources"] else [],
+        "config_json": _parse_config_json(row["config_json"]),
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+    }
+
+
 # --- Project ---
 
 
@@ -71,15 +98,7 @@ async def project_get(project_id: str) -> dict | None:
         )
         if not row:
             return None
-        return {
-            "id": row["id"],
-            "project_id": row["project_id"],
-            "name": row["name"],
-            "sources": list(row["sources"]) if row["sources"] else [],
-            "config_json": row["config_json"],
-            "created_at": row["created_at"],
-            "updated_at": row["updated_at"],
-        }
+        return _project_row(row)
 
 
 async def project_get_themes(project_id: str) -> list[str]:
@@ -192,13 +211,24 @@ async def job_insert_terminal_audit(
         return None
 
 
+def _json_object(raw: object) -> dict | None:
+    """jsonb column → dict (asyncpg may hand it back as text)."""
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            return None
+    return raw if isinstance(raw, dict) else None
+
+
 async def job_get(job_id: str) -> dict | None:
     async with (await get_pool()).acquire() as conn:
         row = await conn.fetchrow(
             """
             SELECT id, project_id, question, question_hash, status, progress, answer,
                    sources_json, confidence, error_message, created_at, updated_at,
-                   job_kind, model_alias, audio_path, transcript, stt_metadata_json
+                   job_kind, model_alias, audio_path, transcript, stt_metadata_json,
+                   user_context_json->'__signals' AS signals_json
             FROM "Job"
             WHERE id = $1
             """,
@@ -230,6 +260,7 @@ async def job_get(job_id: str) -> dict | None:
             "audio_path": row["audio_path"],
             "transcript": row["transcript"],
             "stt_metadata": stt_meta if isinstance(stt_meta, dict) else None,
+            "signals": _json_object(row["signals_json"]),
         }
 
 
@@ -269,6 +300,82 @@ async def job_update_status(
             f'UPDATE "Job" SET {", ".join(updates)} WHERE id = $1',
             *args,
         )
+
+
+async def llm_heavy_counts_24h() -> dict[str, dict[str, int]]:
+    """Per project, last 24 h: calls flagged heavy / near_ctx_limit in user_context_json.__metrics."""
+    async with (await get_pool()).acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT project_id,
+                   COUNT(*) FILTER (WHERE (user_context_json->'__metrics'->>'heavy')::boolean) AS heavy,
+                   COUNT(*) FILTER (WHERE (user_context_json->'__metrics'->>'near_ctx_limit')::boolean) AS near_limit
+            FROM "Job"
+            WHERE created_at > NOW() - interval '24 hours'
+              AND jsonb_typeof(user_context_json) = 'object'
+              AND user_context_json ? '__metrics'
+            GROUP BY project_id
+            """
+        )
+    return {r["project_id"]: {"heavy": r["heavy"], "near_limit": r["near_limit"]} for r in rows}
+
+
+async def job_purge_text(project_id: str, older_than_days: int) -> int:
+    """Drop the text of a project's jobs older than N days; keep status, kind, metrics, signals.
+
+    question becomes "[purged]" (the column is NOT NULL); answer, sources, transcript go to
+    NULL; user_context_json keeps only __metrics and __signals. Returns rows changed.
+    """
+    if older_than_days <= 0:
+        return 0
+    async with (await get_pool()).acquire() as conn:
+        status = await conn.execute(
+            """
+            UPDATE "Job" SET
+                question = '[purged]',
+                question_hash = NULL,
+                answer = NULL,
+                sources_json = NULL,
+                transcript = NULL,
+                user_context_json = CASE
+                    WHEN jsonb_typeof(user_context_json) = 'object'
+                    THEN jsonb_strip_nulls(jsonb_build_object(
+                        '__metrics', user_context_json->'__metrics',
+                        '__signals', user_context_json->'__signals'))
+                    ELSE NULL END,
+                updated_at = NOW()
+            WHERE project_id = $1
+              AND created_at < NOW() - make_interval(days => $2)
+              AND question <> '[purged]'
+              AND status NOT IN ('queued', 'working')
+            """,
+            project_id,
+            older_than_days,
+        )
+    try:
+        return int(str(status).split()[-1])
+    except (ValueError, IndexError):
+        return 0
+
+
+async def job_merge_user_context(job_id: str, extra: dict) -> None:
+    """Merge keys into Job.user_context_json (e.g. `__metrics`). Never raises: metrics are optional."""
+    if not extra:
+        return
+    try:
+        async with (await get_pool()).acquire() as conn:
+            await conn.execute(
+                """
+                UPDATE "Job" SET user_context_json =
+                    (CASE WHEN jsonb_typeof(user_context_json) = 'object'
+                          THEN user_context_json ELSE '{}'::jsonb END) || $2::jsonb
+                WHERE id = $1
+                """,
+                job_id,
+                json.dumps(extra),
+            )
+    except Exception:
+        logger.warning("job_merge_user_context failed for job %s", job_id, exc_info=True)
 
 
 async def job_update_after_stt(
@@ -596,18 +703,7 @@ async def project_list_all() -> list[dict]:
         rows = await conn.fetch(
             'SELECT id, project_id, name, sources, config_json, created_at, updated_at FROM "Project" ORDER BY created_at DESC'
         )
-        return [
-            {
-                "id": r["id"],
-                "project_id": r["project_id"],
-                "name": r["name"],
-                "sources": list(r["sources"]) if r["sources"] else [],
-                "config_json": r["config_json"],
-                "created_at": r["created_at"],
-                "updated_at": r["updated_at"],
-            }
-            for r in rows
-        ]
+        return [_project_row(r) for r in rows]
 
 
 async def project_create(
@@ -631,15 +727,7 @@ async def project_create(
             sources or [],
             cfg,
         )
-        return {
-            "id": row["id"],
-            "project_id": row["project_id"],
-            "name": row["name"],
-            "sources": list(row["sources"]) if row["sources"] else [],
-            "config_json": row["config_json"],
-            "created_at": row["created_at"],
-            "updated_at": row["updated_at"],
-        }
+        return _project_row(row)
 
 
 async def project_update(
@@ -668,15 +756,7 @@ async def project_update(
             f'UPDATE "Project" SET {", ".join(updates)} WHERE project_id = $1 RETURNING id, project_id, name, sources, config_json, created_at, updated_at',
             *args,
         )
-        return {
-            "id": row["id"],
-            "project_id": row["project_id"],
-            "name": row["name"],
-            "sources": list(row["sources"]) if row["sources"] else [],
-            "config_json": row["config_json"],
-            "created_at": row["created_at"],
-            "updated_at": row["updated_at"],
-        }
+        return _project_row(row)
 
 
 async def project_delete(project_id: str) -> None:

@@ -3,13 +3,15 @@ import asyncio
 import json
 import re
 
-import ollama
 from fastapi import APIRouter, Depends, Request
 
 from app.auth import require_token
 from app.config import settings
 from app.job_audit import log_sync_llm_job
-from app.registry import get_project, get_rag_policies, get_router_config
+from app.llm import get_provider
+from app.llm import metrics as llm_metrics
+from app.llm import signals as llm_signals
+from app.registry import get_num_ctx, get_project, get_rag_policies, get_router_config
 from app.rag.prompt import is_shareable_url
 from app.rag.retrieve import retrieve
 from pydantic import BaseModel, ConfigDict, Field
@@ -62,7 +64,7 @@ You must reply with a single valid JSON object (no markdown fences, no prose out
 }
 
 Rules:
-- If action is "answer_now", "answer" must be a non-empty friendly Portuguese string; set escalate_to null.
+- If action is "answer_now", "answer" must be a non-empty {answer_style} Portuguese string; set escalate_to null.
 - If action is "escalate", set answer null and set escalate_to (use "auto" if unsure).
 - "confidence" must be a number between 0 and 1 (not the words high/medium/low).
 
@@ -77,6 +79,24 @@ Heuristics for suggested_route (ZAPZAP):
 - cursor: delegate to Cursor SDK agent on Mac (owner only; zapzap calls bridge, not /ask).
 
 Always include "suggested_route" in the JSON object."""
+
+
+# Style of an answer_now reply, from the project's declared llm_options.tone_of_voice.
+# A project that declares no tone keeps "friendly".
+_ROUTER_ANSWER_STYLE = {
+    "informal": "short, informal",
+    "friendly": "friendly",
+    "technical": "precise, technical",
+    "sales": "service-oriented",
+    "direct": "short, direct (no small talk, no enthusiasm)",
+}
+
+
+def router_system_prompt(project: dict | None) -> str:
+    cfg = (project or {}).get("config_json") or {}
+    tone = ((cfg.get("llm_options") or {}) if isinstance(cfg, dict) else {}).get("tone_of_voice")
+    style = _ROUTER_ANSWER_STYLE.get(str(tone or "").strip().lower(), "friendly")
+    return ROUTER_SYSTEM.replace("{answer_style}", style)
 
 
 class RouterRequest(BaseModel):
@@ -123,6 +143,11 @@ class RouterResponse(BaseModel):
     obs: str | None = Field(None, description="Note for specialist")
     task_type: str | None = Field(None, description="chitchat | extract | rag_deep | reasoning | classification")
     confidence: float = Field(0.0, description="0.0 to 1.0")
+    signals: dict | None = Field(
+        None,
+        description="What the service knows about this decision (not the model's opinion): best_distance, "
+        "chunks_kept, guard_hit, answer_chars, prompt_tokens, near_ctx_limit",
+    )
 
 
 # Context fields worth adding to the retrieval query: free text that helps the
@@ -281,6 +306,7 @@ async def _audit_router(
     model_alias: str,
     status: str,
     error_message: str | None = None,
+    metrics: dict | None = None,
 ) -> RouterResponse:
     await log_sync_llm_job(
         req,
@@ -296,6 +322,7 @@ async def _audit_router(
             "action": resp.action,
             "suggested_route": resp.suggested_route,
             "has_project_id": bool(body.project_id),
+            **({"__metrics": metrics} if metrics else {}),
         },
     )
     return resp
@@ -393,27 +420,40 @@ async def route_message(
     user_parts.append("\nContexto do projeto (biblioteca + mapa de fluxos):\n" + context_text)
     user_content = "\n".join(user_parts)
 
-    system_prompt = ROUTER_SYSTEM
+    base_system = router_system_prompt(project)
+    system_prompt = base_system
     router_cfg = get_router_config(project)
     extra_block = (router_cfg.get("extra_system_block") or "").strip()
     if extra_block:
-        system_prompt = ROUTER_SYSTEM + "\n\n" + extra_block
+        system_prompt = base_system + "\n\n" + extra_block
     elif body.project_id == IAN_ZAP_PROJECT_ID:
-        system_prompt = ROUTER_SYSTEM + ROUTER_SYSTEM_IAN_ZAP
+        system_prompt = base_system + ROUTER_SYSTEM_IAN_ZAP
 
+    call_metrics: dict = {}
+    num_ctx = get_num_ctx(project)
     try:
-        response = await asyncio.to_thread(
-            ollama.chat,
-            model=model_alias,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_content},
-            ],
-            options={"temperature": 0.1, "num_predict": 512},
-            format="json",
+        # Same provider as /ask (config_json.llm_provider), bounded: a hung model call
+        # escalates instead of holding the request.
+        raw, call_metrics = await asyncio.wait_for(
+            get_provider(project).chat_with_metrics(
+                model=model_alias,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_content},
+                ],
+                options={
+                    "temperature": 0.1,
+                    "num_predict": 512,
+                    "format": "json",
+                    **({"num_ctx": num_ctx} if num_ctx else {}),
+                },
+            ),
+            timeout=settings.router_timeout_s,
         )
-        raw = (response.get("message") or {}).get("content") or ""
+        call_metrics = llm_metrics.record("router", body.project_id, model_alias, call_metrics, num_ctx)
     except Exception as e:
+        if isinstance(e, asyncio.TimeoutError):
+            e = RuntimeError(f"router model call timed out after {settings.router_timeout_s:.0f}s")
         out = RouterResponse(
             action="escalate",
             suggested_route="ask",
@@ -436,6 +476,7 @@ async def route_message(
 
     finalized = _finalize_router_response(data)
 
+    guard_hit = False
     if finalized.action == "answer_now" and finalized.answer:
         # /ask runs every answer through sanitize + the per-project bleed/forbidden-terms
         # guard (worker.py). answer_now skipped both — a router-generated reply could
@@ -445,6 +486,7 @@ async def route_message(
 
         cleaned = guard_answer_for_profile(_sanitize_answer(finalized.answer), project)
         if cleaned != finalized.answer:
+            guard_hit = True
             finalized = finalized.model_copy(update={"answer": cleaned})
         # Guard/sanitize may clear the text after finalize already ran. Mirror
         # _finalize_router_response: empty answer_now becomes escalate (Zap silence path).
@@ -480,4 +522,13 @@ async def route_message(
 
         asyncio.create_task(speculative_warmup(finalized.escalate_to))
 
-    return await _audit_router(req, body, finalized, model_alias=model_alias, status="done")
+    finalized = finalized.model_copy(
+        update={
+            "signals": llm_signals.build(
+                chunks=chunks, answer=finalized.answer, guard_hit=guard_hit, metrics=call_metrics
+            )
+        }
+    )
+    return await _audit_router(
+        req, body, finalized, model_alias=model_alias, status="done", metrics=call_metrics
+    )

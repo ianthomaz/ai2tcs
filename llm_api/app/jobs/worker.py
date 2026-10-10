@@ -10,6 +10,8 @@ from zoneinfo import ZoneInfo
 from app import db as db_module
 from app.config import settings
 from app.llm import get_provider
+from app.llm import metrics as llm_metrics
+from app.llm import signals as llm_signals
 from app.registry import (
     get_project,
     get_rag_feature_flags,
@@ -223,14 +225,13 @@ async def _reflect_on_answer(
     fast_model = settings.get_model_name("fast", default_alias="fast")
     fast_opts = {**llm_config, "temperature": 0.2, "num_predict": 512}
     try:
-        raw = await asyncio.wait_for(
-            provider.chat(
-                model=fast_model,
-                messages=[{"role": "user", "content": prompt}],
-                options=fast_opts,
-            ),
-            timeout=settings.llm_chat_timeout_s,
+        raw, call_metrics = await _chat_with_metrics_or_timeout(
+            provider,
+            model=fast_model,
+            messages=[{"role": "user", "content": prompt}],
+            options=fast_opts,
         )
+        llm_metrics.record("ask_reflection", None, fast_model, call_metrics)
         if "{" in raw and "}" in raw:
             blob = raw[raw.find("{") : raw.rfind("}") + 1]
             data = json.loads(blob)
@@ -342,20 +343,34 @@ async def _fire_job_callback(
         logger.warning("Callback failed for job %s: %s", job_id, exc)
 
 
-async def _chat_or_timeout(provider, *, model: str, messages: list[dict], options: dict) -> str:
-    """provider.chat() with a bound.
+async def _chat_with_metrics_or_timeout(
+    provider, *, model: str, messages: list[dict], options: dict
+) -> tuple[str, dict]:
+    """provider call with a bound, returning (text, metrics).
 
-    Without this, a hung provider call (network partition, stuck Ollama container)
-    blocked its job forever — and since a worker processes its alias queue
-    sequentially, every other job behind it too.
+    Without the bound, a hung provider call (network partition, stuck Ollama container)
+    blocks its job forever — and since a worker processes its alias queue sequentially,
+    every other job behind it too. Providers without chat_with_metrics give {} metrics.
     """
+    call = getattr(provider, "chat_with_metrics", None)
     try:
-        return await asyncio.wait_for(
+        if call is not None:
+            return await asyncio.wait_for(
+                call(model=model, messages=messages, options=options),
+                timeout=settings.llm_chat_timeout_s,
+            )
+        text = await asyncio.wait_for(
             provider.chat(model=model, messages=messages, options=options),
             timeout=settings.llm_chat_timeout_s,
         )
+        return text, {}
     except asyncio.TimeoutError as exc:
         raise RuntimeError(f"LLM chat timed out after {settings.llm_chat_timeout_s}s") from exc
+
+
+async def _chat_or_timeout(provider, *, model: str, messages: list[dict], options: dict) -> str:
+    text, _ = await _chat_with_metrics_or_timeout(provider, model=model, messages=messages, options=options)
+    return text
 
 
 def _final_job_status(answer: str | None, *, chunks: list[dict], rag_mode: str, policies: dict) -> str:
@@ -479,7 +494,7 @@ async def run_rag_job(
 
         model_name = settings.get_model_name(model_alias, default_alias="smart")
         provider = get_provider(project)
-        answer = await _chat_or_timeout(
+        answer, call_metrics = await _chat_with_metrics_or_timeout(
             provider,
             model=model_name,
             messages=[
@@ -489,9 +504,14 @@ async def run_rag_job(
             options=llm_config,
         )
 
+        recorded = llm_metrics.record("ask", project_id, model_name, call_metrics, llm_config.get("num_ctx"))
+
         # Post-processing: fix known LLM generation errors (meta-phrases, typos, filler)
+        raw_answer = answer
         answer = _sanitize_answer(answer)
+        sanitized = answer
         answer = guard_answer_for_profile(answer, project)
+        guarded = answer
 
         if get_rag_feature_flags(project)["rag_reflection_enabled"] and chunks and answer:
             answer = await _reflect_on_answer(
@@ -501,6 +521,18 @@ async def run_rag_job(
                 answer=answer,
                 llm_config=llm_config,
             )
+
+        answer_signals = llm_signals.build(
+            chunks=chunks,
+            answer=answer,
+            sanitize_hit=sanitized != raw_answer,
+            guard_hit=guarded != sanitized,
+            metrics=recorded,
+            reflection_changed=answer != guarded,
+        )
+        await db_module.job_merge_user_context(
+            job_id, {**({"__metrics": recorded} if recorded else {}), "__signals": answer_signals}
+        )
 
         # Persist assistant response in conversation history
         if user_id and answer:
@@ -670,6 +702,12 @@ async def _maybe_run_maintenance() -> None:
             logger.info("conversation maintenance (madrugada): %s", stats)
     except Exception as e:
         logger.exception("conversation maintenance failed: %s", e)
+    try:
+        from app.jobs.retention import purge_old_job_text
+
+        await purge_old_job_text()
+    except Exception as e:
+        logger.exception("job text retention failed: %s", e)
 
 
 async def speculative_warmup(model_alias: str) -> None:
@@ -682,7 +720,7 @@ async def speculative_warmup(model_alias: str) -> None:
             _ollama.generate,
             model=model_name,
             prompt="",
-            keep_alive="5m",
+            keep_alive=settings.ollama_keep_alive or "5m",
         )
     except Exception as e:
         logger.warning("Warm-up failed for %s: %s", model_alias, e)

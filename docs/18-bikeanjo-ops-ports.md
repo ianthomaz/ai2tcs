@@ -166,10 +166,12 @@ Avaliado e mantido JSON:
 
 ## 9. Revisão de 28 set 2026 — problemas e pendências
 
+- [ x ] **`triage-v2` no git (out/2026).** `PROMPT_VERSION = "triage-v2"`, prompt `feedback-triage-v2.md` + few-shots G–I. O modelo recebe `subject.kind` (`adult` · `dependent` · `none`), nunca o id; o serviço garante a regra 9 (texto sobre o filho com sujeito adulto → `watch`, confiança ≤ 0,5, aviso `subject_minor_mismatch`) e a rede de `grave` cobre queda com lesão e falta de socorro (caso t11).
+
 Visto no código já mergeado no mini62 (pull request #7), antes de tratar isto como serviço pronto. Nada disto foi corrigido nesta anotação.
 
 - [ ] **Eval `r07` contra a trava de link.** `reply-suggest.eval.jsonl` caso `r07` proíbe qualquer `http://` e `https://` na resposta. A trava do serviço aceita `bikeanjo.org` e subdomínios (decisão de 28 set: medida média). Um rascunho com `https://sistema.bikeanjo.org` passa na trava e faz `scripts/eval_bikeanjo_ops.py` marcar `/replySuggest` como não pronto. Alinhar o `r07` ou a trava antes de usar esse eval como portão.
-- [ ] **Chave de projeto lê rotas que não dizem o projeto.** Detalhe e exemplo em [02 § 2.1](./02-api-integration.md). `GET /projects`, `GET /status/{job_id}` e `GET /result/{job_id}` aceitam qualquer chave válida. A chave `itcs_bikeanjoall_2026_…`, no dia em que existir, herda esse acesso mesmo sem as portas novas. As três portas deste doc não têm esse furo.
+- [ x ] **Chave de projeto só vê o próprio projeto (10/out).** `GET /status`, `GET /result` e `POST /jobs/{id}/cancel` devolvem 404 para job de outro projeto; `GET /jobs` e `GET /projects` vêm filtrados; criar/apagar projeto, `GET /jobs/stats` e a manutenção manual exigem o token global ([02 § 2.2](./02-api-integration.md)).
 - [ ] **`/replySuggest` sem corpus `34` e `35`.** Sem re-ingest desses documentos no projeto `bikeanjoall_2026` (lado Bike Anjo), a porta responde `no_answer` com `no_context` e não chama o modelo.
 - [ ] **Ordem do corte do token global.** Não pôr `SCOPED_KEY_REQUIRED_PROJECTS=bikeanjoall_2026` no `.env` da API antes da chave estar em todos os `.env` do Bike Anjo e do deploy de lá. Invertido, o bot do Zap deixa de responder. Enquanto a variável estiver vazia, `/ask` e `/router` continuam a aceitar o token global. As três portas novas recusam o global em qualquer caso.
 - [ ] **Cópia do contrato e o clone local do Bike Anjo.** Esquemas, prompts e exemplos em `llm_api/contracts/bikeanjo/` batem com `BikeAnjo_Sistema2026/docs/contracts/ai2tcs/` neste mini62. `ORIGIN.md` cita o commit `b59656c`, que esse clone não tem. O `README` e o `CHECKLIST_AI2TCS.md` da cópia estão mais novos do que o `main` desse clone.
@@ -181,4 +183,4 @@ A linha `Job.question` destas portas guarda um rótulo com id operacional (`feed
 
 ---
 
-**Anterior:** [17-integration-backlog.md](./17-integration-backlog.md)
+**Anterior:** [17-integration-backlog.md](./17-integration-backlog.md) · **Seguinte:** [19-optimization-review.md](./19-optimization-review.md)

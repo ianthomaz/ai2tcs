@@ -42,6 +42,7 @@ Exemplos de `config_json` por tipo de uso.
       "max_chunks_to_retrieve": 5
     },
     "llm_options": {
+      "num_ctx": 8192,
       "temperature": 0.5,
       "top_k": 30,
       "top_p": 0.9,
@@ -515,3 +516,34 @@ compatibilidade dos configs existentes; não a use para decidir comportamento.
 ---
 
 **Anterior:** [07-llm-calibration.md](./07-llm-calibration.md) · **Seguinte:** [09-model-upgrade.md](./09-model-upgrade.md)
+
+### `num_ctx` — janela de contexto do modelo
+
+`config_json.llm_options.num_ctx` (inteiro) define quantos tokens o Ollama aceita por chamada
+neste projeto; sem ele vale `OLLAMA_NUM_CTX` do `.env` da API e, se este for `0`, o padrão do
+Ollama instalado (2048 ou 4096). Vale para `/ask`, `/router` e as portas de texto do projeto.
+Janela maior custa memória: subir só onde `llm_calls_near_ctx_limit_24h` (`/metrics`) mostrar
+pergunta perto do limite ([19 § 6](./19-optimization-review.md)).
+
+### `prompt_order` — ordem do system prompt
+
+`config_json.prompt_order: "static_first"` põe o perfil do contato **depois** das instruções
+fixas do projeto. O texto é o mesmo; o Ollama reaproveita o processamento do trecho fixo entre
+contatos. Ligar depois de `scripts/eval_gate.py` aprovar ([19 § A6](./19-optimization-review.md)).
+
+### `policies.text_retention_days` — retenção do texto dos jobs
+
+Depois de N dias, o job do projeto perde o texto (pergunta, resposta, trechos, transcrição,
+contexto do cliente) e guarda só status, métricas e sinais. Sem a chave vale
+`JOB_TEXT_RETENTION_DAYS` do `.env`; `0` guarda para sempre. Roda na manutenção de madrugada.
+
+### `tasks` — tarefas de texto ligadas no projeto
+
+`config_json.tasks.<task_id>` liga uma tarefa de arquivo de `POST /task/{task_id}` para o
+projeto e guarda o vocabulário dela. Sem a chave, a tarefa responde 403 ao projeto.
+
+```json
+{ "tasks": { "text_triage": { "categories": ["parceria", "suporte", "imprensa", "outro"] } } }
+```
+
+Detalhe: [20-text-tasks.md](./20-text-tasks.md).

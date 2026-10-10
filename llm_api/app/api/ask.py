@@ -1,10 +1,10 @@
 """POST /ask, GET /status/{job_id}, GET /result/{job_id}."""
 import hashlib
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app import db as db_module
-from app.auth import require_token
+from app.auth import ensure_job_visible, require_token
 from app.models import AskRequest, AskResponse, ResultResponse, StatusResponse, UserSourceRef
 from app.registry import get_project, get_rag_policies
 
@@ -74,10 +74,8 @@ async def ask(request: AskRequest, _: None = Depends(require_token)):
 
 
 @router.get("/status/{job_id}", response_model=StatusResponse)
-async def status(job_id: str, _: None = Depends(require_token)):
-    job = await db_module.job_get(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="job not found")
+async def status(job_id: str, request: Request, _: None = Depends(require_token)):
+    job = ensure_job_visible(request, await db_module.job_get(job_id))
     st = job["status"]
     return StatusResponse(
         job_id=job["id"],
@@ -89,10 +87,8 @@ async def status(job_id: str, _: None = Depends(require_token)):
 
 
 @router.get("/result/{job_id}", response_model=ResultResponse)
-async def result(job_id: str, _: None = Depends(require_token)):
-    job = await db_module.job_get(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="job not found")
+async def result(job_id: str, request: Request, _: None = Depends(require_token)):
+    job = ensure_job_visible(request, await db_module.job_get(job_id))
     raw_sources = job.get("sources") or []
     sources = [UserSourceRef(url=s["url"]) for s in raw_sources if s.get("url")]
     return ResultResponse(
@@ -103,4 +99,5 @@ async def result(job_id: str, _: None = Depends(require_token)):
         confidence=job.get("confidence"),
         transcript=job.get("transcript"),
         stt_metadata=job.get("stt_metadata"),
+        signals=job.get("signals"),
     )

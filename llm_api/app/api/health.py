@@ -4,6 +4,7 @@ import time
 
 import httpx
 from fastapi import APIRouter
+from fastapi.responses import PlainTextResponse
 
 from app import db as db_module
 from app.config import settings
@@ -56,7 +57,7 @@ async def health():
     }
 
 
-@router.get("/metrics")
+@router.get("/metrics", response_class=PlainTextResponse)
 async def metrics():
     """Real metrics from job stats."""
     try:
@@ -73,11 +74,17 @@ async def metrics():
         if stats.get("avg_duration_seconds") is not None:
             lines.append(f'llm_jobs_avg_duration_seconds {stats["avg_duration_seconds"]}')
         try:
+            for proj, c in (await db_module.llm_heavy_counts_24h()).items():
+                lines.append(f'llm_calls_heavy_24h{{project="{proj}"}} {c["heavy"]}')
+                lines.append(f'llm_calls_near_ctx_limit_24h{{project="{proj}"}} {c["near_limit"]}')
+        except Exception:
+            pass
+        try:
             from app.stt.metrics import stt_metric_lines
 
             lines.extend(stt_metric_lines())
         except Exception:
             pass
-        return "\n".join(lines) + "\n"
+        return PlainTextResponse("\n".join(lines) + "\n")
     except Exception:
-        return "llm_api_ready 0\n"
+        return PlainTextResponse("llm_api_ready 0\n")

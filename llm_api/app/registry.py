@@ -150,6 +150,21 @@ def get_extract_steps_config(project: dict) -> dict:
     return {}
 
 
+def get_num_ctx(project: dict | None) -> int | None:
+    """Context window for this project: config_json.llm_options.num_ctx, else OLLAMA_NUM_CTX, else None.
+
+    None means the request does not send num_ctx and Ollama uses its own default. A larger
+    window costs memory on the host: raise it where the call metrics show near_ctx_limit.
+    """
+    cfg = (project or {}).get("config_json") or {}
+    raw = ((cfg.get("llm_options") or {}) if isinstance(cfg, dict) else {}).get("num_ctx")
+    try:
+        value = int(raw) if raw is not None else int(settings.ollama_num_ctx)
+    except (TypeError, ValueError):
+        value = 0
+    return value if value > 0 else None
+
+
 def get_llm_config(project: dict) -> dict:
     """LLM inference options from project config_json or defaults.
 
@@ -162,7 +177,7 @@ def get_llm_config(project: dict) -> dict:
     cfg = project.get("config_json") or {}
     if isinstance(cfg, dict):
         llm = cfg.get("llm_options") or {}
-        return {
+        out = {
             "temperature": llm.get("temperature", 0.5),
             "top_k": llm.get("top_k", 30),
             "top_p": llm.get("top_p", 0.9),
@@ -171,7 +186,11 @@ def get_llm_config(project: dict) -> dict:
             "tone_of_voice": llm.get("tone_of_voice", "direct"),
             "message_size": llm.get("message_size", "medium"),
         }
-    return {
+        num_ctx = get_num_ctx(project)
+        if num_ctx:
+            out["num_ctx"] = num_ctx
+        return out
+    out = {
         "temperature": 0.5,
         "top_k": 30,
         "top_p": 0.9,
@@ -180,3 +199,7 @@ def get_llm_config(project: dict) -> dict:
         "tone_of_voice": "direct",
         "message_size": "medium",
     }
+    num_ctx = get_num_ctx(project)
+    if num_ctx:
+        out["num_ctx"] = num_ctx
+    return out

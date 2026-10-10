@@ -18,10 +18,14 @@
         "submission_id": { "type": "string", "description": "form_submissions.submission_id ou support_tickets.id" },
         "subject": {
           "type": "object",
-          "required": ["user_id", "dependent_id"],
+          "required": ["subject_id", "user_id", "dependent_id"],
           "properties": {
-            "user_id": { "type": ["string", "null"], "pattern": "^[A-HJ-KM-NP-Z][A-HJ-KM-NP-Z2-9]{3}[2-9]$", "description": "null em chamado sem conta" },
-            "dependent_id": { "type": ["integer", "null"] }
+            "subject_id": {
+              "type": ["string", "null"],
+              "description": "Conta LCCCN ou D_… — chave única do sujeito; null em chamado sem conta"
+            },
+            "user_id": { "type": ["string", "null"], "pattern": "^[A-HJ-KM-NP-Z][A-HJ-KM-NP-Z2-9]{3}[2-9]$", "description": "Conta que responde / canal; null em chamado sem conta" },
+            "dependent_id": { "type": ["integer", "null"], "description": "FK legado user_dependents.id; preferir subject_id" }
           }
         },
         "event_id": { "type": ["string", "null"] },

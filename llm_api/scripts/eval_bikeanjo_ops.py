@@ -127,7 +127,9 @@ PORTS = {
 }
 
 
-def run_port(client: httpx.Client, port: str) -> bool:
+def run_port(client: httpx.Client, port: str, record: list[dict] | None = None) -> bool:
+    """Run one port's eval set; print case by case. `record` (optional) receives
+    {"port", "id", "pass", "hard"} per case — scripts/eval_gate.py compares those."""
     stem, build = PORTS[port]
     hard_fail, soft_total, soft_ok = 0, 0, 0
     prefer_total, prefer_ok = 0, 0
@@ -151,6 +153,8 @@ def run_port(client: httpx.Client, port: str) -> bool:
             prefer_total += 1
             if any(s in raw for s in prefer):
                 prefer_ok += 1
+        if record is not None:
+            record.append({"port": port, "id": c["id"], "pass": not fails, "hard": hard})
         mark = "ok " if not fails else ("HARD" if hard else "miss")
         print(f"  {mark} {c['id']}  {'; '.join(fails) or c.get('why', '')}")
     rate = soft_ok / soft_total if soft_total else 1.0

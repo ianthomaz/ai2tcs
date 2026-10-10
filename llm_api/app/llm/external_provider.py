@@ -34,6 +34,17 @@ _NOT_CONFIGURED = (
 )
 
 
+
+def _usage_metrics(prompt_tokens: object, output_tokens: object) -> dict:
+    """Token counts the provider reported, in the shape of app/llm/metrics.py."""
+    out = {}
+    for key, raw in (("prompt_tokens", prompt_tokens), ("output_tokens", output_tokens)):
+        try:
+            out[key] = int(raw)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            continue
+    return out
+
 class OpenAIProvider(LLMProvider):
     """OpenAI Chat Completions API (also compatible with Gemini's OpenAI-compat endpoint)."""
 
@@ -45,6 +56,10 @@ class OpenAIProvider(LLMProvider):
         self._default_model = default_model
 
     async def chat(self, model: str, messages: list[dict], options: dict) -> str:
+        text, _ = await self.chat_with_metrics(model=model, messages=messages, options=options)
+        return text
+
+    async def chat_with_metrics(self, model: str, messages: list[dict], options: dict) -> tuple[str, dict]:
         effective_model = model or self._default_model
         payload: dict = {
             "model": effective_model,
@@ -60,7 +75,9 @@ class OpenAIProvider(LLMProvider):
             )
             resp.raise_for_status()
             data = resp.json()
-        return (data.get("choices") or [{}])[0].get("message", {}).get("content") or ""
+        usage = data.get("usage") or {}
+        text = (data.get("choices") or [{}])[0].get("message", {}).get("content") or ""
+        return text, _usage_metrics(usage.get("prompt_tokens"), usage.get("completion_tokens"))
 
 
 class AnthropicProvider(LLMProvider):
@@ -73,6 +90,10 @@ class AnthropicProvider(LLMProvider):
         self._default_model = default_model
 
     async def chat(self, model: str, messages: list[dict], options: dict) -> str:
+        text, _ = await self.chat_with_metrics(model=model, messages=messages, options=options)
+        return text
+
+    async def chat_with_metrics(self, model: str, messages: list[dict], options: dict) -> tuple[str, dict]:
         effective_model = model or self._default_model
         # Separate system message from the conversation
         system_text = ""
@@ -104,8 +125,10 @@ class AnthropicProvider(LLMProvider):
             )
             resp.raise_for_status()
             data = resp.json()
+        usage = data.get("usage") or {}
         content = data.get("content") or []
-        return next((b.get("text", "") for b in content if b.get("type") == "text"), "")
+        text = next((b.get("text", "") for b in content if b.get("type") == "text"), "")
+        return text, _usage_metrics(usage.get("input_tokens"), usage.get("output_tokens"))
 
 
 class GeminiProvider(LLMProvider):
@@ -120,6 +143,10 @@ class GeminiProvider(LLMProvider):
         self._default_model = default_model
 
     async def chat(self, model: str, messages: list[dict], options: dict) -> str:
+        text, _ = await self.chat_with_metrics(model=model, messages=messages, options=options)
+        return text
+
+    async def chat_with_metrics(self, model: str, messages: list[dict], options: dict) -> tuple[str, dict]:
         effective_model = model or self._default_model
         system_text = ""
         contents = []
@@ -151,8 +178,10 @@ class GeminiProvider(LLMProvider):
             resp = await client.post(url, json=payload, headers={"x-goog-api-key": self._api_key})
             resp.raise_for_status()
             data = resp.json()
+        usage = data.get("usageMetadata") or {}
+        metrics = _usage_metrics(usage.get("promptTokenCount"), usage.get("candidatesTokenCount"))
         candidates = data.get("candidates") or []
         if not candidates:
-            return ""
+            return "", metrics
         parts = (candidates[0].get("content") or {}).get("parts") or []
-        return "".join(p.get("text", "") for p in parts)
+        return "".join(p.get("text", "") for p in parts), metrics

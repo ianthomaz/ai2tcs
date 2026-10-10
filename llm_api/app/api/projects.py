@@ -1,10 +1,10 @@
 """CRUD endpoints for project management."""
 import json
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app import db as db_module
-from app.auth import require_token
+from app.auth import key_project_id, require_operator, require_token
 from app.ingest.indexer import get_index_stats
 from app.models import (
     ProjectCreateRequest,
@@ -49,8 +49,12 @@ def _project_to_response(
 
 
 @router.get("", response_model=ProjectListResponse)
-async def list_projects(_: None = Depends(require_token)):
+async def list_projects(request: Request, _: None = Depends(require_token)):
     projects = await db_module.project_list_all()
+    own = key_project_id(request)
+    if own:
+        # A project key sees its own project only.
+        projects = [p for p in projects if p.get("project_id") == own]
     items = []
     for proj in projects:
         themes = await db_module.project_get_themes(proj["project_id"])
@@ -69,7 +73,7 @@ async def get_project(project_id: str, _: None = Depends(require_token)):
 
 
 @router.post("", response_model=ProjectResponse, status_code=201)
-async def create_project(request: ProjectCreateRequest, _: None = Depends(require_token)):
+async def create_project(request: ProjectCreateRequest, _: None = Depends(require_operator)):
     existing = await db_module.project_get(request.project_id)
     if existing:
         raise HTTPException(status_code=409, detail="project_id already exists")
@@ -103,7 +107,7 @@ async def update_project(project_id: str, request: ProjectUpdateRequest, _: None
 
 
 @router.delete("/{project_id}", status_code=204)
-async def delete_project(project_id: str, _: None = Depends(require_token)):
+async def delete_project(project_id: str, _: None = Depends(require_operator)):
     existing = await db_module.project_get(project_id)
     if not existing:
         raise HTTPException(status_code=404, detail="project not found")

@@ -28,3 +28,12 @@ def test_router_user_parts_include_current_time_label():
     joined = "\n".join(parts)
     assert "Hora local do contato agora: 2026-08-06T20:15:00-03:00" in joined
     assert "Próximo evento: EBA Natal" in joined
+
+
+def test_router_answer_style_follows_the_project_tone():
+    from app.api.message_router import router_system_prompt
+
+    assert "non-empty friendly Portuguese" in router_system_prompt({"config_json": {}})
+    direct = router_system_prompt({"config_json": {"llm_options": {"tone_of_voice": "direct"}}})
+    assert "short, direct (no small talk, no enthusiasm) Portuguese" in direct
+    assert "friendly" not in direct and "{answer_style}" not in direct

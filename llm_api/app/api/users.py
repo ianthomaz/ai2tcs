@@ -4,7 +4,7 @@ from datetime import date, datetime
 from fastapi import APIRouter, Depends, HTTPException
 
 from app import db as db_module
-from app.auth import require_token
+from app.auth import require_operator, require_token
 from app.models import (
     ConversationResetRequest,
     ConversationResetResponse,
@@ -92,7 +92,7 @@ async def reset_conversation(request: ConversationResetRequest, _: None = Depend
 
 
 @router.post("/conversation/maintenance", response_model=MaintenanceResponse)
-async def run_maintenance(_: None = Depends(require_token)):
+async def run_maintenance(_: None = Depends(require_operator)):
     """Manually trigger conversation maintenance (summarize + purge old messages)."""
     from app.jobs.conversation_maintenance import summarize_and_purge_old_conversations
     stats = await summarize_and_purge_old_conversations(max_age_days=30)

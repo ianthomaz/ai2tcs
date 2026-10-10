@@ -1,0 +1,47 @@
+{
+  "description": "Pedido e resposta de POST /task/text_triage com a chave do Bike Anjo. Texto inventado.",
+  "cases": [
+    {
+      "name": "parceria por e-mail",
+      "request": {
+        "text": "Olá, somos uma loja de bicicletas em Curitiba e queremos apoiar as oficinas de vocês. Com quem falo?",
+        "subject": "Apoio às oficinas",
+        "channel": "email",
+        "sender_known": false
+      },
+      "response_ok": {
+        "status": "ok",
+        "urgency": "none",
+        "priority": 3,
+        "category": "partnership",
+        "summary": "Loja de bicicletas quer apoiar as oficinas e pergunta com quem falar.",
+        "needs_reply": true,
+        "suggested_project": null,
+        "confidence": 0.82,
+        "model": "smart",
+        "prompt_version": "text-triage-v1",
+        "warnings": []
+      }
+    },
+    {
+      "name": "pedido de bike anjo",
+      "request": {
+        "text": "Quero aprender a pedalar no trânsito para ir ao trabalho. Como peço um bike anjo?",
+        "channel": "email"
+      },
+      "response_ok": {
+        "status": "ok",
+        "urgency": "none",
+        "priority": 2,
+        "category": "bike_anjo_request",
+        "summary": "Pessoa quer aprender a pedalar no trânsito e pergunta como pedir um bike anjo.",
+        "needs_reply": true,
+        "suggested_project": null,
+        "confidence": 0.9,
+        "model": "smart",
+        "prompt_version": "text-triage-v1",
+        "warnings": []
+      }
+    }
+  ]
+}

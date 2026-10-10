@@ -1,9 +1,7 @@
 """POST /edu/* routes for Educational API (sync Ollama)."""
-import asyncio
 import logging
 import time
 
-import ollama
 from fastapi import APIRouter, Depends, HTTPException
 from app.auth import require_token
 from app.config import settings
@@ -32,6 +30,7 @@ from app.edu.structured_reply import (
     parse_edu_chat_response,
     structured_reply_valid,
 )
+from app.llm import direct as llm_direct
 
 logger = logging.getLogger(__name__)
 
@@ -41,8 +40,9 @@ router = APIRouter(prefix="/edu", tags=["edu"])
 async def _ollama_edu_chat(
     messages: list, model_name: str, temperature: float, num_predict: int
 ) -> str:
-    response = await asyncio.to_thread(
-        ollama.chat,
+    response = await llm_direct.ollama_chat(
+        "edu_chat",
+        None,
         model=model_name,
         messages=messages,
         options={"temperature": temperature, "num_predict": num_predict},
@@ -155,11 +155,12 @@ async def edu_exercise(request: ExerciseRequest, _: None = Depends(require_token
 
     # 3. Call Ollama
     try:
-        response = await asyncio.to_thread(
-            ollama.chat,
+        response = await llm_direct.ollama_chat(
+            "edu_exercises",
+            None,
             model=settings.get_model_name(request.model, default_alias="smart"),
             messages=messages,
-            options={"temperature": 0.3, "num_predict": 1024}
+            options={"temperature": 0.3, "num_predict": 1024},
         )
         content = (response.get("message") or {}).get("content") or ""
 

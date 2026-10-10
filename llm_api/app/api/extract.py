@@ -1,18 +1,18 @@
 """POST /extract and POST /extract-multi — zapzap onboarding (sync Ollama)."""
-import asyncio
 import json
 import re
 from datetime import datetime
 
-import ollama
 
 from fastapi import APIRouter, Depends, Request
 
 from app.auth import require_token
 from app.config import settings
 from app.job_audit import log_sync_llm_job
+from app.llm import metrics as llm_metrics
 from app.models import ExtractMultiRequest, ExtractMultiResponse, ExtractRequest, ExtractResponse
 from app.registry import get_extract_steps_config, get_project
+from app.llm import direct as llm_direct
 
 router = APIRouter(tags=["extract"])
 
@@ -70,6 +70,37 @@ def _normalize_nascimento(raw: str) -> str | None:
     if re.fullmatch(r"\d{2}/\d{2}/\d{4}", s):
         return s
     return None
+
+
+# reply_intent: the question lists the allowed codes, one per line as "- code: meaning"
+# (zapzap/lib/reply-reader.js buildLlmQuestion) or inline as "Codes: a, b, c".
+_REPLY_INTENT_LINE = re.compile(r"^\s*-\s*([a-z0-9_]+)\s*:", re.MULTILINE)
+_REPLY_INTENT_INLINE = re.compile(r"codes?\s*:\s*([a-z0-9_,\s]+)", re.IGNORECASE)
+_REPLY_INTENT_TOKEN = re.compile(r"[a-z0-9_]+")
+
+
+def reply_intent_codes(question: str) -> list[str]:
+    """Codes the question allows, plus `none`. Empty when the question lists none."""
+    codes = _REPLY_INTENT_LINE.findall(question or "")
+    if not codes:
+        m = _REPLY_INTENT_INLINE.search(question or "")
+        if m:
+            codes = [c.strip().lower() for c in m.group(1).split(",") if c.strip()]
+    if not codes:
+        return []
+    return list(dict.fromkeys([*codes, "none"]))
+
+
+def normalize_reply_intent(raw: str, question: str) -> str | None:
+    """First code-shaped token of the answer, kept only when the question allows it."""
+    token = _REPLY_INTENT_TOKEN.search((raw or "").strip().lower())
+    if not token:
+        return None
+    code = token.group(0)
+    allowed = reply_intent_codes(question)
+    if allowed and code not in allowed:
+        return None
+    return code
 
 
 def _normalize_extracted(step: str, raw: str) -> str | None:
@@ -181,8 +212,10 @@ async def _extract_payment_boleto_confirmation(req: Request, request: ExtractReq
     user_content = f"Server context:\n{request.question}\n\nUser message:\n{request.user_reply}\n"
     model_alias = settings.get_model_name(request.model, default_alias="smart")
     try:
-        response = await asyncio.to_thread(
-            ollama.chat,
+        response = await llm_direct.ollama_chat(
+            "extract_boleto_confirmation",
+            request.project_id,
+            timeout_s=settings.extract_timeout_s,
             model=model_alias,
             messages=[
                 {"role": "system", "content": system},
@@ -261,8 +294,10 @@ async def extract_multi(req: Request, request: ExtractMultiRequest, _: None = De
 
     model_alias = settings.get_model_name(request.model, default_alias="fast")
     try:
-        response = await asyncio.to_thread(
-            ollama.chat,
+        response = await llm_direct.ollama_chat(
+            "extract_multi",
+            request.project_id,
+            timeout_s=settings.extract_timeout_s,
             model=model_alias,
             messages=[
                 {"role": "system", "content": system},
@@ -345,8 +380,10 @@ async def extract(req: Request, request: ExtractRequest, _: None = Depends(requi
     )
 
     try:
-        response = await asyncio.to_thread(
-            ollama.chat,
+        response = await llm_direct.ollama_chat(
+            f"extract_{step}",
+            request.project_id,
+            timeout_s=settings.extract_timeout_s,
             model=model_alias,
             messages=[
                 {"role": "system", "content": system},
@@ -355,7 +392,11 @@ async def extract(req: Request, request: ExtractRequest, _: None = Depends(requi
             options={"temperature": 0.1, "num_predict": 64},
         )
         content = (response.get("message") or {}).get("content") or ""
-        value = _normalize_extracted(step, content)
+        call_metrics = llm_metrics.from_ollama(response)
+        if step == "reply_intent":
+            value = normalize_reply_intent(content, request.question)
+        else:
+            value = _normalize_extracted(step, content)
         out = ExtractResponse(extracted=value)
         await log_sync_llm_job(
             req,
@@ -365,7 +406,7 @@ async def extract(req: Request, request: ExtractRequest, _: None = Depends(requi
             status="done",
             model_alias=model_alias,
             answer=out,
-            user_context={"endpoint": "/extract", "step": step},
+            user_context={"endpoint": "/extract", "step": step, **({"__metrics": call_metrics} if call_metrics else {})},
         )
         return out
     except Exception:

@@ -13,10 +13,10 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 
-import ollama
 
 from app import db as db_module
 from app.config import settings
+from app.llm import direct as llm_direct
 
 logger = logging.getLogger(__name__)
 
@@ -94,8 +94,9 @@ async def summarize_and_purge_old_conversations(max_age_days: int = 30) -> dict:
             prompt = SUMMARY_PROMPT.format(conversation=conversation_text)
 
             try:
-                response = await asyncio.to_thread(
-                    ollama.chat,
+                response = await llm_direct.ollama_chat(
+                    "conversation_summary",
+                    project_id,
                     model=settings.get_model_name(None, default_alias="fast"),
                     messages=[{"role": "user", "content": prompt}],
                     options={"temperature": 0.1, "num_predict": 512},

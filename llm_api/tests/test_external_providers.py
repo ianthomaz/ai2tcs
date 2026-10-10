@@ -49,3 +49,41 @@ async def test_gemini_key_travels_in_header_not_url():
 def test_gemini_requires_api_key():
     with pytest.raises(RuntimeError, match="not configured"):
         GeminiProvider(api_key="", default_model="gemini-2.0-flash")
+
+
+def _client_returning(data: dict) -> MagicMock:
+    mock_client = MagicMock()
+    mock_client.post = AsyncMock(return_value=_FakeResponse(data))
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
+    return mock_client
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "provider,data",
+    [
+        (
+            lambda: __import__("app.llm.external_provider", fromlist=["x"]).OpenAIProvider("k", "https://x", "m"),
+            {"choices": [{"message": {"content": "oi"}}], "usage": {"prompt_tokens": 120, "completion_tokens": 9}},
+        ),
+        (
+            lambda: __import__("app.llm.external_provider", fromlist=["x"]).AnthropicProvider("k", "m"),
+            {"content": [{"type": "text", "text": "oi"}], "usage": {"input_tokens": 120, "output_tokens": 9}},
+        ),
+        (
+            lambda: GeminiProvider("k", "m"),
+            {
+                "candidates": [{"content": {"parts": [{"text": "oi"}]}}],
+                "usageMetadata": {"promptTokenCount": 120, "candidatesTokenCount": 9},
+            },
+        ),
+    ],
+)
+async def test_external_providers_report_token_usage(provider, data):
+    with patch("app.llm.external_provider.httpx.AsyncClient", return_value=_client_returning(data)):
+        text, metrics = await provider().chat_with_metrics(
+            model="", messages=[{"role": "user", "content": "oi"}], options={}
+        )
+    assert text == "oi"
+    assert metrics == {"prompt_tokens": 120, "output_tokens": 9}

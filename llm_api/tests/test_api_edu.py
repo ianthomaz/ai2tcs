@@ -26,7 +26,7 @@ async def test_edu_chat_plain_text_triggers_retry_then_structured_fallback(clien
                 calls.append(func.__name__)
                 return {"message": {"content": "Olá! Sou seu tutor de Mandarim."}}
 
-            with patch("app.api.edu.asyncio.to_thread", side_effect=fake_to_thread):
+            with patch("app.llm.direct.asyncio.to_thread", side_effect=fake_to_thread):
                 body = {
                     "message": "Oi tutor!",
                     "level": "HSK1",
@@ -65,7 +65,7 @@ async def test_edu_chat_structured_response(client):
             async def fake_to_thread(_func, *_a, **_kw):
                 return {"message": {"content": json.dumps(payload, ensure_ascii=False)}}
 
-            with patch("app.api.edu.asyncio.to_thread", side_effect=fake_to_thread):
+            with patch("app.llm.direct.asyncio.to_thread", side_effect=fake_to_thread):
                 r = await client.post(
                     "/edu/chat",
                     json={"message": "Oi!", "level": "HSK1", "language": "zh-CN"},
@@ -108,7 +108,7 @@ async def test_edu_chat_retry_then_valid_json(client):
                     return {"message": {"content": bad}}
                 return {"message": {"content": json.dumps(good, ensure_ascii=False)}}
 
-            with patch("app.api.edu.asyncio.to_thread", side_effect=fake_to_thread):
+            with patch("app.llm.direct.asyncio.to_thread", side_effect=fake_to_thread):
                 r = await client.post(
                     "/edu/chat",
                     json={"message": "Oi!", "level": "HSK1", "language": "zh-CN"},
@@ -132,7 +132,7 @@ async def test_edu_exercise_returns_exercises(client):
         async def fake_to_thread(_func, *_a, **_kw):
             return {"message": {"content": f'[{"{"}"type": "translation", "prompt": "Traduza: 你好", "answer": "Olá", "vocab_id": "{vocab_id}"{"}"}]'}}
 
-        with patch("app.api.edu.asyncio.to_thread", side_effect=fake_to_thread):
+        with patch("app.llm.direct.asyncio.to_thread", side_effect=fake_to_thread):
             body = {
                 "level": "HSK1",
                 "count": 1,

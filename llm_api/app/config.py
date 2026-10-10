@@ -25,6 +25,26 @@ class Settings(BaseSettings):
     # /ask and /router main chat call: without this, provider.chat() had no timeout
     # at all — a hung Ollama call blocked its worker's job queue forever.
     llm_chat_timeout_s: float = 120.0
+    # POST /extract single-field call. Below the zapzap clients (onboarding 5s default,
+    # reply_intent 15s): past this the route answers extracted=null instead of hanging.
+    extract_timeout_s: float = 30.0
+    # POST /router model call (sync, fast model). Past this the router escalates instead of hanging.
+    router_timeout_s: float = 30.0
+    # LLM call metrics (app/llm/metrics.py): prompt at or above this many tokens logs `llm_heavy`.
+    llm_heavy_prompt_tokens: int = 3500
+    # Context the installed Ollama gives a model when num_ctx is not set (2048 or 4096 by
+    # version). A prompt at 90% of it is flagged near_ctx_limit: it may have been cut.
+    llm_context_reference_tokens: int = 4096
+    # Context window sent to Ollama (num_ctx) when the project does not set llm_options.num_ctx.
+    # 0 = do not send: Ollama uses its own default (llm_context_reference_tokens).
+    ollama_num_ctx: int = 0
+    # How long Ollama keeps a model in memory after a call ("30m", "2h", "-1" = forever).
+    # Empty = Ollama's own default (5m). Raise it when llm_call shows high load_ms.
+    ollama_keep_alive: str = ""
+    # Days a Job keeps its text (question, answer, sources, transcript, client context).
+    # Older rows keep only counts, status, metrics and signals. 0 = keep forever.
+    # Per project: config_json.policies.text_retention_days (wins over this).
+    job_text_retention_days: int = 0
     # /edu/chat: default to fast model for lower latency on short structured replies; override per-request with body.model or env.
     edu_chat_default_model_alias: str = "fast"
     edu_chat_num_predict: int = 512
@@ -47,6 +67,11 @@ class Settings(BaseSettings):
     bikeanjo_ops_num_predict: int = 700
     bikeanjo_ops_temperature: float = 0.1
     bikeanjo_reply_rag_context_max_chars: int = 6000
+    # Text task engine (app/tasks/engine.py, POST /task/{task_id}) — defaults for every task.
+    task_model_alias: str = "smart"
+    task_timeout_s: float = 45.0
+    task_num_predict: int = 700
+    task_temperature: float = 0.1
     # Dashboard /usage: max GiB for Ollama memory bar (unified RAM / VRAM reference, e.g. 32 GB Mac)
     dashboard_ollama_memory_reference_gib: float = 32.0
     # Legacy HTML login (only if Google OAuth is not configured)

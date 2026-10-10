@@ -126,6 +126,15 @@ Isto já existia nas rotas antigas. A conferência nova (corpo, `X-Project-Id`, 
 Rotas **exclusivas de um projeto** não aceitam o global em caso nenhum — hoje as do Bike
 Anjo ([18](./18-bikeanjo-ops-ports.md)).
 
+### 2.2 O que uma chave de projeto enxerga
+
+| Rota | Chave de projeto | Token global |
+|---|---|---|
+| `GET /status/{id}`, `GET /result/{id}`, `POST /jobs/{id}/cancel` | só job do próprio projeto; de outro → 404 (não revela que existe) | qualquer job |
+| `GET /jobs` | só o próprio projeto | todos, ou o `project_id` pedido |
+| `GET /projects` | só o próprio projeto | todos |
+| `POST /projects`, `DELETE /projects/{id}`, `GET /jobs/stats`, `POST /users/conversation/maintenance` | 403 | sim |
+
 Histórico da migração: [`03-api-reintegration.md`](03-api-reintegration.md).
 
 ---
@@ -145,6 +154,7 @@ Histórico da migração: [`03-api-reintegration.md`](03-api-reintegration.md).
 | **POST** | **`/boletoExtract`** | **Extração de boleto bancário** — mesmo contrato de fonte que `/nfExtract` (PDF/imagem). Campos: `beneficiary_document`, `payer_document`, `digitable_line`, `barcode`, `due_date`, `amount`, etc. |
 | **POST** | **`/nabilvideomap/qualify-caption`** | **Qualificação síncrona de legenda** (ex.: catálogo de conteúdo / nabilVideoMap) — JSON; auth § 2. Corpo e chaves de resposta: **§ 1.2**. Detalhe de prompts/RAG por ambiente: acordar com manutenção ou notas no clone privado. |
 | **POST** | **`/feedbackTriage`** · **`/healthNormalize`** · **`/replySuggest`** | **Exclusivas do Bike Anjo** — só a chave `bikeanjoall_2026`; token global ou outra chave → 403. JSON síncrono, erro de conteúdo em HTTP 200. Ver [18-bikeanjo-ops-ports.md](./18-bikeanjo-ops-ports.md). |
+| **POST** | **`/task/{task_id}`** | **Tarefa de texto** (qualquer projeto que ligou a tarefa em `config_json.tasks`) — JSON síncrono, mesmo envelope das portas do Bike Anjo. `GET /tasks` lista o que a chave pode rodar. Ver [20-text-tasks.md](./20-text-tasks.md). |
 | **POST** | **`/router`** | **Roteador de mensagem** — ver § 3.2 (orienta: biblioteca vs fluxo; decisão é do orquestrador) |
 | POST | `/ingest` | Indexar/reindexar biblioteca; cria projeto se não existir (com sources no body ou env) |
 | **POST** | **`/ingest/upload`** | **Upload multipart** de um ficheiro para o disco do projeto (ou biblioteca partilhada) + fila de ingest incremental — ver [`03-api-reintegration.md`](03-api-reintegration.md) §4 |
@@ -201,7 +211,7 @@ ou, quando não for possível extrair:
 
 **Steps suportados (onboarding):** `interesse`, `nome`, `cpf`, `email`, `nascimento`, `cep`.
 
-**Step `reply_intent` (leitura de resposta / Zap shadow):** devolve **um código** da lista enviada em `question` (minúsculas, com underscores), ou `none` se incerto. Não inventa schema.
+**Step `reply_intent` (leitura de resposta / Zap shadow):** devolve **um código** da lista enviada em `question` (minúsculas, com underscores), ou `none` se incerto. A lista vem uma por linha (`- código: significado`, o formato do `zapzap/lib/reply-reader.js`) ou em linha (`Codes: a, b`). O serviço tira aspas e pontuação da resposta e devolve `null` para código fora da lista. Exemplos: `llm_api/contracts/bikeanjo/extract.examples.json`. A chamada ao modelo tem teto de `EXTRACT_TIMEOUT_S` (30 s); estourou, `extracted: null`.
 
 **Step extra (pedido de pagamento / zapzap):** `payment_boleto_confirmation`
 
@@ -401,7 +411,12 @@ llm_stt_completed_total 42
 llm_stt_failed_total 1
 llm_stt_transcribe_seconds_sum 180.5
 llm_stt_transcribe_seconds_avg 4.298
+llm_calls_heavy_24h{project="bikeanjoall_2026"} 3
+llm_calls_near_ctx_limit_24h{project="bikeanjoall_2026"} 0
 ```
+
+Resposta em `text/plain`. `llm_calls_*` contam, por projeto e nas últimas 24 h, as chamadas ao
+modelo com prompt pesado ou perto do limite de contexto ([19 § 6](./19-optimization-review.md)).
 
 Útil para monitoramento com Prometheus/Grafana. **Não exige** `Authorization` (verifique se sua instalação expõe `/metrics` ou protege via proxy).
 
@@ -580,9 +595,20 @@ Calibração de RAG e anti-bleed entre projectos vivem no **seed**; o cliente s�
   ],
   "confidence": "high",
   "transcript": null,
-  "stt_metadata": null
+  "stt_metadata": null,
+  "signals": {
+    "best_distance": 0.41, "chunks_kept": 3, "sanitize_hit": false, "guard_hit": false,
+    "reflection_changed": false, "answer_chars": 118, "prompt_tokens": 2610, "near_ctx_limit": false
+  }
 }
 ```
+
+**Campo `signals`:** o que o serviço sabe da resposta — não é opinião do modelo. `confidence`
+continua igual (`high` quando houve trecho). `best_distance` é a distância do melhor trecho
+(menor = mais perto); `guard_hit`/`sanitize_hit` dizem se a trava do projeto ou a limpeza de
+frase mexeu no texto; `near_ctx_limit` diz se o prompt chegou a 90% da janela de contexto.
+O `/router` devolve o mesmo bloco (sem `reflection_changed`). Campo aditivo: cliente que não
+lê não muda ([19 § 7](./19-optimization-review.md)).
 
 Em jobs originados por **`/audio/ask`**, `transcript` contém o texto reconhecido no áudio e `stt_metadata` os metadados do STT; `answer` é a resposta do RAG. Em **`/audio/transcribe`**, `transcript` repete o texto e `answer` também (transcrição apenas).
 

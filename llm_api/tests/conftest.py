@@ -31,3 +31,10 @@ async def client(mock_pool):
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as ac:
             yield ac
+
+
+@pytest.fixture(autouse=True)
+def _no_heavy_counts_db():
+    """/metrics reads heavy-call counts from Postgres; tests without a DB get none."""
+    with patch("app.db.llm_heavy_counts_24h", new_callable=AsyncMock, return_value={}):
+        yield
