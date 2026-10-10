@@ -67,6 +67,11 @@ class Settings(BaseSettings):
     bikeanjo_ops_num_predict: int = 700
     bikeanjo_ops_temperature: float = 0.1
     bikeanjo_reply_rag_context_max_chars: int = 6000
+    # Text task engine (app/tasks/engine.py, POST /task/{task_id}) — defaults for every task.
+    task_model_alias: str = "smart"
+    task_timeout_s: float = 45.0
+    task_num_predict: int = 700
+    task_temperature: float = 0.1
     # Dashboard /usage: max GiB for Ollama memory bar (unified RAM / VRAM reference, e.g. 32 GB Mac)
     dashboard_ollama_memory_reference_gib: float = 32.0
     # Legacy HTML login (only if Google OAuth is not configured)

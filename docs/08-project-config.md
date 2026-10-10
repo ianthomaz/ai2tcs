@@ -536,3 +536,14 @@ contatos. Ligar depois de `scripts/eval_gate.py` aprovar ([19 § A6](./19-optimi
 Depois de N dias, o job do projeto perde o texto (pergunta, resposta, trechos, transcrição,
 contexto do cliente) e guarda só status, métricas e sinais. Sem a chave vale
 `JOB_TEXT_RETENTION_DAYS` do `.env`; `0` guarda para sempre. Roda na manutenção de madrugada.
+
+### `tasks` — tarefas de texto ligadas no projeto
+
+`config_json.tasks.<task_id>` liga uma tarefa de arquivo de `POST /task/{task_id}` para o
+projeto e guarda o vocabulário dela. Sem a chave, a tarefa responde 403 ao projeto.
+
+```json
+{ "tasks": { "text_triage": { "categories": ["parceria", "suporte", "imprensa", "outro"] } } }
+```
+
+Detalhe: [20-text-tasks.md](./20-text-tasks.md).

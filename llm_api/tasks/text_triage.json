@@ -1,0 +1,38 @@
+{
+  "task_id": "text_triage",
+  "description": "Texto que chegou a um projeto (e-mail, formulário, chamado, chat) → urgência, prioridade, categoria do projeto, resumo curto e se pede resposta. Não responde a quem escreveu.",
+  "prompt_file": "text-triage-v1.md",
+  "prompt_version": "text-triage-v1",
+  "input_schema": {
+    "type": "object",
+    "required": ["text"],
+    "properties": {
+      "text": { "type": "string", "minLength": 1, "maxLength": 12000 },
+      "subject": { "type": ["string", "null"], "maxLength": 500 },
+      "channel": { "enum": ["email", "form", "ticket", "chat", "other"] },
+      "sender_known": { "type": ["boolean", "null"], "description": "remetente já tem conta/cadastro no projeto" },
+      "candidate_projects": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "projetos possíveis quando a origem é ambígua (só com o token do operador)"
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "required": ["urgency", "priority", "category", "summary", "needs_reply", "confidence"],
+    "properties": {
+      "urgency": { "enum": ["none", "watch", "urgent"] },
+      "priority": { "type": "integer", "minimum": 1, "maximum": 5 },
+      "category": { "type": "string" },
+      "summary": { "type": "string", "maxLength": 240 },
+      "needs_reply": { "type": "boolean" },
+      "suggested_project": { "type": ["string", "null"] },
+      "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+    }
+  },
+  "project_vocabulary": { "category": "categories" },
+  "input_vocabulary": { "suggested_project": "candidate_projects" },
+  "omit_from_model": [],
+  "audit_fields": ["urgency", "priority", "category", "needs_reply", "suggested_project", "confidence"]
+}

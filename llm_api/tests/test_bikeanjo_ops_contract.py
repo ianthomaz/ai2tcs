@@ -80,7 +80,7 @@ def _fake_chat(content: str):
             assert options.get("format") == "json"
             return content
 
-    return patch("app.bikeanjo.common.get_provider", return_value=_P())
+    return patch("app.tasks.engine.get_provider", return_value=_P())
 
 
 def _fake_retrieve(names: list[str]):

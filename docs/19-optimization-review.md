@@ -62,7 +62,7 @@ Classificação: **M** = medir antes de mexer · **B** = ganho barato, sem mudar
 | A9 | H | **Duas fontes do comportamento do bot.** `flows.js` manda 4,9 mil caracteres de regra a cada `/ask`; o seed do ai2tcs tem outras 1,1 mil (`BIKEANJO_SYSTEM_INSTRUCTION`). Parte se repete, e o texto do cliente está em pt-PT («acções», «és», «manténs») enquanto proíbe «telemóvel». Regra repetida em dois lugares diverge com o tempo. | `zapzap/flows.js:716`, `scripts/seed_bikeanjoall.py` |
 | A10 | Q | **[feito 10/out: estilo do `answer_now` vem de `llm_options.tone_of_voice` declarado; sem declarar, «friendly»]** **Conflito de tom no roteador.** `ROUTER_SYSTEM` pede resposta «friendly»; o bloco do Bike Anjo, anexado depois, pede «sem entusiasmo». O modelo pequeno (fast) resolve como quiser. | `message_router.py` `ROUTER_SYSTEM` |
 | A11 | Q | **[feito 10/out: `scripts/eval_gate.py`]** **Três avaliações soltas.** `scripts/eval_rag.py` (perguntas-ouro, já compara config antes/depois), `scripts/eval_bikeanjo_ops.py` (portas de texto) e o adaptador shadow→eval no Bike Anjo. Não há um comando único que diga «esta mudança de prompt/config piorou alguma coisa». | `scripts/` |
-| A12 | V | **O motor genérico já existe, com nome de projeto.** `app/bikeanjo/common.py` (portão por projeto, envelope, prompt lido de arquivo, `chat_json` com reparo, allowlist) é 80% de um executor de tarefas de texto. O passo `reply_intent` em `/extract` é mais uma classificação com lista fechada, só que em texto livre (sem `format: "json"`); o serviço confere o código contra a lista que vem na pergunta (out/2026) e o zapzap confere de novo. Cada tarefa nova repete o molde em vez de ser configuração. | `app/bikeanjo/`, `app/api/extract.py` |
+| A12 | V | **[feito 10/out: `POST /task/{task_id}`, [20](./20-text-tasks.md); primeira tarefa de arquivo `text_triage`]** **O motor genérico já existe, com nome de projeto.** `app/bikeanjo/common.py` (portão por projeto, envelope, prompt lido de arquivo, `chat_json` com reparo, allowlist) é 80% de um executor de tarefas de texto. O passo `reply_intent` em `/extract` é mais uma classificação com lista fechada, só que em texto livre (sem `format: "json"`); o serviço confere o código contra a lista que vem na pergunta (out/2026) e o zapzap confere de novo. Cada tarefa nova repete o molde em vez de ser configuração. | `app/bikeanjo/`, `app/api/extract.py` |
 
 Pendências de segurança e operação já listadas e não repetidas aqui: [18 § 9](./18-bikeanjo-ops-ports.md)
 (chave de projeto lê `/status` e `/result` de qualquer job; re-ingest de `webplacecc`).
@@ -116,7 +116,7 @@ contrato com cliente.
 
 ### Onda 3 — versatilidade (porta genérica, sem quebrar as atuais)
 
-11. **A12:** um executor `POST /task/{task_id}`: a tarefa é **arquivo** (prompt,
+11. **A12 [feito 10/out — [20](./20-text-tasks.md)]:** um executor `POST /task/{task_id}`: a tarefa é **arquivo** (prompt,
     allowlist, esquema de entrada/saída, se usa RAG, `prompt_version`) num diretório de
     contratos por projeto; o executor é o `common.py` de hoje sem o nome Bike Anjo. A chave
     do projeto decide quais tarefas ela enxerga.

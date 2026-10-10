@@ -6,42 +6,40 @@ error is HTTP 200 with {"status": "error", "error": {"code", "message"}} (common
 """
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import re
 import unicodedata
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable, Literal
+from typing import Any, Callable
 
 from fastapi import Depends, HTTPException, Request
-from pydantic import BaseModel, ValidationError
 
 from app.auth import require_token
 from app.config import settings
-from app.llm import get_provider
-from app.llm import metrics as llm_metrics
-from app.registry import get_num_ctx
+from app.tasks import engine
+from app.tasks.engine import (  # noqa: F401 — re-exported for the Bike Anjo ports
+    PortError,
+    clamp_confidence,
+    compact_json,
+    error_body,
+    parse_json_object,
+    read_request,
+)
 
 logger = logging.getLogger(__name__)
 
 CONTRACTS_DIR = Path(__file__).resolve().parents[2] / "contracts" / "bikeanjo"
 
-ErrorCode = Literal["invalid_request", "timeout", "model_error", "unauthorized"]
-
-
-class PortError(Exception):
-    """Content-level failure, answered as HTTP 200 with the common error envelope."""
-
-    def __init__(self, code: ErrorCode, message: str) -> None:
-        super().__init__(message)
-        self.code = code
-        self.message = message
-
-
-def error_body(code: ErrorCode, message: str) -> dict[str, Any]:
-    return {"status": "error", "error": {"code": code, "message": message}}
+__all__ = [
+    "PortError",
+    "clamp_confidence",
+    "compact_json",
+    "error_body",
+    "parse_json_object",
+    "read_request",
+]
 
 
 async def require_bikeanjo_project(request: Request, _: None = Depends(require_token)) -> str:
@@ -54,22 +52,6 @@ async def require_bikeanjo_project(request: Request, _: None = Depends(require_t
     if isinstance(scoped, str) and scoped in settings.bikeanjo_ops_project_id_set():
         return scoped
     raise HTTPException(status_code=403, detail="Bike Anjo ports require the Bike Anjo project key")
-
-
-async def read_request(request: Request, model: type[BaseModel]) -> BaseModel:
-    """Parse the JSON body into `model`; unknown fields are ignored (models use extra='ignore')."""
-    try:
-        raw = await request.json()
-    except Exception:
-        raise PortError("invalid_request", "O corpo precisa ser JSON.")
-    if not isinstance(raw, dict):
-        raise PortError("invalid_request", "O corpo precisa ser um objeto JSON.")
-    try:
-        return model.model_validate(raw)
-    except ValidationError as e:
-        first = e.errors()[0] if e.errors() else {}
-        where = ".".join(str(p) for p in first.get("loc", ())) or "body"
-        raise PortError("invalid_request", f"Campo inválido: {where} — {first.get('msg', 'inválido')}")
 
 
 # ---------------------------------------------------------------- contract files
@@ -94,18 +76,6 @@ def load_retrieval_hints() -> dict[str, Any]:
 # ---------------------------------------------------------------- model call
 
 
-def parse_json_object(content: str) -> dict[str, Any] | None:
-    text = (content or "").strip()
-    m = re.search(r"\{[\s\S]*\}", text)
-    if not m:
-        return None
-    try:
-        out = json.loads(m.group())
-    except json.JSONDecodeError:
-        return None
-    return out if isinstance(out, dict) else None
-
-
 async def chat_json(
     project: dict | None,
     *,
@@ -114,72 +84,19 @@ async def chat_json(
     validate: Callable[[dict[str, Any]], list[str]] | None = None,
     attempts: int = 2,
 ) -> tuple[dict[str, Any], str]:
-    """One JSON object from the project's provider. Returns (object, model name).
-
-    `validate` lists what is missing in the object; a non-empty list asks the model again,
-    with the list as the repair hint. Raises PortError("timeout") when the model does not
-    answer within the port budget and PortError("model_error") when it fails or keeps
-    answering something unusable.
-    """
-    model_name = settings.get_model_name(settings.bikeanjo_ops_model_alias, default_alias="smart")
-    provider = get_provider(project or {})
-    options = {
-        "temperature": settings.bikeanjo_ops_temperature,
-        "num_predict": settings.bikeanjo_ops_num_predict,
-        "format": "json",
-        **({"num_ctx": num_ctx} if (num_ctx := get_num_ctx(project)) else {}),
-    }
-    messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
-    for attempt in range(attempts):
-        try:
-            call = getattr(provider, "chat_with_metrics", None)
-            if call is not None:
-                content, call_metrics = await asyncio.wait_for(
-                    call(model=model_name, messages=messages, options=options),
-                    timeout=settings.bikeanjo_ops_timeout_s,
-                )
-                llm_metrics.record(
-                    "bikeanjo_ops", (project or {}).get("project_id"), model_name, call_metrics, num_ctx
-                )
-            else:
-                content = await asyncio.wait_for(
-                    provider.chat(model=model_name, messages=messages, options=options),
-                    timeout=settings.bikeanjo_ops_timeout_s,
-                )
-        except asyncio.TimeoutError:
-            raise PortError("timeout", f"O modelo não respondeu em {settings.bikeanjo_ops_timeout_s:.0f}s.")
-        except Exception as e:
-            logger.warning("bikeanjo ops chat failed: %s", e)
-            raise PortError("model_error", "Falha ao chamar o modelo.")
-        parsed = parse_json_object(content)
-        problems = ["a resposta não é um objeto JSON"] if parsed is None else (validate(parsed) if validate else [])
-        if parsed is not None and not problems:
-            return parsed, model_name
-        logger.info("bikeanjo ops: unusable answer (attempt %d): %s", attempt + 1, problems)
-        messages = messages + [
-            {"role": "assistant", "content": content[:2000]},
-            {
-                "role": "user",
-                "content": "Corrija e responda de novo com UM objeto JSON válido e nada mais. Problemas: "
-                + "; ".join(problems),
-            },
-        ]
-    raise PortError("model_error", "O modelo não devolveu JSON válido: " + "; ".join(problems))
-
-
-def compact_json(payload: Any) -> str:
-    """Model input without indentation: the same data in fewer tokens."""
-    return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
-
-
-def clamp_confidence(raw: object) -> float:
-    try:
-        v = float(raw)  # type: ignore[arg-type]
-    except (TypeError, ValueError):
-        return 0.0
-    if v != v:  # NaN
-        return 0.0
-    return max(0.0, min(1.0, v))
+    """The task engine's chat_json with the Bike Anjo ports' budget (BIKEANJO_OPS_*)."""
+    return await engine.chat_json(
+        project,
+        system=system,
+        user=user,
+        validate=validate,
+        attempts=attempts,
+        kind="bikeanjo_ops",
+        model_alias=settings.bikeanjo_ops_model_alias,
+        timeout_s=settings.bikeanjo_ops_timeout_s,
+        num_predict=settings.bikeanjo_ops_num_predict,
+        temperature=settings.bikeanjo_ops_temperature,
+    )
 
 
 def fold(text: str) -> str:
