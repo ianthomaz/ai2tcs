@@ -103,4 +103,5 @@ async def result(job_id: str, _: None = Depends(require_token)):
         confidence=job.get("confidence"),
         transcript=job.get("transcript"),
         stt_metadata=job.get("stt_metadata"),
+        signals=job.get("signals"),
     )

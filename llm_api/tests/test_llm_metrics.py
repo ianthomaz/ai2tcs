@@ -158,3 +158,117 @@ def test_no_route_calls_ollama_chat_outside_the_doors():
         if call.search(line) and not line.lstrip().startswith("#")
     ]
     assert offenders == []
+
+
+# ---------------------------------------------------------------- L2: num_ctx per project
+
+
+def test_num_ctx_comes_from_the_project_then_the_global_default():
+    from app.registry import get_llm_config, get_num_ctx
+
+    with_ctx = {"config_json": {"llm_options": {"num_ctx": 8192}}}
+    without = {"config_json": {}}
+    assert get_num_ctx(with_ctx) == 8192 and get_llm_config(with_ctx)["num_ctx"] == 8192
+    assert get_num_ctx(without) is None and "num_ctx" not in get_llm_config(without)
+    with patch("app.config.settings.ollama_num_ctx", 6144):
+        assert get_num_ctx(without) == 6144
+        assert get_num_ctx(with_ctx) == 8192
+
+
+def test_near_limit_is_measured_against_the_window_actually_sent():
+    assert metrics.flags({"prompt_tokens": 3900})["near_ctx_limit"] is True
+    assert metrics.flags({"prompt_tokens": 3900}, ctx_tokens=8192)["near_ctx_limit"] is False
+    assert metrics.record("ask", "p", "m", {"prompt_tokens": 3900}, 8192)["ctx_tokens"] == 8192
+
+
+# ---------------------------------------------------------------- L1: answer signals
+
+
+def test_signals_describe_the_pipeline_not_the_model():
+    from app.llm import signals
+
+    out = signals.build(
+        chunks=[{"distance": 0.62}, {"distance": 0.41}, {"distance": None}],
+        answer=" Oi! ",
+        guard_hit=True,
+        metrics={"prompt_tokens": 2100, "near_ctx_limit": False},
+    )
+    assert out == {
+        "best_distance": 0.41,
+        "chunks_kept": 3,
+        "sanitize_hit": False,
+        "guard_hit": True,
+        "answer_chars": 3,
+        "prompt_tokens": 2100,
+        "near_ctx_limit": False,
+    }
+    assert signals.build(chunks=[], answer=None)["best_distance"] is None
+
+
+@pytest.mark.asyncio
+async def test_ask_job_stores_signals_and_result_returns_them(client):
+    project = {
+        "project_id": "p1",
+        "name": "P1",
+        "sources": [],
+        "config_json": {"rag_mode": "disabled", "llm_options": {"num_ctx": 8192}},
+    }
+    sent: dict = {}
+
+    class _P(LLMProvider):
+        async def chat(self, model, messages, options):
+            return "texto"
+
+        async def chat_with_metrics(self, model, messages, options):
+            sent.update(options)
+            return "texto", {"prompt_tokens": 120}
+
+    with patch("app.jobs.worker.get_project", new_callable=AsyncMock, return_value=project), patch(
+        "app.jobs.worker.get_rag_mode", return_value="disabled"
+    ), patch("app.jobs.worker.get_provider", return_value=_P()), patch(
+        "app.jobs.worker.db_module.job_update_status", new_callable=AsyncMock
+    ), patch(
+        "app.jobs.worker.db_module.job_merge_user_context", new_callable=AsyncMock
+    ) as merge:
+        await worker.run_rag_job("job-1", "p1", "oi?")
+    assert sent["num_ctx"] == 8192
+    stored = merge.await_args.args[1]
+    assert stored["__signals"]["chunks_kept"] == 0 and stored["__signals"]["answer_chars"] == 5
+    assert stored["__metrics"]["ctx_tokens"] == 8192
+
+    job = {"id": "job-1", "status": "done", "answer": "texto", "sources": [], "signals": stored["__signals"]}
+    with patch("app.config.settings.llm_api_token", "test-token"), patch(
+        "app.api.ask.db_module.job_get", new_callable=AsyncMock, return_value=job
+    ):
+        r = await client.get("/result/job-1", headers={"Authorization": "Bearer test-token"})
+    assert r.json()["signals"]["answer_chars"] == 5
+
+
+@pytest.mark.asyncio
+async def test_router_returns_signals_and_sends_the_project_window(client):
+    sent: dict = {}
+
+    class _P(LLMProvider):
+        async def chat(self, model, messages, options):
+            return ""
+
+        async def chat_with_metrics(self, model, messages, options):
+            sent.update(options)
+            return '{"action":"answer_now","suggested_route":"ask","answer":"Oi.","confidence":0.9}', {
+                "prompt_tokens": 900
+            }
+
+    project = {"project_id": "p1", "name": "P1", "sources": [], "config_json": {"llm_options": {"num_ctx": 8192}}}
+    chunks = [{"path": "a.md", "snippet": "x", "distance": 0.3}]
+    with patch("app.config.settings.llm_api_token", "test-token"), patch(
+        "app.api.message_router.get_project", new_callable=AsyncMock, return_value=project
+    ), patch("app.api.message_router.retrieve", new_callable=AsyncMock, return_value=chunks), patch(
+        "app.api.message_router.get_provider", return_value=_P()
+    ), patch("app.api.message_router.log_sync_llm_job", new_callable=AsyncMock):
+        r = await client.post(
+            "/router", json={"message": "oi?", "project_id": "p1"}, headers={"Authorization": "Bearer test-token"}
+        )
+    body = r.json()
+    assert sent["num_ctx"] == 8192
+    assert body["signals"]["best_distance"] == 0.3 and body["signals"]["chunks_kept"] == 1
+    assert body["signals"]["prompt_tokens"] == 900 and body["confidence"] == 0.9

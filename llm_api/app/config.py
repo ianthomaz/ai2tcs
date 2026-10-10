@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     # Context the installed Ollama gives a model when num_ctx is not set (2048 or 4096 by
     # version). A prompt at 90% of it is flagged near_ctx_limit: it may have been cut.
     llm_context_reference_tokens: int = 4096
+    # Context window sent to Ollama (num_ctx) when the project does not set llm_options.num_ctx.
+    # 0 = do not send: Ollama uses its own default (llm_context_reference_tokens).
+    ollama_num_ctx: int = 0
     # /edu/chat: default to fast model for lower latency on short structured replies; override per-request with body.model or env.
     edu_chat_default_model_alias: str = "fast"
     edu_chat_num_predict: int = 512

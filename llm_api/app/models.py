@@ -136,6 +136,11 @@ class ResultResponse(BaseModel):
         None,
         description="STT metadata: language, duration_seconds, transcribe_seconds, model, segment_count",
     )
+    signals: dict | None = Field(
+        None,
+        description="What the service knows about the answer (not the model's opinion): best_distance, "
+        "chunks_kept, sanitize_hit, guard_hit, reflection_changed, answer_chars, prompt_tokens, near_ctx_limit",
+    )
 
 
 # --- User Profile ---

@@ -10,7 +10,8 @@ from app.config import settings
 from app.job_audit import log_sync_llm_job
 from app.llm import get_provider
 from app.llm import metrics as llm_metrics
-from app.registry import get_project, get_rag_policies, get_router_config
+from app.llm import signals as llm_signals
+from app.registry import get_num_ctx, get_project, get_rag_policies, get_router_config
 from app.rag.prompt import is_shareable_url
 from app.rag.retrieve import retrieve
 from pydantic import BaseModel, ConfigDict, Field
@@ -124,6 +125,11 @@ class RouterResponse(BaseModel):
     obs: str | None = Field(None, description="Note for specialist")
     task_type: str | None = Field(None, description="chitchat | extract | rag_deep | reasoning | classification")
     confidence: float = Field(0.0, description="0.0 to 1.0")
+    signals: dict | None = Field(
+        None,
+        description="What the service knows about this decision (not the model's opinion): best_distance, "
+        "chunks_kept, guard_hit, answer_chars, prompt_tokens, near_ctx_limit",
+    )
 
 
 # Context fields worth adding to the retrieval query: free text that helps the
@@ -405,6 +411,7 @@ async def route_message(
         system_prompt = ROUTER_SYSTEM + ROUTER_SYSTEM_IAN_ZAP
 
     call_metrics: dict = {}
+    num_ctx = get_num_ctx(project)
     try:
         # Same provider as /ask (config_json.llm_provider), bounded: a hung model call
         # escalates instead of holding the request.
@@ -415,11 +422,16 @@ async def route_message(
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_content},
                 ],
-                options={"temperature": 0.1, "num_predict": 512, "format": "json"},
+                options={
+                    "temperature": 0.1,
+                    "num_predict": 512,
+                    "format": "json",
+                    **({"num_ctx": num_ctx} if num_ctx else {}),
+                },
             ),
             timeout=settings.router_timeout_s,
         )
-        call_metrics = llm_metrics.record("router", body.project_id, model_alias, call_metrics)
+        call_metrics = llm_metrics.record("router", body.project_id, model_alias, call_metrics, num_ctx)
     except Exception as e:
         if isinstance(e, asyncio.TimeoutError):
             e = RuntimeError(f"router model call timed out after {settings.router_timeout_s:.0f}s")
@@ -445,6 +457,7 @@ async def route_message(
 
     finalized = _finalize_router_response(data)
 
+    guard_hit = False
     if finalized.action == "answer_now" and finalized.answer:
         # /ask runs every answer through sanitize + the per-project bleed/forbidden-terms
         # guard (worker.py). answer_now skipped both — a router-generated reply could
@@ -454,6 +467,7 @@ async def route_message(
 
         cleaned = guard_answer_for_profile(_sanitize_answer(finalized.answer), project)
         if cleaned != finalized.answer:
+            guard_hit = True
             finalized = finalized.model_copy(update={"answer": cleaned})
         # Guard/sanitize may clear the text after finalize already ran. Mirror
         # _finalize_router_response: empty answer_now becomes escalate (Zap silence path).
@@ -489,6 +503,13 @@ async def route_message(
 
         asyncio.create_task(speculative_warmup(finalized.escalate_to))
 
+    finalized = finalized.model_copy(
+        update={
+            "signals": llm_signals.build(
+                chunks=chunks, answer=finalized.answer, guard_hit=guard_hit, metrics=call_metrics
+            )
+        }
+    )
     return await _audit_router(
         req, body, finalized, model_alias=model_alias, status="done", metrics=call_metrics
     )

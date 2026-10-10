@@ -192,13 +192,24 @@ async def job_insert_terminal_audit(
         return None
 
 
+def _json_object(raw: object) -> dict | None:
+    """jsonb column → dict (asyncpg may hand it back as text)."""
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            return None
+    return raw if isinstance(raw, dict) else None
+
+
 async def job_get(job_id: str) -> dict | None:
     async with (await get_pool()).acquire() as conn:
         row = await conn.fetchrow(
             """
             SELECT id, project_id, question, question_hash, status, progress, answer,
                    sources_json, confidence, error_message, created_at, updated_at,
-                   job_kind, model_alias, audio_path, transcript, stt_metadata_json
+                   job_kind, model_alias, audio_path, transcript, stt_metadata_json,
+                   user_context_json->'__signals' AS signals_json
             FROM "Job"
             WHERE id = $1
             """,
@@ -230,6 +241,7 @@ async def job_get(job_id: str) -> dict | None:
             "audio_path": row["audio_path"],
             "transcript": row["transcript"],
             "stt_metadata": stt_meta if isinstance(stt_meta, dict) else None,
+            "signals": _json_object(row["signals_json"]),
         }
 
 

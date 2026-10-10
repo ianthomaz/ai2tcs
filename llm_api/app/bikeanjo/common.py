@@ -22,6 +22,7 @@ from app.auth import require_token
 from app.config import settings
 from app.llm import get_provider
 from app.llm import metrics as llm_metrics
+from app.registry import get_num_ctx
 
 logger = logging.getLogger(__name__)
 
@@ -126,6 +127,7 @@ async def chat_json(
         "temperature": settings.bikeanjo_ops_temperature,
         "num_predict": settings.bikeanjo_ops_num_predict,
         "format": "json",
+        **({"num_ctx": num_ctx} if (num_ctx := get_num_ctx(project)) else {}),
     }
     messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
     for attempt in range(attempts):
@@ -136,7 +138,9 @@ async def chat_json(
                     call(model=model_name, messages=messages, options=options),
                     timeout=settings.bikeanjo_ops_timeout_s,
                 )
-                llm_metrics.record("bikeanjo_ops", (project or {}).get("project_id"), model_name, call_metrics)
+                llm_metrics.record(
+                    "bikeanjo_ops", (project or {}).get("project_id"), model_name, call_metrics, num_ctx
+                )
             else:
                 content = await asyncio.wait_for(
                     provider.chat(model=model_name, messages=messages, options=options),

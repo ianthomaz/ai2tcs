@@ -93,7 +93,10 @@ async def main():
                 },
                 # Canal WhatsApp: resposta curta. Sem isto o projeto herda o default
                 # "medium" = 2 a 4 parágrafos, que nenhum corpus consegue encurtar.
-                "llm_options": {"tone_of_voice": "direct", "message_size": "short"},
+                # num_ctx: regras (~1,4k tokens) + pergunta e trechos (~0,9k) + histórico (até
+                # ~0,7k) + resposta (até 1.024) passam do padrão do Ollama (4.096). Custo:
+                # memória no mini62 — conferir no /usage do dashboard depois do restart.
+                "llm_options": {"tone_of_voice": "direct", "message_size": "short", "num_ctx": 8192},
                 # Sem isto herda o fallback genérico ("convide para contato"), que
                 # empurra convite comercial quando o RAG vem fraco.
                 "no_answer_fallback": (

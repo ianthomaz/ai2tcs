@@ -5,7 +5,7 @@ dos dois lados, para `diff -r` servir de conferência.
 
 | | |
 |---|---|
-| origem | `bikeanjo2026all@9e1cfbe3` (branch `claude/bike-anjo-llm-integration-7fsuhp`, PR #228) |
+| origem | `bikeanjo2026all@2c829db8` (branch `claude/bike-anjo-llm-integration-7fsuhp`, PR #228) |
 | copiado em | 2026-10-10 |
 | fora da cópia | `runs/` (logs de lote com texto de saúde; este repositório é público) |
 

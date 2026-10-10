@@ -193,8 +193,7 @@ WHERE (user_context_json->'__metrics'->>'heavy')::boolean
 ORDER BY created_at DESC LIMIT 50;
 ```
 
-**Próximo, com os números na mão:** se `near_ctx_limit` aparece, `llm_options.num_ctx`
-por projeto (ex. 8192), medindo memória no mini62 antes.
+**Janela de contexto:** `llm_options.num_ctx` por projeto ([08](./08-project-config.md)); `near_ctx_limit` mede contra a janela enviada (`ctx_tokens` no registro).
 
 **Aberto — higiene de log (dono, 10/out):** quanto cada chamada grava (o `Job` guarda a
 pergunta do `/ask` e do `/router` em `question`), por quanto tempo, e o que fica no disco do
@@ -204,8 +203,8 @@ mini62. Levantamento antes de decidir retenção e o que mascarar.
 
 | # | O que muda para quem usa | Onde mexe | Tamanho | Quando |
 |---|---|---|---|---|
-| L1 | O painel de julgamento (shadow) ganha uma confiança que não é opinião do modelo: distância do melhor trecho, quantos trechos passaram, se o guard mexeu | `/ask` e `/router` devolvem `signals` ao lado do que já devolvem (aditivo) | pequeno | já |
-| L2 | Respostas deixam de perder regra por corte de contexto | `llm_options.num_ctx` por projeto (só configuração) | mínimo | quando `llm_calls_near_ctx_limit_24h` aparecer |
+| L1 | **[feito 10/out]** O painel de julgamento (shadow) ganha uma confiança que não é opinião do modelo: distância do melhor trecho, quantos trechos passaram, se o guard mexeu | `/ask` e `/router` devolvem `signals` ao lado do que já devolvem (aditivo) | pequeno | já |
+| L2 | **[feito 10/out]** Respostas deixam de perder regra por corte de contexto | `llm_options.num_ctx` por projeto ou `OLLAMA_NUM_CTX` global; o Bike Anjo vai com 8192 (conta no seed) e `near_ctx_limit` passa a medir contra a janela enviada | mínimo | — |
 | L3 | Primeira resposta do dia deixa de esperar o modelo carregar | `OLLAMA_KEEP_ALIVE` no mini62 para os modelos mais usados | mínimo | quando `load_ms` alto aparecer no `llm_call` |
 | L4 | Mudança de prompt, modelo ou `llm_options` passa por um comando que diz «piorou» antes de ir ao ar | `scripts/eval_gate.py` juntando `eval_rag.py`, `eval_bikeanjo_ops.py` e o shadow exportado | médio | depois |
 | L5 | O disco do mini62 guarda só o necessário das perguntas | retenção e máscara de `Job.question` e das linhas de auditoria, por projeto | médio | depois do levantamento de higiene (§ 6, «Aberto») |

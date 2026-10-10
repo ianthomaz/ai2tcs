@@ -585,9 +585,20 @@ Calibração de RAG e anti-bleed entre projectos vivem no **seed**; o cliente s�
   ],
   "confidence": "high",
   "transcript": null,
-  "stt_metadata": null
+  "stt_metadata": null,
+  "signals": {
+    "best_distance": 0.41, "chunks_kept": 3, "sanitize_hit": false, "guard_hit": false,
+    "reflection_changed": false, "answer_chars": 118, "prompt_tokens": 2610, "near_ctx_limit": false
+  }
 }
 ```
+
+**Campo `signals`:** o que o serviço sabe da resposta — não é opinião do modelo. `confidence`
+continua igual (`high` quando houve trecho). `best_distance` é a distância do melhor trecho
+(menor = mais perto); `guard_hit`/`sanitize_hit` dizem se a trava do projeto ou a limpeza de
+frase mexeu no texto; `near_ctx_limit` diz se o prompt chegou a 90% da janela de contexto.
+O `/router` devolve o mesmo bloco (sem `reflection_changed`). Campo aditivo: cliente que não
+lê não muda ([19 § 7](./19-optimization-review.md)).
 
 Em jobs originados por **`/audio/ask`**, `transcript` contém o texto reconhecido no áudio e `stt_metadata` os metadados do STT; `answer` é a resposta do RAG. Em **`/audio/transcribe`**, `transcript` repete o texto e `answer` também (transcrição apenas).
 

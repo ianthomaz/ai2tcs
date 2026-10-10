@@ -11,6 +11,7 @@ from app import db as db_module
 from app.config import settings
 from app.llm import get_provider
 from app.llm import metrics as llm_metrics
+from app.llm import signals as llm_signals
 from app.registry import (
     get_project,
     get_rag_feature_flags,
@@ -503,13 +504,14 @@ async def run_rag_job(
             options=llm_config,
         )
 
-        recorded = llm_metrics.record("ask", project_id, model_name, call_metrics)
-        if recorded:
-            await db_module.job_merge_user_context(job_id, {"__metrics": recorded})
+        recorded = llm_metrics.record("ask", project_id, model_name, call_metrics, llm_config.get("num_ctx"))
 
         # Post-processing: fix known LLM generation errors (meta-phrases, typos, filler)
+        raw_answer = answer
         answer = _sanitize_answer(answer)
+        sanitized = answer
         answer = guard_answer_for_profile(answer, project)
+        guarded = answer
 
         if get_rag_feature_flags(project)["rag_reflection_enabled"] and chunks and answer:
             answer = await _reflect_on_answer(
@@ -519,6 +521,18 @@ async def run_rag_job(
                 answer=answer,
                 llm_config=llm_config,
             )
+
+        answer_signals = llm_signals.build(
+            chunks=chunks,
+            answer=answer,
+            sanitize_hit=sanitized != raw_answer,
+            guard_hit=guarded != sanitized,
+            metrics=recorded,
+            reflection_changed=answer != guarded,
+        )
+        await db_module.job_merge_user_context(
+            job_id, {**({"__metrics": recorded} if recorded else {}), "__signals": answer_signals}
+        )
 
         # Persist assistant response in conversation history
         if user_id and answer:

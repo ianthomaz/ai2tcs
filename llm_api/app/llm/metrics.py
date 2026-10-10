@@ -46,19 +46,29 @@ def from_ollama(response: Any) -> dict[str, Any]:
     return {k: v for k, v in out.items() if v is not None}
 
 
-def flags(metrics: dict[str, Any]) -> dict[str, bool]:
+def flags(metrics: dict[str, Any], ctx_tokens: int | None = None) -> dict[str, bool]:
+    """`ctx_tokens` is the num_ctx the call sent; without it, Ollama's default is assumed."""
     prompt = metrics.get("prompt_tokens") or 0
+    window = ctx_tokens or settings.llm_context_reference_tokens
     return {
         "heavy": prompt >= settings.llm_heavy_prompt_tokens,
-        "near_ctx_limit": prompt >= int(settings.llm_context_reference_tokens * 0.9),
+        "near_ctx_limit": prompt >= int(window * 0.9),
     }
 
 
-def record(kind: str, project_id: str | None, model: str, metrics: dict[str, Any]) -> dict[str, Any]:
+def record(
+    kind: str,
+    project_id: str | None,
+    model: str,
+    metrics: dict[str, Any],
+    ctx_tokens: int | None = None,
+) -> dict[str, Any]:
     """Log the call; return metrics + flags, ready to store next to the job."""
     if not metrics:
         return {}
-    out = {**metrics, **flags(metrics), "model": model}
+    out = {**metrics, **flags(metrics, ctx_tokens), "model": model}
+    if ctx_tokens:
+        out["ctx_tokens"] = ctx_tokens
     line = (
         "kind=%s project=%s model=%s prompt_tokens=%s output_tokens=%s total_ms=%s load_ms=%s "
         "heavy=%s near_ctx_limit=%s"
