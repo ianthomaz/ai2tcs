@@ -201,7 +201,7 @@ ou, quando não for possível extrair:
 
 **Steps suportados (onboarding):** `interesse`, `nome`, `cpf`, `email`, `nascimento`, `cep`.
 
-**Step `reply_intent` (leitura de resposta / Zap shadow):** devolve **um código** da lista enviada em `question` (minúsculas, com underscores), ou `none` se incerto. Não inventa schema.
+**Step `reply_intent` (leitura de resposta / Zap shadow):** devolve **um código** da lista enviada em `question` (minúsculas, com underscores), ou `none` se incerto. A lista vem uma por linha (`- código: significado`, o formato do `zapzap/lib/reply-reader.js`) ou em linha (`Codes: a, b`). O serviço tira aspas e pontuação da resposta e devolve `null` para código fora da lista. Exemplos: `llm_api/contracts/bikeanjo/extract.examples.json`. A chamada ao modelo tem teto de `EXTRACT_TIMEOUT_S` (30 s); estourou, `extracted: null`.
 
 **Step extra (pedido de pagamento / zapzap):** `payment_boleto_confirmation`
 

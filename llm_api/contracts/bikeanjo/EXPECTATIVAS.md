@@ -18,7 +18,7 @@ urgência, scores, âncora. **Sem RAG.**
 {
   "source": "eba-feedback | historico-ciclista | support_ticket",
   "submission_id": "812",
-  "subject": { "user_id": "AABC4", "dependent_id": null },
+  "subject": { "subject_id": "AABC4", "user_id": "AABC4", "dependent_id": null },
   "event_id": "C-AA002-A026",
   "locale": "pt-BR",
   "fields": { "impressao_curta": "…", "recado_livre": "… zap [contato]" },
@@ -28,7 +28,9 @@ urgência, scores, âncora. **Sem RAG.**
 
 | Campo | Regra |
 |---|---|
-| `subject.user_id` | `null` em chamado sem conta |
+| `subject.subject_id` | Conta LCCCN ou `D_…`; `null` em chamado sem conta |
+| `subject.user_id` | Conta do canal; `null` em chamado sem conta |
+| `subject.dependent_id` | FK legado; preferir `subject_id` |
 | `fields` | só strings não vazias; já redigidas (`[contato]` / `[documento]`); histórico com prefixo `historico.` |
 | `scales` | inteiros 1–5; pode ser `{}` |
 

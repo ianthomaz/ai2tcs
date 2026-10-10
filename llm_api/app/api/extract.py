@@ -72,6 +72,37 @@ def _normalize_nascimento(raw: str) -> str | None:
     return None
 
 
+# reply_intent: the question lists the allowed codes, one per line as "- code: meaning"
+# (zapzap/lib/reply-reader.js buildLlmQuestion) or inline as "Codes: a, b, c".
+_REPLY_INTENT_LINE = re.compile(r"^\s*-\s*([a-z0-9_]+)\s*:", re.MULTILINE)
+_REPLY_INTENT_INLINE = re.compile(r"codes?\s*:\s*([a-z0-9_,\s]+)", re.IGNORECASE)
+_REPLY_INTENT_TOKEN = re.compile(r"[a-z0-9_]+")
+
+
+def reply_intent_codes(question: str) -> list[str]:
+    """Codes the question allows, plus `none`. Empty when the question lists none."""
+    codes = _REPLY_INTENT_LINE.findall(question or "")
+    if not codes:
+        m = _REPLY_INTENT_INLINE.search(question or "")
+        if m:
+            codes = [c.strip().lower() for c in m.group(1).split(",") if c.strip()]
+    if not codes:
+        return []
+    return list(dict.fromkeys([*codes, "none"]))
+
+
+def normalize_reply_intent(raw: str, question: str) -> str | None:
+    """First code-shaped token of the answer, kept only when the question allows it."""
+    token = _REPLY_INTENT_TOKEN.search((raw or "").strip().lower())
+    if not token:
+        return None
+    code = token.group(0)
+    allowed = reply_intent_codes(question)
+    if allowed and code not in allowed:
+        return None
+    return code
+
+
 def _normalize_extracted(step: str, raw: str) -> str | None:
     """Clean LLM output so it passes zapzap validators."""
     if not raw or not raw.strip():
@@ -345,17 +376,23 @@ async def extract(req: Request, request: ExtractRequest, _: None = Depends(requi
     )
 
     try:
-        response = await asyncio.to_thread(
-            ollama.chat,
-            model=model_alias,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user_content},
-            ],
-            options={"temperature": 0.1, "num_predict": 64},
+        response = await asyncio.wait_for(
+            asyncio.to_thread(
+                ollama.chat,
+                model=model_alias,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user_content},
+                ],
+                options={"temperature": 0.1, "num_predict": 64},
+            ),
+            timeout=settings.extract_timeout_s,
         )
         content = (response.get("message") or {}).get("content") or ""
-        value = _normalize_extracted(step, content)
+        if step == "reply_intent":
+            value = normalize_reply_intent(content, request.question)
+        else:
+            value = _normalize_extracted(step, content)
         out = ExtractResponse(extracted=value)
         await log_sync_llm_job(
             req,

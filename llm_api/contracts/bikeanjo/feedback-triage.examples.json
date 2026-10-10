@@ -20,7 +20,7 @@
       "request": {
         "source": "eba-feedback",
         "submission_id": "812",
-        "subject": { "user_id": "AABC4", "dependent_id": null },
+        "subject": { "subject_id": "AABC4", "user_id": "AABC4", "dependent_id": null },
         "event_id": "C-AA002-A026",
         "locale": "pt-BR",
         "fields": {
@@ -41,7 +41,7 @@
         "theme_free": null,
         "confidence": 0.86,
         "model": "exemplo",
-        "prompt_version": "triage-v1",
+        "prompt_version": "triage-v2",
         "warnings": []
       }
     },
@@ -58,7 +58,7 @@
       "request": {
         "source": "support_ticket",
         "submission_id": "77",
-        "subject": { "user_id": null, "dependent_id": null },
+        "subject": { "subject_id": null, "user_id": null, "dependent_id": null },
         "event_id": null,
         "locale": "pt-BR",
         "fields": { "subject": "Link de inscrição não abre", "message": "Tentei 3 vezes e dá erro. Meu e-mail é [contato]" },
@@ -74,7 +74,7 @@
         "theme_free": null,
         "confidence": 0.8,
         "model": "exemplo",
-        "prompt_version": "triage-v1"
+        "prompt_version": "triage-v2"
       }
     }
   ],

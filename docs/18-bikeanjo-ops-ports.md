@@ -166,7 +166,7 @@ Avaliado e mantido JSON:
 
 ## 9. Revisão de 28 set 2026 — problemas e pendências
 
-- [ ] **`triage-v2` só no mini62.** O Bike Anjo registra `triage-v2` publicado aqui em 2/out (AC8); a `main` deste repositório serve `triage-v1` e não tem `prompts/feedback-triage-v2.md`. Deploy a partir da `main` volta a triagem para v1. Ver [19 § A1](./19-optimization-review.md).
+- [ x ] **`triage-v2` no git (out/2026).** `PROMPT_VERSION = "triage-v2"`, prompt `feedback-triage-v2.md` + few-shots G–I. O modelo recebe `subject.kind` (`adult` · `dependent` · `none`), nunca o id; o serviço garante a regra 9 (texto sobre o filho com sujeito adulto → `watch`, confiança ≤ 0,5, aviso `subject_minor_mismatch`) e a rede de `grave` cobre queda com lesão e falta de socorro (caso t11).
 
 Visto no código já mergeado no mini62 (pull request #7), antes de tratar isto como serviço pronto. Nada disto foi corrigido nesta anotação.
 

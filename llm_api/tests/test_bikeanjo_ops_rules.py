@@ -257,3 +257,64 @@ async def test_no_context_is_no_answer_without_calling_the_model():
         out = await rs.run(_reply_req(REPLY["r05"]), "bikeanjoall_2026", {"config_json": {}})
     assert out["no_answer"] is True and "no_context" in out["warnings"]
     chat.assert_not_called()
+
+
+# ---------------------------------------------------------------- triage-v2
+
+
+def test_triage_serves_v2_prompt_and_version():
+    assert ft.PROMPT_VERSION == "triage-v2"
+    assert "Sujeito ≠ texto" in ft.system_prompt()
+    assert "Exemplo G" in ft.system_prompt()
+
+
+@pytest.mark.parametrize(
+    "subject,kind",
+    [
+        ({"subject_id": "AABC4", "user_id": "AABC4", "dependent_id": None}, "adult"),
+        ({"subject_id": "D_AABC4_A", "user_id": "AABC4", "dependent_id": 12}, "dependent"),
+        ({"subject_id": None, "user_id": "AABC4", "dependent_id": 12}, "dependent"),
+        ({"subject_id": None, "user_id": None, "dependent_id": None}, "none"),
+    ],
+)
+def test_model_sees_subject_kind_never_the_id(subject, kind):
+    req = ft.FeedbackTriageRequest(source="eba-feedback", submission_id="1", subject=subject, fields={"x": "ok"})
+    prompt = ft.user_prompt(req)
+    assert f'"subject":{{"kind":"{kind}"}}' in prompt
+    assert "AABC4" not in prompt and "12" not in prompt
+
+
+def test_rule9_child_text_on_adult_subject_goes_to_a_person():
+    case = TRIAGE["t16"]
+    req = ft.FeedbackTriageRequest(
+        source="eba-feedback", submission_id="t16", subject=case["subject"], fields=case["fields"]
+    )
+    model = {**_BLAND, "tags": ["aprendizado", "elogio_pessoa"], "named_people": ["Fátima"], "confidence": 0.9}
+    out = ft.postprocess(model, req, "m")
+    assert out["urgency"] == "watch"
+    assert out["confidence"] <= case["expect"]["confidence_max"]
+    assert "subject_minor_mismatch" in out["warnings"]
+    assert out["named_people"] == ["Fátima"]
+
+
+def test_rule9_does_not_fire_on_a_dependent_subject():
+    case = TRIAGE["t16"]
+    req = ft.FeedbackTriageRequest(
+        source="eba-feedback",
+        submission_id="t16",
+        subject={"subject_id": "D_AAF98_A", "user_id": "AAF98", "dependent_id": 3},
+        fields=case["fields"],
+    )
+    out = ft.postprocess({**_BLAND, "confidence": 0.9}, req, "m")
+    assert out["urgency"] == "none" and out["confidence"] == 0.9
+
+
+def test_rule9_never_lowers_urgent():
+    req = ft.FeedbackTriageRequest(
+        source="eba-feedback",
+        submission_id="x",
+        subject={"subject_id": "AABC4", "user_id": "AABC4"},
+        fields={"recado_livre": "Minha filha aprendeu, mas caiu e ficou sangrando e ninguém ajudou."},
+    )
+    out = ft.postprocess(dict(_BLAND), req, "m")
+    assert out["urgency"] == "urgent" and "grave" in out["tags"]

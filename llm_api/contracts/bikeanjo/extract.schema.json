@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "bikeanjo/ai2tcs/extract/1",
   "title": "POST /extract e POST /extract-multi",
-  "description": "Extração de campo(s) da resposta livre no Zap (em produção): onboarding, reply_intent e correção de boleto. Cliente: zapzap/lib/llm-remote.js (extractFromReply, extractMultiField). Sem valor extraído → null; o bot pergunta de novo.",
+  "description": "Extração de campo(s) da resposta livre no Zap (em produção): onboarding, correção de boleto e o passo reply_intent da leitura de resposta em shadow (a pergunta traz o contexto e a lista fechada de códigos, uma linha `- código: significado` cada; o serviço devolve só um código da lista ou `none`, e o zapzap confere de novo — zapzap/lib/reply-reader.js). Cliente: zapzap/lib/llm-remote.js (extractFromReply, extractFromReplyShadow, extractMultiField). O pedido de pagamento não usa para extrair: a pessoa só confirma o que a nota disse. Sem valor extraído → null; o bot pergunta de novo.",
   "$defs": {
     "request_single": {
       "type": "object",

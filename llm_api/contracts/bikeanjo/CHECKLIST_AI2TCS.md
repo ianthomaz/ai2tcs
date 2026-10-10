@@ -32,28 +32,33 @@ implementar lá. Ordem pensada para uma sessão; não pular o critério de «pro
       jsonschema
 - [x] NF/boleto: mandar `error: {code, message}` **ao lado** de `errors` (aditivo). Os
       clientes do BA e do Zap já leem `error.message` primeiro — ver
-      `response_error_with_error` nos examples
+      `response_error_with_error` nos examples (código no ai2tcs `5493e36`; entra no
+      serviço vivo no próximo restart/deploy LLM)
 
 ---
 
 ## 2. `POST /feedbackTriage` (primeira porta nova)
 
 Arquivos: `feedback-triage.schema.json` · `.examples.json` · `.eval.jsonl` ·
-`prompts/feedback-triage-v1.md`.
+`prompts/feedback-triage-v2.md`.
 
 - [x] Rota JSON sync em `app/bikeanjo/` (módulo do projeto, não `app/api/`) + `include_router` em `main.py`
 - [x] Modelos de entrada/saída alinhados ao esquema (ou validação runtime)
-- [x] Prompt = conteúdo de `prompts/feedback-triage-v1.md` **+**
-      `prompts/feedback-triage-fewshots.md`; resposta com `"prompt_version": "triage-v1"`
+- [x] Prompt `triage-v1` no ar (lote de produção de 1/out).
+- [x] **Publicar `triage-v2`:** prompt = `prompts/feedback-triage-v2.md` **+**
+      `prompts/feedback-triage-fewshots.md` (exemplos G–I), resposta com
+      `"prompt_version": "triage-v2"`; publicado no ai2tcs (mini62, 2/out/2026) +
+      `FEEDBACK_TRIAGE_PROMPT_VERSION = 'triage-v2'` no BA ([AC8](../../engenharia_attention_change.md)).
+      No git do ai2tcs desde out/2026: `PROMPT_VERSION = "triage-v2"`, o modelo recebe
+      `subject.kind` (`adult` · `dependent` · `none`, nunca o id) e o serviço garante a
+      regra 9 (texto sobre o filho com sujeito adulto → `watch`, confiança ≤ 0,5).
 - [x] Allowlist no serviço: tags, urgência, sources do esquema — valor fora da lista →
       strip / erro `invalid_request`, nunca inventar tag
 - [x] **Contrato:** cada `request` em `feedback-triage.examples.json` é aceito; corpo de
       sucesso valida `response_ok`
-- [ ] **Eval (pronto):** no `feedback-triage.eval.jsonl`:
-  - todo caso com `tags_include` contendo `grave` → tag `grave` **e** `urgency` esperado
-  - demais casos: ≥ 80% dos `expect` satisfeitos
-  - `anchor_quote` ≤ 160 chars e substrato de algum `fields.*` (sem `[contato]`)
-- [ ] Smoke: `curl` com Bearer do projeto `bikeanjoall_2026` + um `request` do examples
+- [x] **Eval (pronto):** no `feedback-triage.eval.jsonl` (2/out/2026, mini62):
+      hard failures 0 · rate 85% → PRONTO (t11–t15 ok; miss cosmético t08/t16).
+- [x] Smoke: `curl` Bearer projeto `bikeanjoall_2026` → `prompt_version: triage-v2`
 
 **O que o Bike Anjo faz depois (não bloqueia a rota):** CLI lote + tabelas
 `form_submission_triages` / `support_ticket_triages` + cron + digest + UI —
@@ -104,10 +109,10 @@ Arquivos: `reply-suggest.*` · `prompts/reply-suggest-v1.md` · hints em `rag/`.
 - [x] `no_answer: true` é sucesso válido (não forçar texto)
 - [ ] **Eval (pronto):** nenhum caso promete ação já feita («já excluí», «vou te enviar»)
       nem inventa URL; caso grave (assédio/violência) → sempre `no_answer`
-- [ ] `eval_bikeanjo_ops.py` entende `url_hosts` (r07): toda URL do rascunho tem host
+- [x] `eval_bikeanjo_ops.py` entende `url_hosts` (r07): toda URL do rascunho tem host
       `bikeanjo.org` ou subdomínio — a mesma medida da trava. Link é permitido e bem-vindo
-      (dono, 30/set)
-- [ ] `eval_bikeanjo_ops.py` entende `prefer_contains` (r01): conta quantos rascunhos
+      (dono, 30/set) — código no ai2tcs; medir «PRONTO» ainda espera restart + eval vivo
+- [x] `eval_bikeanjo_ops.py` entende `prefer_contains` (r01): conta quantos rascunhos
       trazem o link da articulação da cidade (`36_sync_articulacoes_locais`); é taxa,
       não reprova o caso
 - [ ] Re-ingest com `36_sync_articulacoes_locais.md` (link da página de cada articulação)
@@ -119,9 +124,28 @@ Fontes RAG entram no JSON da porta; a tela de suporte **não** as mostra (shadow
 
 ---
 
+## 5b. `POST /extract` — passo `reply_intent` (leitura de resposta em shadow)
+
+- [x] Em `llm_api/app/api/extract.py`, `STEP_INSTRUCTIONS`, a linha de
+      [AC14](../../engenharia_attention_change.md): o passo devolve um código da lista
+      que vem na pergunta, ou `none` (ai2tcs PR #8).
+- [x] O serviço lê a lista da pergunta (`- código: significado`) e devolve `null` para
+      código fora dela; resposta embrulhada («release_slot».) vira o código. Chamada ao
+      modelo com teto de tempo (`EXTRACT_TIMEOUT_S`, 30 s).
+- [x] Contrato: `extract.examples.json` com a pergunta que `buildLlmQuestion` monta —
+      trava nos dois lados (`zapzap/lib/__tests__/ai2tcs-contracts.test.js` e
+      `tests/test_api_zapzap_contract.py` no ai2tcs).
+- [ ] Pronto quando `node zapzap/scripts/reply-reading-probe.js "pode contar comigo"`
+      devolve `confirm_presence` (ou outro código da lista), não `no_answer`.
+
+---
+
 ## Pôr no ar (mini62) — só com ordem do dono
 
-Os itens «Eval (pronto)» e «Smoke» acima medem o modelo vivo, então esperam o deploy.
+As portas `/feedbackTriage`, `/healthNormalize`, `/replySuggest` e o envelope
+`error` no NF/boleto **já rodam** no serviço vivo (1/out/2026). Itens «Eval (pronto)»
+e re-ingest do corpus (`36_…`) ainda medem qualidade / índice — não bloqueiam o
+código das portas.
 
 1. `git pull` do ai2tcs + rebuild (`./scripts/deploy_llm.sh`).
 2. Smoke: `curl` com a chave `bikeanjoall_2026` num `request` dos examples → `status: ok`;
@@ -131,17 +155,6 @@ Os itens «Eval (pronto)» e «Smoke» acima medem o modelo vivo, então esperam
    — imprime caso a caso e dá **PRONTO** / **não pronto** por porta com os critérios acima.
 4. Só com **PRONTO**: lote de ensaio no sistemaBA (`--dry-run --limit=30`) — com ok explícito.
 5. Corte do token global para o Bike Anjo — ordem em [README](README.md) § Acesso.
-
----
-
-## 5b. `POST /extract` — `reply_intent` (Zap shadow)
-
-- [x] Step `reply_intent` em `STEP_INSTRUCTIONS` (`app/api/extract.py`): um código da
-      lista em `question` (lowercase + underscores) ou `none`
-- [x] Contrato: `extract.schema.json` lista o step; `extract.examples.json` cobre
-      confirm / none / unknown
-- [x] Sem step órfão de confirmação de NF em `/extract` (correção de boleto segue
-      `payment_boleto_confirmation`; NF via `/nfExtract`)
 
 ---
 

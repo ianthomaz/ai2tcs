@@ -20,7 +20,7 @@ from app.bikeanjo.common import (
     load_prompt,
 )
 
-PROMPT_VERSION = "triage-v1"
+PROMPT_VERSION = "triage-v2"
 
 TAGS = ("grave", "construtiva", "elogio_pessoa", "elogio_geral", "bug_sistema", "logistica", "aprendizado", "outro")
 URGENCIES = ("none", "watch", "urgent")
@@ -30,12 +30,28 @@ THEME_MAX = 40
 NAMED_PEOPLE_MAX = 5
 
 _MARKER_RE = re.compile(r"\[(contato|documento)\]", re.IGNORECASE)
+# Rule 9 of triage-v2: adult subject, text says the child is the one who took the workshop.
+# Matched on fold(text). Recall over precision — the outcome is only "a person reviews it".
+_CHILD_MENTION = re.compile(r"\b(meu|minha|nosso|nossa) (filh[oa]s?|net[oa]s?|crianca|menin[oa])\b")
+_CHILD_DID = re.compile(r"\b(fez|fizeram|aprendeu|aprenderam|participou|pedalou|conseguiu|adorou|amou)\b")
+MINOR_MISMATCH_CONFIDENCE = 0.5
+MINOR_MISMATCH_THEME = "texto sobre o menor, sujeito adulto"
 
 
 class Subject(BaseModel):
     model_config = ConfigDict(extra="ignore")
+    subject_id: str | None = None  # LCCCN account or D_… dependent; null for a ticket without account
     user_id: str | None = None
     dependent_id: int | None = None
+
+    def kind(self) -> Literal["adult", "dependent", "none"]:
+        """What the model may know about the subject — never the id itself."""
+        sid = (self.subject_id or "").strip()
+        if sid.startswith("D_") or self.dependent_id is not None:
+            return "dependent"
+        if sid or (self.user_id or "").strip():
+            return "adult"
+        return "none"
 
 
 class FeedbackTriageRequest(BaseModel):
@@ -76,7 +92,7 @@ def _scales(raw: dict[str, Any]) -> dict[str, int]:
 
 def system_prompt() -> str:
     return (
-        load_prompt("feedback-triage-v1.md")
+        load_prompt("feedback-triage-v2.md")
         + "\n\n"
         + load_prompt("feedback-triage-fewshots.md")
         + "\n\nResponda com UM objeto JSON com as chaves scores, tags, urgency, anchor_quote, "
@@ -85,8 +101,23 @@ def system_prompt() -> str:
 
 
 def user_prompt(req: FeedbackTriageRequest) -> str:
-    # Only what the classification needs: no submission, person or event ids.
-    return compact_json({"source": req.source, "fields": req.fields, "scales": _scales(req.scales)})
+    # Only what the classification needs: no submission, person or event ids. The subject
+    # goes as its kind (adult / dependent / none) — rule 9 of triage-v2 needs it.
+    return compact_json(
+        {
+            "source": req.source,
+            "subject": {"kind": req.subject.kind()},
+            "fields": req.fields,
+            "scales": _scales(req.scales),
+        }
+    )
+
+
+def minor_text_on_adult_subject(req: FeedbackTriageRequest) -> bool:
+    if req.subject.kind() != "adult":
+        return False
+    text = fold(" ".join(req.fields.values()))
+    return bool(_CHILD_MENTION.search(text) and _CHILD_DID.search(text))
 
 
 def validate_model_output(obj: dict[str, Any]) -> list[str]:
@@ -176,6 +207,14 @@ def postprocess(obj: dict[str, Any], req: FeedbackTriageRequest, model: str) -> 
 
     theme = obj.get("theme_free")
     theme_free = _truncate_words(str(theme).strip(), THEME_MAX) if isinstance(theme, str) and theme.strip() else None
+    confidence = clamp_confidence(obj.get("confidence"))
+
+    if minor_text_on_adult_subject(req):
+        if urgency == "none":
+            urgency = "watch"
+        confidence = min(confidence, MINOR_MISMATCH_CONFIDENCE)
+        theme_free = theme_free or MINOR_MISMATCH_THEME
+        warnings.append("subject_minor_mismatch")
 
     return {
         "status": "ok",
@@ -185,7 +224,7 @@ def postprocess(obj: dict[str, Any], req: FeedbackTriageRequest, model: str) -> 
         "anchor_quote": _anchor(obj.get("anchor_quote"), req.fields, warnings),
         "named_people": named,
         "theme_free": theme_free,
-        "confidence": clamp_confidence(obj.get("confidence")),
+        "confidence": confidence,
         "model": model,
         "prompt_version": PROMPT_VERSION,
         "warnings": sorted(set(warnings)),

@@ -1,5 +1,5 @@
 {
-  "description": "Wire examples for POST /extract. Schema: extract.schema.json.",
+  "description": "Exemplos do contrato de POST /extract. No reply_intent, `build_input` é a entrada de buildLlmQuestion (zapzap/lib/reply-reader.js) e `request.question` é o que ela produz; `model_says` é o texto cru do modelo e `response_ok` o que o serviço devolve. Testes: zapzap lib/__tests__/ai2tcs-contracts.test.js · ai2tcs tests/test_api_zapzap_contract.py.",
   "cases": [
     {
       "name": "onboarding_cep",
@@ -15,26 +15,71 @@
     },
     {
       "name": "reply_intent_confirm",
+      "build_input": {
+        "contextKey": "event_confirmation",
+        "sentText": "Oi, Ana! Sua vaga na EBA de sábado está garantida. Você confirma presença?"
+      },
       "request": {
         "task": "extract",
         "step": "reply_intent",
-        "question": "Codes: confirm_presence, decline, none",
+        "question": "Contexto: Confirmação de presença.\nMensagem que o Bike Anjo enviou à pessoa: «Oi, Ana! Sua vaga na EBA de sábado está garantida. Você confirma presença?»\nO que queremos saber com a resposta: Se a pessoa vai à oficina (confirma a presença) ou não vai (libera a vaga).\nResponda só com um destes códigos, sem mais nada:\n- confirm_presence: vai / confirma a presença\n- release_slot: não vai / libera a vaga\n- escalate_human: pede para falar com alguém da equipe\n- none: outra coisa, ou não dá para saber\nSe não der para ter certeza, responda none.",
         "userReply": "pode contar comigo"
       },
+      "model_says": "confirm_presence",
       "response_ok": {
         "extracted": "confirm_presence"
       }
     },
     {
       "name": "reply_intent_unsure",
+      "build_input": {
+        "contextKey": "event_confirmation",
+        "sentText": "Oi, Ana! Sua vaga na EBA de sábado está garantida. Você confirma presença?"
+      },
       "request": {
         "task": "extract",
         "step": "reply_intent",
-        "question": "Codes: confirm_presence, decline, none",
+        "question": "Contexto: Confirmação de presença.\nMensagem que o Bike Anjo enviou à pessoa: «Oi, Ana! Sua vaga na EBA de sábado está garantida. Você confirma presença?»\nO que queremos saber com a resposta: Se a pessoa vai à oficina (confirma a presença) ou não vai (libera a vaga).\nResponda só com um destes códigos, sem mais nada:\n- confirm_presence: vai / confirma a presença\n- release_slot: não vai / libera a vaga\n- escalate_human: pede para falar com alguém da equipe\n- none: outra coisa, ou não dá para saber\nSe não der para ter certeza, responda none.",
         "userReply": "talvez depois eu vejo"
       },
+      "model_says": "none",
       "response_ok": {
         "extracted": "none"
+      }
+    },
+    {
+      "name": "reply_intent_outside_list",
+      "build_input": {
+        "contextKey": "event_confirmation",
+        "sentText": "Oi, Ana! Sua vaga na EBA de sábado está garantida. Você confirma presença?"
+      },
+      "request": {
+        "task": "extract",
+        "step": "reply_intent",
+        "question": "Contexto: Confirmação de presença.\nMensagem que o Bike Anjo enviou à pessoa: «Oi, Ana! Sua vaga na EBA de sábado está garantida. Você confirma presença?»\nO que queremos saber com a resposta: Se a pessoa vai à oficina (confirma a presença) ou não vai (libera a vaga).\nResponda só com um destes códigos, sem mais nada:\n- confirm_presence: vai / confirma a presença\n- release_slot: não vai / libera a vaga\n- escalate_human: pede para falar com alguém da equipe\n- none: outra coisa, ou não dá para saber\nSe não der para ter certeza, responda none.",
+        "userReply": "quero pagar"
+      },
+      "model_says": "confirm_data",
+      "response_ok": {
+        "extracted": null
+      },
+      "why": "código de outro contexto não passa: o serviço só devolve o que a pergunta lista"
+    },
+    {
+      "name": "reply_intent_wrapped",
+      "build_input": {
+        "contextKey": "event_confirmation",
+        "sentText": "Oi, Ana! Sua vaga na EBA de sábado está garantida. Você confirma presença?"
+      },
+      "request": {
+        "task": "extract",
+        "step": "reply_intent",
+        "question": "Contexto: Confirmação de presença.\nMensagem que o Bike Anjo enviou à pessoa: «Oi, Ana! Sua vaga na EBA de sábado está garantida. Você confirma presença?»\nO que queremos saber com a resposta: Se a pessoa vai à oficina (confirma a presença) ou não vai (libera a vaga).\nResponda só com um destes códigos, sem mais nada:\n- confirm_presence: vai / confirma a presença\n- release_slot: não vai / libera a vaga\n- escalate_human: pede para falar com alguém da equipe\n- none: outra coisa, ou não dá para saber\nSe não der para ter certeza, responda none.",
+        "userReply": "não vou poder ir"
+      },
+      "model_says": "«release_slot».",
+      "response_ok": {
+        "extracted": "release_slot"
       }
     },
     {

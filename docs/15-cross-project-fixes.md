@@ -49,7 +49,7 @@ ESTUDOSMOBI_SOURCES=/path/estudosMobi/fluxosLLM,/path/estudosMobi/bibliotecaCont
 | Auth | `itcs_{project_id}_*` por bot |
 | Router | `config_json.router.extra_system_block` para regras extras (padrão `ian_zap`) |
 | Boleto | `POST /boletoExtract` + step `payment_boleto_confirmation` em `/extract` |
-| Reply intent | step `reply_intent` em `/extract` (código da lista em `question`, ou `none`) |
+| Reply intent | step `reply_intent` em `/extract` (código da lista em `question`, ou `none`; fora da lista → `null`) |
 | Webhook | `callback_url` em `POST /ask` (HTTPS) em vez de polling longo |
 
 ---

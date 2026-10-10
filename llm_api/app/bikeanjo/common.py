@@ -196,6 +196,14 @@ GRAVE_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
         r"\bameac(ou|aram|a de morte)",
         r"\bquebro tudo",
         r"\bvou (te |ai e )?(matar|bater|quebrar)",
+        # Fall with injury and no help (triage-v2 rule 1): calm tone does not lower it.
+        r"\bmachuc(ou|ei|ada|ado|aram)\b",
+        r"\bvirei o pe\b",
+        r"\btorc(i|eu) o (pe|tornozelo|joelho|pulso|braco)",
+        r"\b(fratur|luxa|tor[cç]ao)",
+        r"\bnem (me )?ajudou a levantar",
+        r"\bninguem (veio )?(me |a |o )?(ajudar|socorr)",
+        r"\bdificuldades? (pra|para) andar\b",
     )
 )
 
