@@ -8,6 +8,8 @@ from typing import Any
 
 import httpx
 
+from app.llm import metrics as llm_metrics
+
 
 def _extract_json(raw: str) -> dict[str, Any]:
     if not raw:
@@ -85,7 +87,9 @@ async def enrich_boleto_with_local_llm(
             async with httpx.AsyncClient(timeout=timeout_cfg) as client:
                 r = await client.post(url, json=payload)
                 r.raise_for_status()
-                content = r.json().get("message", {}).get("content", "")
+                data = r.json()
+                llm_metrics.record("boleto_extract", None, str(payload.get("model") or ""), llm_metrics.from_ollama(data))
+                content = data.get("message", {}).get("content", "")
                 parsed = _extract_json(content)
                 if parsed:
                     return parsed, warnings

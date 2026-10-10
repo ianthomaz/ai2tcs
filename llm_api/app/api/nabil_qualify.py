@@ -1,13 +1,11 @@
 """POST /nabilvideomap/qualify-caption — nabilVideoMap cataloguing (sync Ollama + optional RAG)."""
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import re
 from typing import Any
 
-import ollama
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.auth import require_token
@@ -20,6 +18,7 @@ from app.models import (
 )
 from app.registry import get_project, get_rag_policies
 from app.rag.retrieve import retrieve
+from app.llm import direct as llm_direct
 
 logger = logging.getLogger(__name__)
 
@@ -315,8 +314,10 @@ async def _build_rag_block(project_id: str, caption: str, project: dict) -> str:
 
 
 async def _ollama_chat(*, model: str, system: str, user: str, num_predict: int) -> str:
-    def _call() -> dict:
-        return ollama.chat(
+    try:
+        response = await llm_direct.ollama_chat(
+            "nabil_qualify",
+            "nabilvideomap",
             model=model,
             messages=[
                 {"role": "system", "content": system},
@@ -327,9 +328,6 @@ async def _ollama_chat(*, model: str, system: str, user: str, num_predict: int) 
                 "num_predict": num_predict,
             },
         )
-
-    try:
-        response = await asyncio.to_thread(_call)
     except Exception as e:
         logger.warning("Ollama qualify-caption failed: %s", e)
         raise OllamaQualifyInfraError(f"ollama_error: {e!s}") from e

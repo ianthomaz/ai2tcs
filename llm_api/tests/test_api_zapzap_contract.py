@@ -58,7 +58,7 @@ async def test_extract_reply_intent_returns_code(client):
     async def fake_to_thread(_func, *_a, **_kw):
         return {"message": {"content": "confirm_presence"}}
 
-    with patch.object(extract_module.asyncio, "to_thread", side_effect=fake_to_thread), patch(
+    with patch("app.llm.direct.asyncio.to_thread", side_effect=fake_to_thread), patch(
         "app.api.extract.log_sync_llm_job", new_callable=AsyncMock
     ):
         r = await client.post(
@@ -114,7 +114,7 @@ async def test_extract_multi_accepts_payment_context_and_extra_keys(client):
     async def fake_to_thread(_func, *_a, **_kw):
         return {"message": {"content": '{"supplier_name": "Novo Emissor SA"}'}}
 
-    with patch.object(extract_module.asyncio, "to_thread", side_effect=fake_to_thread), patch(
+    with patch("app.llm.direct.asyncio.to_thread", side_effect=fake_to_thread), patch(
         "app.api.extract.log_sync_llm_job", new_callable=AsyncMock
     ):
         r = await client.post(
@@ -264,7 +264,7 @@ async def test_reply_intent_examples_through_the_route(client, case):
     async def fake_to_thread(_func, *_a, **_kw):
         return {"message": {"content": case["model_says"]}}
 
-    with patch.object(extract_module.asyncio, "to_thread", side_effect=fake_to_thread), patch(
+    with patch("app.llm.direct.asyncio.to_thread", side_effect=fake_to_thread), patch(
         "app.api.extract.log_sync_llm_job", new_callable=AsyncMock
     ):
         r = await client.post("/extract", json=case["request"], headers=HEADERS)
@@ -279,7 +279,7 @@ async def test_extract_model_timeout_returns_null(client):
     async def slow(_func, *_a, **_kw):
         await _asyncio.sleep(1)
 
-    with patch.object(extract_module.asyncio, "to_thread", side_effect=slow), patch(
+    with patch("app.llm.direct.asyncio.to_thread", side_effect=slow), patch(
         "app.config.settings.extract_timeout_s", 0.01
     ), patch("app.api.extract.log_sync_llm_job", new_callable=AsyncMock):
         r = await client.post("/extract", json=_REPLY_CASES[0]["request"], headers=HEADERS)

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -124,3 +125,36 @@ async def test_router_model_timeout_escalates(client):
     body = r.json()
     assert body["action"] == "escalate" and "timed out" in (body["obs"] or "")
     assert audit.await_args.kwargs["status"] == "failed"
+
+
+@pytest.mark.asyncio
+async def test_direct_ollama_door_records_and_bounds(caplog):
+    from app.llm import direct
+
+    with patch("ollama.chat", return_value=_OLLAMA), caplog.at_level(logging.INFO, logger="app.llm.metrics"):
+        response = await direct.ollama_chat("edu_chat", None, model="m", messages=[])
+    assert response is _OLLAMA
+    assert any("kind=edu_chat" in r.getMessage() for r in caplog.records)
+
+    async def slow(*_a, **_kw):
+        await asyncio.sleep(1)
+
+    with patch("app.llm.direct.asyncio.to_thread", side_effect=slow), pytest.raises(asyncio.TimeoutError):
+        await direct.ollama_chat("edu_chat", None, timeout_s=0.01, model="m", messages=[])
+
+
+def test_no_route_calls_ollama_chat_outside_the_doors():
+    """Every model call is recorded: ollama.chat lives only in the provider and in app/llm/direct.py."""
+    from pathlib import Path
+
+    app_dir = Path(__file__).resolve().parents[1] / "app"
+    allowed = {app_dir / "llm" / "direct.py", app_dir / "llm" / "ollama_provider.py"}
+    call = re.compile(r"\bollama\.chat\s*[,(]")
+    offenders = [
+        f"{p.relative_to(app_dir)}:{n}"
+        for p in app_dir.rglob("*.py")
+        if p not in allowed
+        for n, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1)
+        if call.search(line) and not line.lstrip().startswith("#")
+    ]
+    assert offenders == []

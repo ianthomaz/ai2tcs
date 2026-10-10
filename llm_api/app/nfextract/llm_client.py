@@ -8,6 +8,8 @@ from typing import Any
 
 import httpx
 
+from app.llm import metrics as llm_metrics
+
 
 def _extract_json(raw: str) -> dict[str, Any]:
     if not raw:
@@ -122,7 +124,9 @@ async def enrich_with_local_llm(
             async with httpx.AsyncClient(timeout=timeout_cfg) as client:
                 r = await client.post(f"{ollama_host.rstrip('/')}/api/chat", json=payload)
                 r.raise_for_status()
-                content = ((r.json().get("message") or {}).get("content") or "").strip()
+                data = r.json()
+                llm_metrics.record("nf_extract", None, str(payload.get("model") or ""), llm_metrics.from_ollama(data))
+                content = ((data.get("message") or {}).get("content") or "").strip()
                 parsed = _extract_json(content)
                 if not parsed:
                     warnings.append("LLM returned non-JSON content; kept Python extraction.")

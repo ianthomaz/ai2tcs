@@ -148,8 +148,26 @@ contrato com cliente.
 
 ## 6. Registro das chamadas da LLM (feito out/2026)
 
-Toda chamada ao modelo pelo `/ask`, `/router`, `/extract` e pelas portas do Bike Anjo
-registra contagens e tempos — **nunca o texto** da pergunta ou da resposta.
+Toda chamada ao modelo, de **todo projeto**, registra contagens e tempos — **nunca o texto**
+da pergunta ou da resposta. Há duas portas e nenhuma outra:
+
+- `get_provider(project).chat_with_metrics` — Ollama e provedores externos (OpenAI, Anthropic,
+  Gemini devolvem os tokens que a API informa);
+- `app/llm/direct.py` `ollama_chat` — rota que precisa de argumento só do Ollama; tem teto de
+  tempo (`LLM_CHAT_TIMEOUT_S` por padrão).
+
+Trava: `tests/test_llm_metrics.py` falha se `ollama.chat` aparecer fora dessas duas portas.
+
+| `kind` no log | Onde |
+|---|---|
+| `ask`, `ask_reflection` | worker do `/ask` |
+| `router` | `/router` |
+| `extract_<passo>`, `extract_multi`, `extract_boleto_confirmation` | `/extract`, `/extract-multi` |
+| `bikeanjo_ops` | `/feedbackTriage`, `/healthNormalize`, `/replySuggest` |
+| `nf_extract`, `boleto_extract` | leitura de documento |
+| `edu_chat`, `edu_exercises` | `/edu/*` |
+| `nabil_qualify` | `/nabilvideomap/qualify-caption` |
+| `conversation_summary` | resumo mensal de conversas (madrugada) |
 
 | Onde | O quê |
 |---|---|
@@ -181,6 +199,16 @@ por projeto (ex. 8192), medindo memória no mini62 antes.
 **Aberto — higiene de log (dono, 10/out):** quanto cada chamada grava (o `Job` guarda a
 pergunta do `/ask` e do `/router` em `question`), por quanto tempo, e o que fica no disco do
 mini62. Levantamento antes de decidir retenção e o que mascarar.
+
+## 7. Próximo lote — cinco otimizações para todos os projetos (out/2026)
+
+| # | O que muda para quem usa | Onde mexe | Tamanho | Quando |
+|---|---|---|---|---|
+| L1 | O painel de julgamento (shadow) ganha uma confiança que não é opinião do modelo: distância do melhor trecho, quantos trechos passaram, se o guard mexeu | `/ask` e `/router` devolvem `signals` ao lado do que já devolvem (aditivo) | pequeno | já |
+| L2 | Respostas deixam de perder regra por corte de contexto | `llm_options.num_ctx` por projeto (só configuração) | mínimo | quando `llm_calls_near_ctx_limit_24h` aparecer |
+| L3 | Primeira resposta do dia deixa de esperar o modelo carregar | `OLLAMA_KEEP_ALIVE` no mini62 para os modelos mais usados | mínimo | quando `load_ms` alto aparecer no `llm_call` |
+| L4 | Mudança de prompt, modelo ou `llm_options` passa por um comando que diz «piorou» antes de ir ao ar | `scripts/eval_gate.py` juntando `eval_rag.py`, `eval_bikeanjo_ops.py` e o shadow exportado | médio | depois |
+| L5 | O disco do mini62 guarda só o necessário das perguntas | retenção e máscara de `Job.question` e das linhas de auditoria, por projeto | médio | depois do levantamento de higiene (§ 6, «Aberto») |
 
 ---
 

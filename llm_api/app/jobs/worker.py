@@ -224,14 +224,13 @@ async def _reflect_on_answer(
     fast_model = settings.get_model_name("fast", default_alias="fast")
     fast_opts = {**llm_config, "temperature": 0.2, "num_predict": 512}
     try:
-        raw = await asyncio.wait_for(
-            provider.chat(
-                model=fast_model,
-                messages=[{"role": "user", "content": prompt}],
-                options=fast_opts,
-            ),
-            timeout=settings.llm_chat_timeout_s,
+        raw, call_metrics = await _chat_with_metrics_or_timeout(
+            provider,
+            model=fast_model,
+            messages=[{"role": "user", "content": prompt}],
+            options=fast_opts,
         )
+        llm_metrics.record("ask_reflection", None, fast_model, call_metrics)
         if "{" in raw and "}" in raw:
             blob = raw[raw.find("{") : raw.rfind("}") + 1]
             data = json.loads(blob)

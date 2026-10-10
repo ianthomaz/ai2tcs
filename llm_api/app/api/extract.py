@@ -1,10 +1,8 @@
 """POST /extract and POST /extract-multi — zapzap onboarding (sync Ollama)."""
-import asyncio
 import json
 import re
 from datetime import datetime
 
-import ollama
 
 from fastapi import APIRouter, Depends, Request
 
@@ -14,6 +12,7 @@ from app.job_audit import log_sync_llm_job
 from app.llm import metrics as llm_metrics
 from app.models import ExtractMultiRequest, ExtractMultiResponse, ExtractRequest, ExtractResponse
 from app.registry import get_extract_steps_config, get_project
+from app.llm import direct as llm_direct
 
 router = APIRouter(tags=["extract"])
 
@@ -213,8 +212,10 @@ async def _extract_payment_boleto_confirmation(req: Request, request: ExtractReq
     user_content = f"Server context:\n{request.question}\n\nUser message:\n{request.user_reply}\n"
     model_alias = settings.get_model_name(request.model, default_alias="smart")
     try:
-        response = await asyncio.to_thread(
-            ollama.chat,
+        response = await llm_direct.ollama_chat(
+            "extract_boleto_confirmation",
+            request.project_id,
+            timeout_s=settings.extract_timeout_s,
             model=model_alias,
             messages=[
                 {"role": "system", "content": system},
@@ -293,8 +294,10 @@ async def extract_multi(req: Request, request: ExtractMultiRequest, _: None = De
 
     model_alias = settings.get_model_name(request.model, default_alias="fast")
     try:
-        response = await asyncio.to_thread(
-            ollama.chat,
+        response = await llm_direct.ollama_chat(
+            "extract_multi",
+            request.project_id,
+            timeout_s=settings.extract_timeout_s,
             model=model_alias,
             messages=[
                 {"role": "system", "content": system},
@@ -377,20 +380,19 @@ async def extract(req: Request, request: ExtractRequest, _: None = Depends(requi
     )
 
     try:
-        response = await asyncio.wait_for(
-            asyncio.to_thread(
-                ollama.chat,
-                model=model_alias,
-                messages=[
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user_content},
-                ],
-                options={"temperature": 0.1, "num_predict": 64},
-            ),
-            timeout=settings.extract_timeout_s,
+        response = await llm_direct.ollama_chat(
+            f"extract_{step}",
+            request.project_id,
+            timeout_s=settings.extract_timeout_s,
+            model=model_alias,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": user_content},
+            ],
+            options={"temperature": 0.1, "num_predict": 64},
         )
         content = (response.get("message") or {}).get("content") or ""
-        call_metrics = llm_metrics.record("extract", request.project_id, model_alias, llm_metrics.from_ollama(response))
+        call_metrics = llm_metrics.from_ollama(response)
         if step == "reply_intent":
             value = normalize_reply_intent(content, request.question)
         else:
