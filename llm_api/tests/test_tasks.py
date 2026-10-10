@@ -74,6 +74,27 @@ def test_text_triage_spec_examples_validate():
     assert executor._errors(schema, {**_GOOD, "category": "inventada"})
 
 
+_BA_CONTRACT = Path(__file__).resolve().parents[1] / "contracts" / "bikeanjo"
+_ENVELOPE = {"status", "model", "prompt_version", "warnings"}
+
+
+def test_bike_anjo_text_triage_contract_matches_the_task_and_the_seed():
+    """The Bike Anjo contract (copied from bikeanjo2026all) fits the generic task as is."""
+    spec = file_task("text_triage")
+    contract = json.loads((_BA_CONTRACT / "text-triage.schema.json").read_text(encoding="utf-8"))
+    categories = contract["$defs"]["category"]["enum"]
+    seed = (Path(__file__).resolve().parents[1] / "scripts" / "seed_bikeanjoall.py").read_text(encoding="utf-8")
+    for c in categories:
+        assert f'"{c}"' in seed, c
+    project = {"project_id": "bikeanjoall_2026", "config_json": {"tasks": {"text_triage": {"categories": categories}}}}
+    examples = json.loads((_BA_CONTRACT / "text-triage.examples.json").read_text(encoding="utf-8"))
+    for case in examples["cases"]:
+        assert executor._errors(spec["input_schema"], case["request"]) == [], case["name"]
+        out = {k: v for k, v in case["response_ok"].items() if k not in _ENVELOPE}
+        assert executor._errors(executor.output_schema_for(spec, project, case["request"]), out) == [], case["name"]
+        assert case["response_ok"]["prompt_version"] == spec["prompt_version"]
+
+
 @pytest.mark.asyncio
 async def test_project_key_runs_an_enabled_file_task_with_its_vocabulary(client):
     p, seen = _model_says(_GOOD)

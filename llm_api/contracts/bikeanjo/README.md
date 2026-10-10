@@ -35,6 +35,7 @@ publicadas** no mini62 — o serviço vivo segue sem elas até o deploy e o eval
 | `POST /feedbackTriage` | esquema + exemplos + eval + prompt | **implementada, não publicada** | `itcs-feedback-triage.ts` (fila `feedback_triage`) |
 | `POST /healthNormalize` | esquema + exemplos + eval + prompt | **implementada, não publicada** | `itcs-health-normalize.ts` (fila `health_normalize`) |
 | `POST /replySuggest` | esquema + exemplos + eval + prompt | **implementada, não publicada** | `itcs-reply-suggest.ts` (`/admin/suporte` → Responder) |
+| `POST /task/text_triage` | esquema + exemplos | **implementada, não publicada** — porta genérica do ai2tcs (docs/20), categorias do Bike Anjo no seed | `itcs-text-triage.ts` · `scripts/text-triage.ts` (só classifica) |
 | erro comum | `common.schema.json` | NF/boleto mandam `errors:[]`; `error` ao lado é aceito | todos os clientes leem `error.message`, depois `errors[0]` |
 
 Outras rotas no serviço que **não** têm pasta aqui (fora do escopo Bike Anjo ops):
@@ -54,6 +55,7 @@ Outras rotas no serviço que **não** têm pasta aqui (fora do escopo Bike Anjo 
 | `/feedbackTriage` | `feedback-triage.schema.json` | `feedback-triage.examples.json` | `feedback-triage.eval.jsonl` | `prompts/feedback-triage-v2.md` |
 | `/healthNormalize` | `health-normalize.schema.json` | `health-normalize.examples.json` | `health-normalize.eval.jsonl` | `prompts/health-normalize-v1.md` |
 | `/replySuggest` | `reply-suggest.schema.json` | `reply-suggest.examples.json` | `reply-suggest.eval.jsonl` | `prompts/reply-suggest-v1.md` |
+| `/task/text_triage` | `text-triage.schema.json` | `text-triage.examples.json` | — | (no serviço: `llm_api/tasks/prompts/text-triage-v1.md`) |
 | erro | `common.schema.json` | — | — | — |
 
 ---
