@@ -1,6 +1,7 @@
 # 20 — Tarefas de texto: uma porta para todos os projetos (`POST /task/{task_id}`)
 
-Classificar, priorizar e resumir texto é o mesmo trabalho em qualquer projeto. Esta porta é o
+Classificar, priorizar e resumir texto é o mesmo trabalho em qualquer projeto (princípio no
+[README](../README.md#princípio-serviço-de-vários-projetos)). Esta porta é o
 motor único: a tarefa é **arquivo**, o vocabulário é **configuração do projeto**, e o código
 não muda para um projeto novo usar.
 
@@ -18,7 +19,7 @@ não muda para um projeto novo usar.
 | Tipo | O que é | Quem roda |
 |---|---|---|
 | **arquivo** | especificação JSON: esquema de entrada, esquema de saída, prompt, `prompt_version` | projeto que ligou a tarefa em `config_json.tasks.<task_id>` |
-| **código** | porta com travas próprias (as do Bike Anjo, [18](./18-bikeanjo-ops-ports.md)) registrada no executor | a regra da porta: só a chave do Bike Anjo |
+| **código** | porta com travas próprias registrada no executor, com a lista de projetos que podem usar (`allowed_projects`) — hoje as do Bike Anjo, [18](./18-bikeanjo-ops-ports.md) | a chave de um projeto da lista |
 
 `feedback_triage`, `health_normalize` e `reply_suggest` respondem pela porta nova **e** pelas
 rotas de sempre (`/feedbackTriage`, `/healthNormalize`, `/replySuggest`) — mesmo código, mesmo
@@ -76,7 +77,9 @@ Ligar num projeto (dashboard → projeto → `config_json`, ou `PUT /projects/{i
 { "tasks": { "text_triage": { "categories": ["parceria", "suporte", "imprensa", "outro"] } } }
 ```
 
-As categorias são decisão de cada projeto. Pedido:
+As categorias são decisão de cada projeto. O Bike Anjo liga com `bike_anjo_request`,
+`volunteering`, `partnership`, `press`, `event`, `support`, `other`
+(`scripts/seed_bikeanjoall.py`). Pedido:
 
 ```bash
 curl -X POST "$LLM_API_URL/task/text_triage" -H "Authorization: Bearer itcs_<projeto>_…" \

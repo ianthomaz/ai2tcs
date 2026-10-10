@@ -35,6 +35,19 @@ Infra e credenciais da organização: repositórios privados ou `local-only/` no
 
 `.gitignore`: `_credentials/`, `.basicITCS_getAware` (legado).
 
+## Princípio: serviço de vários projetos
+
+O ai2tcs serve vários projetos. O Bike Anjo é o primeiro cliente e traz as demandas, mas o
+que se constrói aqui é **para qualquer projeto**:
+
+- Capacidade nova nasce **genérica**: tarefa em arquivo (`llm_api/tasks/`, [docs/20](docs/20-text-tasks.md)),
+  vocabulário e limites na configuração do projeto (`config_json`), chave do próprio projeto.
+- Código com nome de projeto (`app/bikeanjo/`) só para o que é regra daquele projeto e não
+  cabe em configuração — e mesmo assim entra pela porta comum (`/task/{task_id}`), com a
+  lista de projetos que podem usar declarada na própria tarefa.
+- Antes de escrever código para um projeto, perguntar: outro projeto usaria isto trocando só
+  a configuração? Se sim, é tarefa genérica.
+
 ## Convenções
 
 - **Código e comentários técnicos:** inglês.

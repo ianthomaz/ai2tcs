@@ -4,8 +4,9 @@ Two kinds, same route (POST /task/{task_id}):
 - file task: llm_api/tasks/<task_id>.json (+ prompt in tasks/prompts/). A project runs it
   when its config_json.tasks has an entry for the task — that entry carries the project's
   vocabulary (e.g. {"text_triage": {"categories": [...]}}). New task = new file, no code.
-- code task: a port with its own guards (Bike Anjo ops), registered here with its handler;
-  allowed only for the key of a project in BIKEANJO_OPS_PROJECT_IDS — same rule as its route.
+- code task: a port with its own guards, registered here with its handler and the projects
+  whose key may run it (`allowed_projects`). Today: the Bike Anjo ops ports
+  (BIKEANJO_OPS_PROJECT_IDS) — same rule as their routes.
 """
 from __future__ import annotations
 
@@ -28,10 +29,16 @@ class CodeTask:
     request_model: type[BaseModel]
     run: Callable[[Any, str, dict | None], Awaitable[dict[str, Any]]]
     audit_summary: Callable[[dict[str, Any]], dict[str, Any]]
+    allowed_projects: Callable[[], set[str]]
+    description: str = ""
 
 
 def _code_tasks() -> dict[str, CodeTask]:
     from app.bikeanjo import feedback_triage, health_normalize, reply_suggest
+    from app.config import settings
+
+    bikeanjo_ops = settings.bikeanjo_ops_project_id_set
+    ops_doc = "porta de código (docs/18)"
 
     return {
         "feedback_triage": CodeTask(
@@ -39,24 +46,34 @@ def _code_tasks() -> dict[str, CodeTask]:
             feedback_triage.FeedbackTriageRequest,
             lambda req, _pid, project: feedback_triage.run(req, project),
             feedback_triage.audit_summary,
+            bikeanjo_ops,
+            ops_doc,
         ),
         "health_normalize": CodeTask(
             "health_normalize",
             health_normalize.HealthNormalizeRequest,
             lambda req, _pid, project: health_normalize.run(req, project),
             health_normalize.audit_summary,
+            bikeanjo_ops,
+            ops_doc,
         ),
         "reply_suggest": CodeTask(
             "reply_suggest",
             reply_suggest.ReplySuggestRequest,
             reply_suggest.run,
             reply_suggest.audit_summary,
+            bikeanjo_ops,
+            ops_doc,
         ),
     }
 
 
 def code_task(task_id: str) -> CodeTask | None:
     return _code_tasks().get(task_id)
+
+
+def list_code_tasks() -> list[CodeTask]:
+    return list(_code_tasks().values())
 
 
 @lru_cache(maxsize=None)

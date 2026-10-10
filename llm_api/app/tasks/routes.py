@@ -1,8 +1,8 @@
 """POST /task/{task_id} and GET /tasks — one door for every project's text tasks (docs/20).
 
 Project: the key's project; with the operator (global) token, `project_id` in the body.
-File tasks run for a project that enabled them in config_json.tasks; code tasks (Bike Anjo
-ops) keep their own rule — the Bike Anjo project key only. The body is the task input.
+File tasks run for a project that enabled them in config_json.tasks; a code task runs only
+for the key of one of its `allowed_projects`. The body is the task input.
 """
 from __future__ import annotations
 
@@ -18,16 +18,16 @@ from app.job_audit import log_sync_llm_job
 from app.registry import get_project
 from app.tasks import executor
 from app.tasks.engine import PortError, error_body, read_json_object
-from app.tasks.registry import code_task, file_task, list_file_tasks, project_task_config
+from app.tasks.registry import CodeTask, code_task, file_task, list_code_tasks, list_file_tasks, project_task_config
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["tasks"])
 
 
-def _code_task_allowed(request: Request) -> bool:
+def _code_task_allowed(request: Request, task: CodeTask) -> bool:
     pid = key_project_id(request)
-    return bool(pid and pid in settings.bikeanjo_ops_project_id_set())
+    return bool(pid and pid in task.allowed_projects())
 
 
 @router.post("/task/{task_id}")
@@ -36,8 +36,8 @@ async def run_task(task_id: str, request: Request, _: None = Depends(require_tok
     spec = None if code else file_task(task_id)
     if code is None and spec is None:
         raise HTTPException(status_code=404, detail="task not found")
-    if code is not None and not _code_task_allowed(request):
-        raise HTTPException(status_code=403, detail="This task requires the Bike Anjo project key")
+    if code is not None and not _code_task_allowed(request, code):
+        raise HTTPException(status_code=403, detail=f"Task {task_id} is not enabled for this key")
 
     project_id: str | None = key_project_id(request)
     summary: dict[str, Any] = {}
@@ -101,7 +101,7 @@ async def list_tasks(request: Request, _: None = Depends(require_token)) -> dict
         if pid and not enabled:
             continue
         out.append({"task_id": task_id, "kind": "file", "description": spec.get("description"), "prompt_version": spec.get("prompt_version")})
-    if not pid or _code_task_allowed(request):
-        for task_id in ("feedback_triage", "health_normalize", "reply_suggest"):
-            out.append({"task_id": task_id, "kind": "code", "description": "porta do Bike Anjo (docs/18)"})
+    for task in list_code_tasks():
+        if not pid or _code_task_allowed(request, task):
+            out.append({"task_id": task.task_id, "kind": "code", "description": task.description})
     return {"tasks": out}
