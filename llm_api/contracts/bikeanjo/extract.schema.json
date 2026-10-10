@@ -17,7 +17,8 @@
           "const": "extract"
         },
         "step": {
-          "type": "string"
+          "type": "string",
+          "description": "Known steps: interesse, nome, cpf, email, nascimento, cep, reply_intent, payment_boleto_confirmation. Unknown step → extracted null."
         },
         "question": {
           "type": "string"

@@ -180,7 +180,7 @@ Usado pelo **zapzap** quando a validação rígida do onboarding falha (ex.: usu
 ```json
 {
   "task": "extract",
-  "step": "interesse | nome | cpf | email | nascimento | cep",
+  "step": "interesse | nome | cpf | email | nascimento | cep | reply_intent | payment_boleto_confirmation",
   "question": "Texto da pergunta que foi feita ao usuário",
   "userReply": "Resposta em texto livre do usuário"
 }
@@ -201,24 +201,25 @@ ou, quando não for possível extrair:
 
 **Steps suportados (onboarding):** `interesse`, `nome`, `cpf`, `email`, `nascimento`, `cep`.
 
-**Step extra (pedido de pagamento / zapzap):** `payment_nf_confirmation`
+**Step `reply_intent` (leitura de resposta / Zap shadow):** devolve **um código** da lista enviada em `question` (minúsculas, com underscores), ou `none` se incerto. Não inventa schema.
 
-- Usado após a leitura da nota fiscal no WhatsApp: o usuário manda correções em texto livre (emissor, valor, `copiar: email@…`, PIX, banco, observações).
-- O campo `question` traz o contexto montado pelo zapzap (inclui JSON `current_nf`).
+**Step extra (pedido de pagamento / zapzap):** `payment_boleto_confirmation`
+
+- Usado após a leitura do boleto no WhatsApp: o usuário manda correções em texto livre.
 - A resposta é **`extracted` como string JSON** (não um único valor escalar). Chaves permitidas (todas opcionais):  
-  `supplier_name`, `amount`, `nf_number`, `payment_type` (`pix` \| `transferencia` \| `boleto` \| `dinheiro` \| `cartao_credito`), `payment_info`, `payment_freeform`, `pix_key`, `contact_email`, `bank_name`, `bank_agency`, `bank_account`, `internal_reference`, `context_notes`, `notes`.
+  `beneficiary_name`, `beneficiary_document`, `payer_name`, `payer_document`, `digitable_line`, `barcode`, `due_date`, `amount`, `bank_code`, `document_number`, `payment_type`, `notes`.
 - Se nada couber: `extracted` = `"{}"` ou `null` em erro de modelo.
-- Modelo Ollama: alias **`smart`** (melhor aderência a JSON); `num_predict` maior que no onboarding.
+- Modelo Ollama: alias **`smart`**; `num_predict` maior que no onboarding.
 
 #### 3.1.1 POST /extract-multi — vários campos de uma vez
 
 Contrato alinhado ao zapzap (`LLM_API_CONTRACT.md` no repo bikeanjo/zapzap). O corpo inclui `task: "extract_multi"`, `userReply`, `fields` (lista de `{ id, label, example }`) e opcionalmente `context`.
 
-**`context`:** além de `current_step` e `already_collected`, a API **aceita chaves extras** (sem descartar). No fluxo de pagamento o zapzap envia por exemplo `step`, `instruction`, `current_nf`, `message_lines` — tudo é repassado ao modelo em um único JSON para contextualizar a extração.
+**`context`:** além de `current_step` e `already_collected`, a API **aceita chaves extras** (sem descartar). Chaves como `step`, `instruction`, `message_lines` são repassadas ao modelo em um único JSON.
 
 **Response (200):** `{ "extracted": { "nome": "...", "cpf": "..." } }` — só entradas extraídas com sucesso; objeto vazio se nada válido.
 
-**Pagamento:** quando `context` indica confirmação de NF (ex.: `step: "payment_nf_confirmation"` ou presença de `current_nf`), o prompt reforça que podem ser correções de pagamento; com muitos `fields`, o limite de tokens de saída é ampliado automaticamente.
+**Campos muitos:** com mais de 8 `fields`, o limite de tokens de saída (`num_predict`) é ampliado automaticamente.
 
 ### 3.2 POST /router — Roteador de mensagem (triage + intenção)
 

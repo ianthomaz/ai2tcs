@@ -126,9 +126,9 @@ async def test_extract_multi_accepts_payment_context_and_extra_keys(client):
                     {"id": "supplier_name", "label": "Nome do emissor na NF", "example": "ACME"},
                 ],
                 "context": {
-                    "step": "payment_nf_confirmation",
-                    "current_nf": {"supplier_name": "Errado LTDA", "amount": 10},
+                    "step": "payment_boleto_confirmation",
                     "instruction": "fill corrections",
+                    "message_lines": ["corrigindo o emissor"],
                 },
             },
             headers=HEADERS,
