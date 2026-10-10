@@ -271,6 +271,44 @@ async def job_update_status(
         )
 
 
+async def llm_heavy_counts_24h() -> dict[str, dict[str, int]]:
+    """Per project, last 24 h: calls flagged heavy / near_ctx_limit in user_context_json.__metrics."""
+    async with (await get_pool()).acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT project_id,
+                   COUNT(*) FILTER (WHERE (user_context_json->'__metrics'->>'heavy')::boolean) AS heavy,
+                   COUNT(*) FILTER (WHERE (user_context_json->'__metrics'->>'near_ctx_limit')::boolean) AS near_limit
+            FROM "Job"
+            WHERE created_at > NOW() - interval '24 hours'
+              AND jsonb_typeof(user_context_json) = 'object'
+              AND user_context_json ? '__metrics'
+            GROUP BY project_id
+            """
+        )
+    return {r["project_id"]: {"heavy": r["heavy"], "near_limit": r["near_limit"]} for r in rows}
+
+
+async def job_merge_user_context(job_id: str, extra: dict) -> None:
+    """Merge keys into Job.user_context_json (e.g. `__metrics`). Never raises: metrics are optional."""
+    if not extra:
+        return
+    try:
+        async with (await get_pool()).acquire() as conn:
+            await conn.execute(
+                """
+                UPDATE "Job" SET user_context_json =
+                    (CASE WHEN jsonb_typeof(user_context_json) = 'object'
+                          THEN user_context_json ELSE '{}'::jsonb END) || $2::jsonb
+                WHERE id = $1
+                """,
+                job_id,
+                json.dumps(extra),
+            )
+    except Exception:
+        logger.warning("job_merge_user_context failed for job %s", job_id, exc_info=True)
+
+
 async def job_update_after_stt(
     job_id: str,
     *,

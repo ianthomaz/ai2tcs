@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, Request
 from app.auth import require_token
 from app.config import settings
 from app.job_audit import log_sync_llm_job
+from app.llm import metrics as llm_metrics
 from app.models import ExtractMultiRequest, ExtractMultiResponse, ExtractRequest, ExtractResponse
 from app.registry import get_extract_steps_config, get_project
 
@@ -389,6 +390,7 @@ async def extract(req: Request, request: ExtractRequest, _: None = Depends(requi
             timeout=settings.extract_timeout_s,
         )
         content = (response.get("message") or {}).get("content") or ""
+        call_metrics = llm_metrics.record("extract", request.project_id, model_alias, llm_metrics.from_ollama(response))
         if step == "reply_intent":
             value = normalize_reply_intent(content, request.question)
         else:
@@ -402,7 +404,7 @@ async def extract(req: Request, request: ExtractRequest, _: None = Depends(requi
             status="done",
             model_alias=model_alias,
             answer=out,
-            user_context={"endpoint": "/extract", "step": step},
+            user_context={"endpoint": "/extract", "step": step, **({"__metrics": call_metrics} if call_metrics else {})},
         )
         return out
     except Exception:

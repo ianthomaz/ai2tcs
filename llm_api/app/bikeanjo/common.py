@@ -21,6 +21,7 @@ from pydantic import BaseModel, ValidationError
 from app.auth import require_token
 from app.config import settings
 from app.llm import get_provider
+from app.llm import metrics as llm_metrics
 
 logger = logging.getLogger(__name__)
 
@@ -129,10 +130,18 @@ async def chat_json(
     messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
     for attempt in range(attempts):
         try:
-            content = await asyncio.wait_for(
-                provider.chat(model=model_name, messages=messages, options=options),
-                timeout=settings.bikeanjo_ops_timeout_s,
-            )
+            call = getattr(provider, "chat_with_metrics", None)
+            if call is not None:
+                content, call_metrics = await asyncio.wait_for(
+                    call(model=model_name, messages=messages, options=options),
+                    timeout=settings.bikeanjo_ops_timeout_s,
+                )
+                llm_metrics.record("bikeanjo_ops", (project or {}).get("project_id"), model_name, call_metrics)
+            else:
+                content = await asyncio.wait_for(
+                    provider.chat(model=model_name, messages=messages, options=options),
+                    timeout=settings.bikeanjo_ops_timeout_s,
+                )
         except asyncio.TimeoutError:
             raise PortError("timeout", f"O modelo não respondeu em {settings.bikeanjo_ops_timeout_s:.0f}s.")
         except Exception as e:

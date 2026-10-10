@@ -64,6 +64,11 @@ Em regra **sem mudança** se usam aliases (`smart`, `reasoner`, …) e `project_
 
 ---
 
+## Chamadas pesadas da LLM
+
+`grep llm_heavy` no log da API, ou `llm_calls_heavy_24h` / `llm_calls_near_ctx_limit_24h` no
+`/metrics`. Critérios, campos gravados e a consulta SQL: [19 § 6](./19-optimization-review.md).
+
 ## QA ao vivo
 
 Dentro de `llm_api/`, contra a API que está a correr (por defeito `http://127.0.0.1:28471`):

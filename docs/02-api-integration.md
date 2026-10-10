@@ -401,7 +401,12 @@ llm_stt_completed_total 42
 llm_stt_failed_total 1
 llm_stt_transcribe_seconds_sum 180.5
 llm_stt_transcribe_seconds_avg 4.298
+llm_calls_heavy_24h{project="bikeanjoall_2026"} 3
+llm_calls_near_ctx_limit_24h{project="bikeanjoall_2026"} 0
 ```
+
+Resposta em `text/plain`. `llm_calls_*` contam, por projeto e nas últimas 24 h, as chamadas ao
+modelo com prompt pesado ou perto do limite de contexto ([19 § 6](./19-optimization-review.md)).
 
 Útil para monitoramento com Prometheus/Grafana. **Não exige** `Authorization` (verifique se sua instalação expõe `/metrics` ou protege via proxy).
 

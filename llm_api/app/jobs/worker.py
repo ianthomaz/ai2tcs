@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 from app import db as db_module
 from app.config import settings
 from app.llm import get_provider
+from app.llm import metrics as llm_metrics
 from app.registry import (
     get_project,
     get_rag_feature_flags,
@@ -342,20 +343,34 @@ async def _fire_job_callback(
         logger.warning("Callback failed for job %s: %s", job_id, exc)
 
 
-async def _chat_or_timeout(provider, *, model: str, messages: list[dict], options: dict) -> str:
-    """provider.chat() with a bound.
+async def _chat_with_metrics_or_timeout(
+    provider, *, model: str, messages: list[dict], options: dict
+) -> tuple[str, dict]:
+    """provider call with a bound, returning (text, metrics).
 
-    Without this, a hung provider call (network partition, stuck Ollama container)
-    blocked its job forever — and since a worker processes its alias queue
-    sequentially, every other job behind it too.
+    Without the bound, a hung provider call (network partition, stuck Ollama container)
+    blocks its job forever — and since a worker processes its alias queue sequentially,
+    every other job behind it too. Providers without chat_with_metrics give {} metrics.
     """
+    call = getattr(provider, "chat_with_metrics", None)
     try:
-        return await asyncio.wait_for(
+        if call is not None:
+            return await asyncio.wait_for(
+                call(model=model, messages=messages, options=options),
+                timeout=settings.llm_chat_timeout_s,
+            )
+        text = await asyncio.wait_for(
             provider.chat(model=model, messages=messages, options=options),
             timeout=settings.llm_chat_timeout_s,
         )
+        return text, {}
     except asyncio.TimeoutError as exc:
         raise RuntimeError(f"LLM chat timed out after {settings.llm_chat_timeout_s}s") from exc
+
+
+async def _chat_or_timeout(provider, *, model: str, messages: list[dict], options: dict) -> str:
+    text, _ = await _chat_with_metrics_or_timeout(provider, model=model, messages=messages, options=options)
+    return text
 
 
 def _final_job_status(answer: str | None, *, chunks: list[dict], rag_mode: str, policies: dict) -> str:
@@ -479,7 +494,7 @@ async def run_rag_job(
 
         model_name = settings.get_model_name(model_alias, default_alias="smart")
         provider = get_provider(project)
-        answer = await _chat_or_timeout(
+        answer, call_metrics = await _chat_with_metrics_or_timeout(
             provider,
             model=model_name,
             messages=[
@@ -488,6 +503,10 @@ async def run_rag_job(
             ],
             options=llm_config,
         )
+
+        recorded = llm_metrics.record("ask", project_id, model_name, call_metrics)
+        if recorded:
+            await db_module.job_merge_user_context(job_id, {"__metrics": recorded})
 
         # Post-processing: fix known LLM generation errors (meta-phrases, typos, filler)
         answer = _sanitize_answer(answer)

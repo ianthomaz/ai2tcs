@@ -3,12 +3,13 @@ import asyncio
 import json
 import re
 
-import ollama
 from fastapi import APIRouter, Depends, Request
 
 from app.auth import require_token
 from app.config import settings
 from app.job_audit import log_sync_llm_job
+from app.llm import get_provider
+from app.llm import metrics as llm_metrics
 from app.registry import get_project, get_rag_policies, get_router_config
 from app.rag.prompt import is_shareable_url
 from app.rag.retrieve import retrieve
@@ -281,6 +282,7 @@ async def _audit_router(
     model_alias: str,
     status: str,
     error_message: str | None = None,
+    metrics: dict | None = None,
 ) -> RouterResponse:
     await log_sync_llm_job(
         req,
@@ -296,6 +298,7 @@ async def _audit_router(
             "action": resp.action,
             "suggested_route": resp.suggested_route,
             "has_project_id": bool(body.project_id),
+            **({"__metrics": metrics} if metrics else {}),
         },
     )
     return resp
@@ -401,19 +404,25 @@ async def route_message(
     elif body.project_id == IAN_ZAP_PROJECT_ID:
         system_prompt = ROUTER_SYSTEM + ROUTER_SYSTEM_IAN_ZAP
 
+    call_metrics: dict = {}
     try:
-        response = await asyncio.to_thread(
-            ollama.chat,
-            model=model_alias,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_content},
-            ],
-            options={"temperature": 0.1, "num_predict": 512},
-            format="json",
+        # Same provider as /ask (config_json.llm_provider), bounded: a hung model call
+        # escalates instead of holding the request.
+        raw, call_metrics = await asyncio.wait_for(
+            get_provider(project).chat_with_metrics(
+                model=model_alias,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_content},
+                ],
+                options={"temperature": 0.1, "num_predict": 512, "format": "json"},
+            ),
+            timeout=settings.router_timeout_s,
         )
-        raw = (response.get("message") or {}).get("content") or ""
+        call_metrics = llm_metrics.record("router", body.project_id, model_alias, call_metrics)
     except Exception as e:
+        if isinstance(e, asyncio.TimeoutError):
+            e = RuntimeError(f"router model call timed out after {settings.router_timeout_s:.0f}s")
         out = RouterResponse(
             action="escalate",
             suggested_route="ask",
@@ -480,4 +489,6 @@ async def route_message(
 
         asyncio.create_task(speculative_warmup(finalized.escalate_to))
 
-    return await _audit_router(req, body, finalized, model_alias=model_alias, status="done")
+    return await _audit_router(
+        req, body, finalized, model_alias=model_alias, status="done", metrics=call_metrics
+    )

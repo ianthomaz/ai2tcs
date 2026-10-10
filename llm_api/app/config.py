@@ -28,6 +28,13 @@ class Settings(BaseSettings):
     # POST /extract single-field call. Below the zapzap clients (onboarding 5s default,
     # reply_intent 15s): past this the route answers extracted=null instead of hanging.
     extract_timeout_s: float = 30.0
+    # POST /router model call (sync, fast model). Past this the router escalates instead of hanging.
+    router_timeout_s: float = 30.0
+    # LLM call metrics (app/llm/metrics.py): prompt at or above this many tokens logs `llm_heavy`.
+    llm_heavy_prompt_tokens: int = 3500
+    # Context the installed Ollama gives a model when num_ctx is not set (2048 or 4096 by
+    # version). A prompt at 90% of it is flagged near_ctx_limit: it may have been cut.
+    llm_context_reference_tokens: int = 4096
     # /edu/chat: default to fast model for lower latency on short structured replies; override per-request with body.model or env.
     edu_chat_default_model_alias: str = "fast"
     edu_chat_num_predict: int = 512

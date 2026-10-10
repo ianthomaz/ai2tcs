@@ -52,10 +52,10 @@ Classificação: **M** = medir antes de mexer · **B** = ganho barato, sem mudar
 | # | Tipo | Achado | Onde |
 |---|---|---|---|
 | A1 | H | **[resolvido out/2026: `triage-v2` no git, ver 18 § 9]** **O que roda no mini62 não estava no git.** O Bike Anjo registra `triage-v2` publicado no ai2tcs do mini62 em 2/out (AC8, eval PRONTO). Nenhum commit do ai2tcs no GitHub tem `triage-v2`: `app/bikeanjo/feedback_triage.py` diz `triage-v1` e `contracts/bikeanjo/prompts/` não tem `feedback-triage-v2.md`. Um deploy a partir da `main` volta a triagem para v1. | `feedback_triage.py:23` |
-| A2 | M | **`num_ctx` nunca é definido.** `get_llm_config` não passa `num_ctx`; o Ollama usa o padrão da versão instalada (2048 ou 4096). O prompt do Bike Anjo tem ~3 mil tokens antes do histórico. Se passar do limite, o Ollama descarta parte do prompt para caber, sem erro, mantendo só os primeiros tokens; as regras do system prompt, que vêm logo depois, são o trecho mais exposto. Pode explicar parte do «ignora a regra» do shadow. | `registry.py:153`, `ollama_provider.py` |
-| A3 | M | **As métricas do Ollama são descartadas.** A resposta traz `prompt_eval_count`, `eval_count`, `total_duration`, `load_duration`; `OllamaProvider.chat` devolve só o texto. Sem isso não se sabe tokens por job, tempo de carga do modelo nem se A2 acontece. | `app/llm/ollama_provider.py` |
-| A4 | B | **`/router` e `/extract` chamam o Ollama direto.** Sem `asyncio.wait_for` (um Ollama travado prende a requisição), ignoram `config_json.llm_provider` do projeto e não passam pelo provider. O `/ask` já tem `_chat_or_timeout`. O `/extract` atende também a leitura de resposta do Bike Anjo (`reply_intent`). **`/extract`: teto de tempo aplicado (out/2026, `EXTRACT_TIMEOUT_S`); falta o provider.** | `message_router.py`, `extract.py` (blocos `ollama.chat`) |
-| A5 | B | **Um cliente Chroma novo por consulta.** `_retrieve_from_path` cria `chromadb.PersistentClient` a cada busca (2× por mensagem, 3× com deep search). Cache de cliente/coleção por caminho, invalidado no ingest, tira esse custo fixo. | `app/rag/retrieve.py:36` |
+| A2 | M | **[medição no ar com A3; correção espera os números]** **`num_ctx` nunca é definido.** `get_llm_config` não passa `num_ctx`; o Ollama usa o padrão da versão instalada (2048 ou 4096). O prompt do Bike Anjo tem ~3 mil tokens antes do histórico. Se passar do limite, o Ollama descarta parte do prompt para caber, sem erro, mantendo só os primeiros tokens; as regras do system prompt, que vêm logo depois, são o trecho mais exposto. Pode explicar parte do «ignora a regra» do shadow. | `registry.py:153`, `ollama_provider.py` |
+| A3 | M | **[feito out/2026, ver § 6]** **As métricas do Ollama eram descartadas.** A resposta traz `prompt_eval_count`, `eval_count`, `total_duration`, `load_duration`; `OllamaProvider.chat` devolve só o texto. Sem isso não se sabe tokens por job, tempo de carga do modelo nem se A2 acontece. | `app/llm/ollama_provider.py` |
+| A4 | B | **[feito out/2026: `/router` pelo provider com `ROUTER_TIMEOUT_S`; `/extract` com `EXTRACT_TIMEOUT_S`]** **`/router` e `/extract` chamavam o Ollama direto.** Sem `asyncio.wait_for` (um Ollama travado prende a requisição), ignoram `config_json.llm_provider` do projeto e não passam pelo provider. O `/ask` já tem `_chat_or_timeout`. O `/extract` atende também a leitura de resposta do Bike Anjo (`reply_intent`). **`/extract`: teto de tempo aplicado (out/2026, `EXTRACT_TIMEOUT_S`); falta o provider.** | `message_router.py`, `extract.py` (blocos `ollama.chat`) |
+| A5 | — | **Não é problema (conferido out/2026).** `_retrieve_from_path` cria `chromadb.PersistentClient` a cada busca, mas o Chroma reaproveita o mesmo sistema por caminho (`SharedSystemClient._identifier_to_system`); o custo de criar o cliente é desprezível. Nada a fazer. | `app/rag/retrieve.py:36` |
 | A6 | B | **A ordem do system prompt desperdiça o cache de prefixo do Ollama.** O Ollama reaproveita o processamento do início do prompt quando ele se repete. Hoje o perfil da pessoa (muda a cada contato) vem **antes** do bloco fixo do projeto (`system_instruction`). Fixo primeiro, variável depois, é o mesmo texto em outra ordem — mas muda o que o modelo lê por último, então entra com eval antes/depois. | `prompt.py` `build_system_prompt` |
 | A7 | Q | **A confiança do `/ask` não é sinal.** `confidence = "high" if chunks else "low"`. A do `/router` é autodeclarada pelo modelo e já foi vista alta em respostas 👎 (backlog Bike Anjo R1). Há sinais determinísticos baratos e honestos: distância do melhor trecho, quantos trechos passaram do limiar, se o guard ou o sanitize mexeu, tamanho da resposta. | `worker.py:518`, `message_router.py` |
 | A8 | Q | **Padrões de amostragem pensados para texto longo.** O bot do Bike Anjo herda `temperature 0.5` e `repeat_penalty 1.3`. Penalidade de repetição alta em resposta curta em português castiga `de`, `a`, URLs repetidas. É configuração por projeto (`llm_options`), sem código: A/B com o eval. | `registry.py:166` |
@@ -90,7 +90,6 @@ contrato com cliente.
 
 4. **A4:** `/router` e `/extract` passam por `get_provider(project)` + `_chat_or_timeout`
    (o `/router` com `format: "json"`, já suportado pelo provider). Mesmo prompt, mesma saída.
-5. **A5:** cache de `PersistentClient`/coleção por caminho, limpo pelo ingest daquele projeto.
 6. **A6:** system prompt na ordem fixo → variável, atrás de flag por projeto
    (`config_json.prompt_order: "static_first"`), ligado só depois do eval igual ou melhor.
 7. **A8:** A/B de `llm_options` do `bikeanjoall_2026` (`temperature 0.3`,
@@ -146,6 +145,42 @@ contrato com cliente.
 | D1 | Como o `triage-v2` do mini62 entra no git (A1) | a) commitar do mini62 · b) reescrever a partir do contrato do Bike Anjo | a — é o código que passou no eval |
 | D2 | Fonte única do comportamento do bot (A9/A10) | a) `system_instruction` no ai2tcs · b) arquivo no repositório do Bike Anjo, copiado como os contratos | b — o Bike Anjo já versiona o que o bot sabe; o ai2tcs lê |
 | D3 | Ordem da Onda 3 | a) depois das ondas 0–2 · b) já, em paralelo | a — o executor genérico herda as métricas e o gate de eval |
+
+## 6. Registro das chamadas da LLM (feito out/2026)
+
+Toda chamada ao modelo pelo `/ask`, `/router`, `/extract` e pelas portas do Bike Anjo
+registra contagens e tempos — **nunca o texto** da pergunta ou da resposta.
+
+| Onde | O quê |
+|---|---|
+| log (`app.llm.metrics`) | `llm_call kind=… project=… model=… prompt_tokens=… output_tokens=… total_ms=… load_ms=… heavy=… near_ctx_limit=…` em INFO; a mesma linha como `llm_heavy` em WARNING quando a chamada é pesada |
+| `Job.user_context_json.__metrics` | `/ask` (no próprio job), `/router` e `/extract` (na linha de auditoria) |
+| `GET /metrics` | `llm_calls_heavy_24h{project=…}` e `llm_calls_near_ctx_limit_24h{project=…}` |
+
+Critérios (`app/config.py`, por variável de ambiente):
+
+| Variável | Padrão | Significado |
+|---|---|---|
+| `LLM_HEAVY_PROMPT_TOKENS` | 3500 | prompt a partir disto é `heavy` |
+| `LLM_CONTEXT_REFERENCE_TOKENS` | 4096 | contexto que o Ollama instalado dá sem `num_ctx`; prompt ≥ 90% dele é `near_ctx_limit` (pode ter sido cortado) |
+| `ROUTER_TIMEOUT_S` · `EXTRACT_TIMEOUT_S` | 30 · 30 | teto da chamada ao modelo nas rotas síncronas |
+
+Consulta das pesadas (Postgres):
+
+```sql
+SELECT created_at, project_id, job_kind,
+       user_context_json->'__metrics' AS m
+FROM "Job"
+WHERE (user_context_json->'__metrics'->>'heavy')::boolean
+ORDER BY created_at DESC LIMIT 50;
+```
+
+**Próximo, com os números na mão:** se `near_ctx_limit` aparece, `llm_options.num_ctx`
+por projeto (ex. 8192), medindo memória no mini62 antes.
+
+**Aberto — higiene de log (dono, 10/out):** quanto cada chamada grava (o `Job` guarda a
+pergunta do `/ask` e do `/router` em `question`), por quanto tempo, e o que fica no disco do
+mini62. Levantamento antes de decidir retenção e o que mascarar.
 
 ---
 
