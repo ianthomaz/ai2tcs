@@ -8,6 +8,7 @@
 | [`retrieval-hints.json`](retrieval-hints.json) | boost/downrank por porta + `intent_clusters` |
 | `bibliotecaConteudoLLM/35_rag_prioridades_por_pergunta.md` | mapa **dentro** do índice (a LLM lê) |
 | `bibliotecaConteudoLLM/34_suporte_chamados_rascunho.md` | fatos/proibições do canal chamado |
+| `bibliotecaConteudoLLM/38_tom_voz_associacao.md` | tom de voz da equipe (replySuggest) |
 | `bibliotecaConteudoLLM/27_…` + `mapaFluxosLLM/06–09` | operação 2026 sem stubs vazios |
 
 ---

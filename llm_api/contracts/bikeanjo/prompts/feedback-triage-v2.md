@@ -1,8 +1,7 @@
 # System prompt — `feedbackTriage` · `prompt_version: triage-v2`
 
-Sucede o [`feedback-triage-v1.md`](feedback-triage-v1.md), que é o prompt em uso enquanto
-`FEEDBACK_TRIAGE_PROMPT_VERSION` for `triage-v1` (troca: AC8 em
-[engenharia_attention_change](../../../engenharia_attention_change.md)). Colar no ai2tcs como system (ou equivalente). O modelo devolve **só JSON** no molde
+Prompt em uso (`FEEDBACK_TRIAGE_PROMPT_VERSION = 'triage-v2'` em
+`sistemaBA/src/lib/feedback-triage-shared.ts`). Colar no ai2tcs como system (ou equivalente). O modelo devolve **só JSON** no molde
 `response_ok` do esquema. Sem markdown, sem prosa fora do JSON.
 
 ---

@@ -12,17 +12,15 @@ discordarem, **vale o arquivo**.
 | [`prompts/`](prompts/) | rascunho de system prompt (`prompt_version`) + few-shots de triagem |
 | [`rag/`](rag/RAG_PORTAS.md) | manifest do corpus, boost/downrank, intent clusters, docs `34`/`35` |
 | Prosa | [10h](../../10h_ai2tcs_portas_de_texto.md) (molde) · [10g](../../10g_feedback_triage_llm.md) · [10f](../../10f_health_normalize_api_contract.md) · [10b](../../10b_nf_extract_api_contract.md) · [10d](../../10d_ai2tcs_contrato_e_evolucao.md) |
-| Ensaios / lotes | [`runs/`](runs/README.md) — resultados versionados (ex. [2026-09-28 mini62](runs/2026-09-28-mini62-batch/NOTES.md): timeouts, fila calma) |
 
 ---
 
 ## Inventário × serviço vivo (mini62)
 
-Rotas registradas em `ai2tcs/llm_api/app/main.py`. As três portas novas estão
-**implementadas** no ai2tcs (branch `claude/bike-anjo-llm-integration-7fsuhp`, módulo
-`llm_api/app/bikeanjo/`, doc `ai2tcs/docs/18-bikeanjo-ops-ports.md`) e **ainda não
-publicadas** no mini62 — o serviço vivo segue sem elas até o deploy e o eval (ver
-[CHECKLIST](CHECKLIST_AI2TCS.md) § Pôr no ar).
+Rotas registradas em `ai2tcs/llm_api/app/main.py`. As portas ops (`llm_api/app/bikeanjo/`,
+doc `ai2tcs/docs/18-bikeanjo-ops-ports.md`) **rodam no mini62** desde 1/out/2026;
+`reply_intent` + `triage-v2` alinhados ao contrato (PR #9, 10/out/2026). Qualidade por
+porta (eval, re-ingest RAG): [CHECKLIST](CHECKLIST_AI2TCS.md).
 
 | Porta | Neste repo | No ai2tcs hoje | Cliente Bike Anjo |
 |---|---|---|---|
@@ -32,10 +30,10 @@ publicadas** no mini62 — o serviço vivo segue sem elas até o deploy e o eval
 | `POST /ask` (+ status/result) | esquema + exemplos | **produção** (`api/ask.py`) | idem |
 | `POST /extract` · `/extract-multi` | esquema + exemplos | **produção** (`api/extract.py`); passos: onboarding, `reply_intent`, `payment_boleto_confirmation` | zap |
 | `GET /health` | — | **produção** | smoke |
-| `POST /feedbackTriage` | esquema + exemplos + eval + prompt | **implementada, não publicada** | `itcs-feedback-triage.ts` (fila `feedback_triage`) |
-| `POST /healthNormalize` | esquema + exemplos + eval + prompt | **implementada, não publicada** | `itcs-health-normalize.ts` (fila `health_normalize`) |
-| `POST /replySuggest` | esquema + exemplos + eval + prompt | **implementada, não publicada** | `itcs-reply-suggest.ts` (`/admin/suporte` → Responder) |
-| `POST /task/text_triage` | esquema + exemplos | **implementada, não publicada** — porta genérica do ai2tcs (docs/20), categorias do Bike Anjo no seed | `itcs-text-triage.ts` · `scripts/text-triage.ts` (só classifica) |
+| `POST /feedbackTriage` | esquema + exemplos + eval + prompt | **produção** (`triage-v2` no mini62) | `itcs-feedback-triage.ts` (fila `feedback_triage`) |
+| `POST /healthNormalize` | esquema + exemplos + eval + prompt | **produção** | `itcs-health-normalize.ts` (fila `health_normalize`) |
+| `POST /replySuggest` | esquema + exemplos + eval + prompt | **produção** | `itcs-reply-suggest.ts` (`/admin/suporte` → Responder) |
+| `POST /task/text_triage` | esquema + exemplos | **produção** — porta genérica (docs/20), categorias no seed | `itcs-text-triage.ts` · `scripts/text-triage.ts` (bot da caixa = médio prazo, [10h § 2](../../10h_ai2tcs_portas_de_texto.md)) |
 | erro comum | `common.schema.json` | NF/boleto mandam `errors:[]`; `error` ao lado é aceito | todos os clientes leem `error.message`, depois `errors[0]` |
 
 Outras rotas no serviço que **não** têm pasta aqui (fora do escopo Bike Anjo ops):

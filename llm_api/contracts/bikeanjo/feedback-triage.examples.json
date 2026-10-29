@@ -7,7 +7,6 @@
         "source": "eba-feedback",
         "submissionId": "812",
         "userId": "AABC4",
-        "dependentId": null,
         "eventId": "C-AA002-A026",
         "payload": {
           "impressao_curta": "Muito acolhedor",
@@ -20,7 +19,7 @@
       "request": {
         "source": "eba-feedback",
         "submission_id": "812",
-        "subject": { "subject_id": "AABC4", "user_id": "AABC4", "dependent_id": null },
+        "subject": { "subject_id": "AABC4", "user_id": "AABC4" },
         "event_id": "C-AA002-A026",
         "locale": "pt-BR",
         "fields": {
@@ -51,14 +50,13 @@
         "source": "support_ticket",
         "submissionId": "77",
         "userId": null,
-        "dependentId": null,
         "eventId": null,
         "payload": { "subject": "Link de inscrição não abre", "message": "Tentei 3 vezes e dá erro. Meu e-mail é maria@exemplo.com" }
       },
       "request": {
         "source": "support_ticket",
         "submission_id": "77",
-        "subject": { "subject_id": null, "user_id": null, "dependent_id": null },
+        "subject": { "subject_id": null, "user_id": null },
         "event_id": null,
         "locale": "pt-BR",
         "fields": { "subject": "Link de inscrição não abre", "message": "Tentei 3 vezes e dá erro. Meu e-mail é [contato]" },

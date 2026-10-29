@@ -18,7 +18,7 @@ urgência, scores, âncora. **Sem RAG.**
 {
   "source": "eba-feedback | historico-ciclista | support_ticket",
   "submission_id": "812",
-  "subject": { "subject_id": "AABC4", "user_id": "AABC4", "dependent_id": null },
+  "subject": { "subject_id": "AABC4", "user_id": "AABC4" },
   "event_id": "C-AA002-A026",
   "locale": "pt-BR",
   "fields": { "impressao_curta": "…", "recado_livre": "… zap [contato]" },
@@ -30,7 +30,6 @@ urgência, scores, âncora. **Sem RAG.**
 |---|---|
 | `subject.subject_id` | Conta LCCCN ou `D_…`; `null` em chamado sem conta |
 | `subject.user_id` | Conta do canal; `null` em chamado sem conta |
-| `subject.dependent_id` | FK legado; preferir `subject_id` |
 | `fields` | só strings não vazias; já redigidas (`[contato]` / `[documento]`); histórico com prefixo `historico.` |
 | `scales` | inteiros 1–5; pode ser `{}` |
 
@@ -47,7 +46,7 @@ urgência, scores, âncora. **Sem RAG.**
   "theme_free": null,
   "confidence": 0.86,
   "model": "…",
-  "prompt_version": "triage-v1",
+  "prompt_version": "triage-v2",
   "warnings": []
 }
 ```

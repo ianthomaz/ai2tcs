@@ -38,6 +38,8 @@
     {"path": "bibliotecaConteudoLLM/34_suporte_chamados_rascunho.md", "role": "support", "channels": ["replySuggest"], "priority": 1, "topics": ["chamado", "suporte", "lgpd"]},
     {"path": "bibliotecaConteudoLLM/35_rag_prioridades_por_pergunta.md", "role": "routing", "channels": ["ask", "replySuggest"], "priority": 1, "topics": ["prioridade_rag"]},
     {"path": "bibliotecaConteudoLLM/36_sync_articulacoes_locais.md", "role": "core", "channels": ["ask", "replySuggest"], "priority": 1, "topics": ["articulacao", "hotpage", "cidade", "link"]},
+    {"path": "bibliotecaConteudoLLM/37_shadow_aprendizado_deploy.md", "role": "zap_local", "channels": ["ask"], "priority": 1, "topics": ["shadow", "silencio", "aprendizado"]},
+    {"path": "bibliotecaConteudoLLM/38_tom_voz_associacao.md", "role": "support", "channels": ["replySuggest"], "priority": 1, "topics": ["tom", "voz", "email", "chamado"]},
     {"path": "bibliotecaConteudoLLM/regimento-interno.md", "role": "legal_downrank", "channels": ["ask"], "priority": 4, "topics": ["regimento"]},
     {"path": "mapaFluxosLLM/01_mapa_entrada_mensagem.md", "role": "zap_map", "channels": ["ask"], "priority": 2, "topics": ["pipeline_zap"]},
     {"path": "mapaFluxosLLM/02_mapa_outbound_templates.md", "role": "zap_map", "channels": ["ask"], "priority": 2, "topics": ["templates"]},

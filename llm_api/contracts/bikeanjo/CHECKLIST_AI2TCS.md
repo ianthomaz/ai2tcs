@@ -44,11 +44,10 @@ Arquivos: `feedback-triage.schema.json` · `.examples.json` · `.eval.jsonl` ·
 
 - [x] Rota JSON sync em `app/bikeanjo/` (módulo do projeto, não `app/api/`) + `include_router` em `main.py`
 - [x] Modelos de entrada/saída alinhados ao esquema (ou validação runtime)
-- [x] Prompt `triage-v1` no ar (lote de produção de 1/out).
 - [x] **Publicar `triage-v2`:** prompt = `prompts/feedback-triage-v2.md` **+**
       `prompts/feedback-triage-fewshots.md` (exemplos G–I), resposta com
       `"prompt_version": "triage-v2"`; publicado no ai2tcs (mini62, 2/out/2026) +
-      `FEEDBACK_TRIAGE_PROMPT_VERSION = 'triage-v2'` no BA ([AC8](../../engenharia_attention_change.md)).
+      `FEEDBACK_TRIAGE_PROMPT_VERSION = 'triage-v2'` no BA.
       No git do ai2tcs desde out/2026: `PROMPT_VERSION = "triage-v2"`, o modelo recebe
       `subject.kind` (`adult` · `dependent` · `none`, nunca o id) e o serviço garante a
       regra 9 (texto sobre o filho com sujeito adulto → `watch`, confiança ≤ 0,5).
@@ -126,26 +125,25 @@ Fontes RAG entram no JSON da porta; a tela de suporte **não** as mostra (shadow
 
 ## 5b. `POST /extract` — passo `reply_intent` (leitura de resposta em shadow)
 
-- [x] Em `llm_api/app/api/extract.py`, `STEP_INSTRUCTIONS`, a linha de
-      [AC14](../../engenharia_attention_change.md): o passo devolve um código da lista
-      que vem na pergunta, ou `none` (ai2tcs PR #8).
+- [x] Em `llm_api/app/api/extract.py`, `STEP_INSTRUCTIONS`: o passo devolve um código da
+      lista que vem na pergunta, ou `none` (ai2tcs PR #9).
 - [x] O serviço lê a lista da pergunta (`- código: significado`) e devolve `null` para
       código fora dela; resposta embrulhada («release_slot».) vira o código. Chamada ao
       modelo com teto de tempo (`EXTRACT_TIMEOUT_S`, 30 s).
 - [x] Contrato: `extract.examples.json` com a pergunta que `buildLlmQuestion` monta —
       trava nos dois lados (`zapzap/lib/__tests__/ai2tcs-contracts.test.js` e
       `tests/test_api_zapzap_contract.py` no ai2tcs).
-- [ ] Pronto quando `node zapzap/scripts/reply-reading-probe.js "pode contar comigo"`
-      devolve `confirm_presence` (ou outro código da lista), não `no_answer`.
+- [x] `node zapzap/scripts/reply-reading-probe.js "pode contar comigo"` →
+      `confirm_presence` (mini62, 10/out/2026).
 
 ---
 
-## Pôr no ar (mini62) — só com ordem do dono
+## Próximo deploy LLM (mini62) — só com ordem do dono
 
-As portas `/feedbackTriage`, `/healthNormalize`, `/replySuggest` e o envelope
-`error` no NF/boleto **já rodam** no serviço vivo (1/out/2026). Itens «Eval (pronto)»
-e re-ingest do corpus (`36_…`) ainda medem qualidade / índice — não bloqueiam o
-código das portas.
+As portas `/feedbackTriage`, `/healthNormalize`, `/replySuggest`, `reply_intent` e o
+envelope `error` no NF/boleto **já rodam** no serviço vivo (1/out/2026; `reply_intent` +
+`triage-v2` alinhados em 10/out/2026). Esta lista vale para **mudança nova** no ai2tcs ou
+refresh de eval/re-ingest — não é pendência de deploy Bike Anjo.
 
 1. `git pull` do ai2tcs + rebuild (`./scripts/deploy_llm.sh`).
 2. Smoke: `curl` com a chave `bikeanjoall_2026` num `request` dos examples → `status: ok`;

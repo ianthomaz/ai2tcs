@@ -11,6 +11,7 @@
         "31_zap_pragmatico_anti_promessa",
         "32_shadow_licoes_silencio_e_local",
         "33_transicao_sistema_e_calendario_local",
+        "37_shadow_aprendizado_deploy",
         "16_identidade_assistente",
         "23_whatsapp_canal_o_que_faz",
         "17_exemplos_mensagens_whatsapp",
@@ -56,6 +57,7 @@
       "query_from": ["subject", "message"],
       "boost_path_substrings": [
         "35_rag_prioridades_por_pergunta",
+        "38_tom_voz_associacao",
         "34_suporte_chamados_rascunho",
         "09_contato_e_parcerias",
         "02_como_funciona",
@@ -84,6 +86,7 @@
       ],
       "exclude_path_substrings": [],
       "preferred_sources_in_response": [
+        "38_tom_voz_associacao",
         "34_suporte_chamados_rascunho",
         "35_rag_prioridades_por_pergunta",
         "09_contato_e_parcerias",
