@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app import db as db_module
 from app.auth import ensure_job_visible, require_token
-from app.models import AskRequest, AskResponse, ResultResponse, StatusResponse, UserSourceRef
+from app.models import AskIntent, AskRequest, AskResponse, ResultResponse, StatusResponse, UserSourceRef
 from app.registry import get_project, get_rag_policies
 
 router = APIRouter(tags=["ask"])
@@ -91,6 +91,13 @@ async def result(job_id: str, request: Request, _: None = Depends(require_token)
     job = ensure_job_visible(request, await db_module.job_get(job_id))
     raw_sources = job.get("sources") or []
     sources = [UserSourceRef(url=s["url"]) for s in raw_sources if s.get("url")]
+    raw_intent = job.get("intent")
+    intent = None
+    if isinstance(raw_intent, dict):
+        try:
+            intent = AskIntent.model_validate(raw_intent)
+        except Exception:
+            intent = None
     return ResultResponse(
         job_id=job["id"],
         status=job["status"],
@@ -100,4 +107,5 @@ async def result(job_id: str, request: Request, _: None = Depends(require_token)
         transcript=job.get("transcript"),
         stt_metadata=job.get("stt_metadata"),
         signals=job.get("signals"),
+        intent=intent,
     )

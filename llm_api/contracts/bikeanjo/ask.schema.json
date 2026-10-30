@@ -134,7 +134,40 @@
             "string",
             "null"
           ],
-          "description": "final, já no formato WhatsApp: curto, link-first, sem markdown, sem preâmbulo"
+          "description": "final, já no formato WhatsApp: curto, link-first, sem markdown, sem preâmbulo. Em knowledge_kind=user_system preferir null — o cliente executa a action."
+        },
+        "intent": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "2º roteador semântico do /ask (aditivo). Presente quando config_json.ask_intent.enabled. O cliente lê action e executa consulta; a LLM não lê banco.",
+          "required": [
+            "knowledge_kind"
+          ],
+          "properties": {
+            "knowledge_kind": {
+              "enum": [
+                "org_general",
+                "user_system",
+                "unknown"
+              ]
+            },
+            "action": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Código da lista fechada do projeto (ask_intent.actions) se user_system; senão null"
+            },
+            "action_payload": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "description": "Opcional: event_name / event_id se o modelo inferir do histórico"
+            }
+          }
         },
         "signals": {
           "type": [

@@ -1,0 +1,70 @@
+{
+  "project_id": "bikeanjoall_2026",
+  "cases": [
+    {
+      "id": 1,
+      "name": "inscricao_consegue_ver",
+      "question": "acho q já fiz a inscrição… vc consegue ver aí?",
+      "history": [
+        {"role": "assistant", "content": "Te convidamos para a Escola Bike Anjo (EBA) deste sábado."},
+        {"role": "user", "content": "quero ir!"}
+      ],
+      "expected": {
+        "knowledge_kind": "user_system",
+        "action": "event_interest_lookup"
+      }
+    },
+    {
+      "id": 2,
+      "name": "ja_me_inscrevi",
+      "question": "já me inscrevi?",
+      "history": [],
+      "expected": {
+        "knowledge_kind": "user_system",
+        "action": "event_interest_lookup"
+      }
+    },
+    {
+      "id": 3,
+      "name": "o_que_e_bike_anjo",
+      "question": "o que é a Bike Anjo?",
+      "history": [],
+      "expected": {
+        "knowledge_kind": "org_general",
+        "action": null
+      }
+    },
+    {
+      "id": 4,
+      "name": "como_funciona_eba",
+      "question": "como funciona a Escola Bike Anjo?",
+      "history": [],
+      "expected": {
+        "knowledge_kind": "org_general",
+        "action": null
+      }
+    },
+    {
+      "id": 5,
+      "name": "obrigado_silence",
+      "question": "obrigado",
+      "history": [],
+      "expected": {
+        "knowledge_kind": "unknown",
+        "action": null,
+        "job_status": "no_answer"
+      }
+    },
+    {
+      "id": 6,
+      "name": "link_cadastro_not_lookup",
+      "question": "quero o link do cadastro",
+      "history": [],
+      "expected": {
+        "knowledge_kind": "org_general",
+        "action": null,
+        "forbid_action": "event_interest_lookup"
+      }
+    }
+  ]
+}

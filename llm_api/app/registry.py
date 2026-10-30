@@ -141,6 +141,43 @@ def get_router_config(project: dict) -> dict:
     return {"routes": None, "extra_system_block": "", "default_escalate_model": "smart"}
 
 
+def get_ask_intent_config(project: dict) -> dict | None:
+    """Closed-list semantic cut for /ask from config_json.ask_intent.
+
+    Returns None when disabled or misconfigured (caller keeps legacy RAG-only behaviour).
+    Shape: {"enabled": bool, "actions": [{"code": str, "meaning": str}, ...]}.
+    """
+    cfg = project.get("config_json") or {}
+    if not isinstance(cfg, dict):
+        return None
+    raw = cfg.get("ask_intent")
+    if not isinstance(raw, dict) or not raw.get("enabled"):
+        return None
+    actions_in = raw.get("actions")
+    if not isinstance(actions_in, list) or not actions_in:
+        return None
+    actions: list[dict] = []
+    for item in actions_in:
+        if isinstance(item, str) and item.strip():
+            actions.append({"code": item.strip(), "meaning": item.strip()})
+            continue
+        if not isinstance(item, dict):
+            continue
+        code = item.get("code")
+        if not isinstance(code, str) or not code.strip():
+            continue
+        meaning = item.get("meaning")
+        actions.append(
+            {
+                "code": code.strip(),
+                "meaning": meaning.strip() if isinstance(meaning, str) and meaning.strip() else code.strip(),
+            }
+        )
+    if not actions:
+        return None
+    return {"enabled": True, "actions": actions}
+
+
 def get_extract_steps_config(project: dict) -> dict:
     """Optional per-project extract step overrides from config_json.extract_steps."""
     cfg = project.get("config_json") or {}

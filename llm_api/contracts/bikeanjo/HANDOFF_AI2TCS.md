@@ -51,3 +51,19 @@ Em 17/out, de fora (`llm.webplace.cc`), sem `Authorization`:
 Com a regra de chave por projeto (token global ou chave alheia → 403), pedido **sem** chave
 respondendo parece fora do desenho. Conferir no ai2tcs se é de propósito. O Bike Anjo não
 mexe nisso.
+
+## 4. 2º roteador semântico — `intent` no `/ask` (v1 · 30/out/2026)
+
+No WhatsApp, o 1º roteador é mecânico no cliente (só passa se a mensagem tiver `?`).
+O 2º é o `/ask`: qualidade semântica do que a pessoa quer saber. A LLM **não lê banco**;
+perguntas do tipo «já me inscrevi? / consegue ver aí?» não devem virar prosa inventada
+nem link de cadastro.
+
+**No ai2tcs (feito):** `GET /result/{id}` devolve `intent` quando
+`config_json.ask_intent.enabled`. Shape: `knowledge_kind` + `action` (lista fechada do
+projeto) + `action_payload`. Em `user_system` o serviço salta o RAG e deixa `answer`
+vazio. Seed `bikeanjoall_2026` inclui `event_interest_lookup` (+ duas actions reservadas)
+e regras duras no `system_instruction`.
+
+**No Bike Anjo (próximo):** ler `intent.action` → executar consulta → mensagem padrão
+(shadow primeiro). Sem o executor, o contrato já existe para plugar.

@@ -21,7 +21,62 @@
         "status": "done"
       },
       "result": {
-        "answer": "Para ser Bike Anjo, comece pelo cadastro:\nhttps://sistema.bikeanjo.org/cadastro"
+        "answer": "Para ser Bike Anjo, comece pelo cadastro:\nhttps://sistema.bikeanjo.org/cadastro",
+        "intent": {
+          "knowledge_kind": "org_general",
+          "action": null,
+          "action_payload": null
+        }
+      }
+    },
+    {
+      "name": "status de inscrição → user_system (cliente executa)",
+      "request": {
+        "project_id": "bikeanjoall_2026",
+        "question": "acho q já fiz a inscrição… vc consegue ver aí?",
+        "history": [
+          {
+            "role": "assistant",
+            "text": "Te convidamos para a Escola Bike Anjo (EBA) deste sábado."
+          }
+        ]
+      },
+      "job_created": {
+        "job_id": "job_intent_1"
+      },
+      "job_status": {
+        "status": "done"
+      },
+      "result": {
+        "answer": null,
+        "intent": {
+          "knowledge_kind": "user_system",
+          "action": "event_interest_lookup",
+          "action_payload": {
+            "event_name": "Escola Bike Anjo"
+          }
+        }
+      }
+    },
+    {
+      "name": "o que é a Bike Anjo → org_general + RAG",
+      "request": {
+        "project_id": "bikeanjoall_2026",
+        "question": "o que é a Bike Anjo?"
+      },
+      "job_created": {
+        "job_id": "job_intent_3"
+      },
+      "job_status": {
+        "status": "done"
+      },
+      "result": {
+        "answer": "Bike Anjo é uma rede de voluntários que ensina a pedalar e articula ciclismo urbano.",
+        "intent": {
+          "knowledge_kind": "org_general",
+          "action": null,
+          "action_payload": null
+        }
       }
     },
     {

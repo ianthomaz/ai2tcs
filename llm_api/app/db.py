@@ -228,7 +228,8 @@ async def job_get(job_id: str) -> dict | None:
             SELECT id, project_id, question, question_hash, status, progress, answer,
                    sources_json, confidence, error_message, created_at, updated_at,
                    job_kind, model_alias, audio_path, transcript, stt_metadata_json,
-                   user_context_json->'__signals' AS signals_json
+                   user_context_json->'__signals' AS signals_json,
+                   user_context_json->'__intent' AS intent_json
             FROM "Job"
             WHERE id = $1
             """,
@@ -261,6 +262,7 @@ async def job_get(job_id: str) -> dict | None:
             "transcript": row["transcript"],
             "stt_metadata": stt_meta if isinstance(stt_meta, dict) else None,
             "signals": _json_object(row["signals_json"]),
+            "intent": _json_object(row["intent_json"]),
         }
 
 

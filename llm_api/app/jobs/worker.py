@@ -13,6 +13,7 @@ from app.llm import get_provider
 from app.llm import metrics as llm_metrics
 from app.llm import signals as llm_signals
 from app.registry import (
+    get_ask_intent_config,
     get_project,
     get_rag_feature_flags,
     get_rag_mode,
@@ -21,6 +22,7 @@ from app.registry import (
     get_behavior_instruction_inline,
     get_behavior_instruction_path,
 )
+from app.rag.ask_intent import classify_ask_intent
 from app.rag.prompt import build_messages, is_shareable_url
 from app.rag.answer_guard import guard_answer_for_profile
 from app.rag.retrieve import retrieve
@@ -413,6 +415,55 @@ async def run_rag_job(
         if isinstance(project.get("config_json"), dict):
             embed_model = (project["config_json"] or {}).get("embedding_model") or embed_model
 
+        # Semantic cut (2nd router): classify before RAG when project enables ask_intent.
+        intent_dict: dict | None = None
+        ask_intent_cfg = get_ask_intent_config(project)
+        if ask_intent_cfg:
+            await db_module.job_update_status(job_id, "working", progress="classifying_intent")
+            hist_for_cls = client_conversation_override
+            if hist_for_cls is None and user_id:
+                hist_for_cls = await db_module.conversation_get_recent(user_id, project_id, limit=6)
+            intent_dict = await classify_ask_intent(
+                project,
+                ask_intent_cfg,
+                question=question,
+                history=hist_for_cls,
+            )
+            kind = intent_dict.get("knowledge_kind")
+            if kind in ("user_system", "unknown"):
+                await db_module.job_merge_user_context(job_id, {"__intent": intent_dict})
+                if user_id:
+                    await db_module.conversation_append(
+                        user_id, project_id, "user", question, job_id=job_id
+                    )
+                # user_system: done with empty answer — client runs the closed action.
+                # unknown: silence (no_answer).
+                status = "done" if kind == "user_system" else policies.get("when_no_answer", "no_answer")
+                await db_module.job_update_status(
+                    job_id,
+                    status,
+                    progress="complete",
+                    answer=None,
+                    sources=[],
+                    confidence="high" if kind == "user_system" else "low",
+                )
+                if callback_url:
+                    await _fire_job_callback(
+                        callback_url,
+                        job_id=job_id,
+                        status=status,
+                        answer=None,
+                        sources=[],
+                    )
+                logger.info(
+                    "job %s intent=%s action=%s status=%s (skip RAG)",
+                    job_id,
+                    kind,
+                    intent_dict.get("action"),
+                    status,
+                )
+                return
+
         # RAG retrieval (skipped when rag_mode == "disabled")
         chunks: list[dict] = []
         if rag_mode != "disabled":
@@ -530,9 +581,10 @@ async def run_rag_job(
             metrics=recorded,
             reflection_changed=answer != guarded,
         )
-        await db_module.job_merge_user_context(
-            job_id, {**({"__metrics": recorded} if recorded else {}), "__signals": answer_signals}
-        )
+        merge_ctx: dict = {**({"__metrics": recorded} if recorded else {}), "__signals": answer_signals}
+        if intent_dict:
+            merge_ctx["__intent"] = intent_dict
+        await db_module.job_merge_user_context(job_id, merge_ctx)
 
         # Persist assistant response in conversation history
         if user_id and answer:

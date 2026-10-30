@@ -1,4 +1,6 @@
 """Pydantic models for API request/response."""
+from typing import Any, Literal
+
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
 from app.extract_envelope import extract_error_dict
@@ -122,6 +124,20 @@ class UserSourceRef(BaseModel):
     url: str
 
 
+class AskIntent(BaseModel):
+    """Semantic cut for /ask: who should answer — org RAG vs client user-system lookup."""
+
+    knowledge_kind: Literal["org_general", "user_system", "unknown"]
+    action: str | None = Field(
+        None,
+        description="Closed-list code from project config when knowledge_kind=user_system; else null",
+    )
+    action_payload: dict[str, Any] | None = Field(
+        None,
+        description="Optional hints (e.g. event_name) for the client executor",
+    )
+
+
 class ResultResponse(BaseModel):
     job_id: str
     status: str
@@ -140,6 +156,10 @@ class ResultResponse(BaseModel):
         None,
         description="What the service knows about the answer (not the model's opinion): best_distance, "
         "chunks_kept, sanitize_hit, guard_hit, reflection_changed, answer_chars, prompt_tokens, near_ctx_limit",
+    )
+    intent: AskIntent | None = Field(
+        None,
+        description="Semantic router cut (additive). Present when project ask_intent is enabled.",
     )
 
 
