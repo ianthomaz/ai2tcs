@@ -16,3 +16,4 @@ Contribuições ao código e contratos: [../CONTRIBUTING.md](../CONTRIBUTING.md)
 - [20-text-tasks.md](20-text-tasks.md) — tarefas de texto para qualquer projeto: `POST /task/{task_id}`, tarefa em arquivo, vocabulário na configuração do projeto (`text_triage`).
 - [21-review-nov2026.md](21-review-nov2026.md) — avaliação, contra o código, das prioridades do Bike Anjo (S1–S4) e da revisão de arquitetura; plano em fatias F0–F4.
 - [22-answer-ratings.md](22-answer-ratings.md) — julgamentos de resposta de qualquer projeto (`/ratings`): proposta de termo proibido com aprovação e exemplos aprovados no `/ask`.
+- [23-ecosystem-panorama.md](23-ecosystem-panorama.md) — panorama: o ai2tcs no ecossistema ITCS, como a base é lida, o caminho para o robô conversar com mais liberdade e as frentes abertas.

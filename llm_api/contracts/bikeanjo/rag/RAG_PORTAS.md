@@ -17,7 +17,7 @@
 
 | Porta | RAG | Direção |
 |---|---|---|
-| `/ask` | sim | boost Zap (24/31/32/33/16/23 + mapas CEP/router); downrank estatuto/regimento/INDEX |
+| `/ask` · `/router` | sim | boost Zap (24/31/32/33/16/23 + mapas CEP/router); downrank estatuto/regimento/INDEX; `intent_clusters` por palavra-chave. O ai2tcs lê de `config_json.retrieval_hints`, que o seed copia deste `retrieval-hints.json` (porta `ask`) |
 | `/feedbackTriage` | **não** | few-shots |
 | `/healthNormalize` | **não** | allowlist + `health-normalize-v1.md` + `health-normalize-fewshots.md` |
 | `/replySuggest` | sim | boost `34`/`35`/FAQ/contato; **downrank** `mapaFluxosLLM` e identidade do bot. A UI de `/admin/suporte` não lista as fontes. |

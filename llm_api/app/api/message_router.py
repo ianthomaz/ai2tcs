@@ -368,7 +368,7 @@ async def route_message(
         embed_model = (project["config_json"] or {}).get("embedding_model") or embed_model
 
     chunks = await retrieve(
-        body.project_id, _build_retrieval_query(body), top_k=top_k, embedding_model=embed_model
+        body.project_id, _build_retrieval_query(body), top_k=top_k, embedding_model=embed_model, port="ask"
     )
     max_dist = policies.get("max_chunk_distance", 1.0)
     chunks = [c for c in chunks if c.get("distance") is None or c["distance"] <= max_dist]

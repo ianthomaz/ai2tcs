@@ -73,4 +73,4 @@ mandando `"rating": null`.
 
 ---
 
-**Anterior:** [21-review-nov2026.md](./21-review-nov2026.md)
+**Anterior:** [21-review-nov2026.md](./21-review-nov2026.md) · **Próximo:** [23-ecosystem-panorama.md](./23-ecosystem-panorama.md)

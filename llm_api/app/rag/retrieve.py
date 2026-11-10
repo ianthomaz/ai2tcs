@@ -7,7 +7,7 @@ import chromadb
 from chromadb.config import Settings as ChromaSettings
 
 from app.config import settings
-from app.ingest.embeddings import get_embedding_async
+from app.ingest.embeddings import QUERY_INSTRUCTIONS, get_embedding_async
 
 
 def get_chroma_path(project_id: str) -> Path:
@@ -81,10 +81,12 @@ async def retrieve(
     query: str,
     top_k: int = 5,
     embedding_model: str = "mxbai-embed-large",
+    port: str | None = None,
 ) -> list[dict]:
     """
     Return list of { "id", "path", "snippet", "distance", "origin" } for top_k chunks.
-    Retrieves from project index AND shared libraries if configured.
+    Retrieves from project index AND shared libraries if configured. With `port`, the
+    project's retrieval hints for that channel reorder the candidates (app/rag/hints.py).
     """
     from app.registry import get_project, get_rag_feature_flags
     project = await get_project(project_id)
@@ -93,18 +95,24 @@ async def retrieve(
     if isinstance(shared_libraries, str):
         shared_libraries = [shared_libraries]
 
-    query_embedding = await get_embedding_async(query, model=embedding_model)
     flags = get_rag_feature_flags(project or {})
+    policies = cfg.get("policies") if isinstance(cfg.get("policies"), dict) else {}
+    instruction = QUERY_INSTRUCTIONS.get(embedding_model, "") if policies.get("embedding_query_instruction") else ""
+    query_embedding = await get_embedding_async(instruction + query, model=embedding_model)
+
+    # Twice top_k from each index: hybrid, hints and rerank reorder a real pool. With none of
+    # them on, the first top_k by distance are the same as asking for top_k.
+    fetch_k = min(top_k * 2, 20)
 
     # 1. Retrieve from project
     tasks = [
-        _retrieve_from_path(get_chroma_path(project_id), query_embedding, top_k=top_k, origin="project")
+        _retrieve_from_path(get_chroma_path(project_id), query_embedding, top_k=fetch_k, origin="project")
     ]
 
     # 2. Retrieve from shared libraries
     for slug in shared_libraries:
         tasks.append(
-            _retrieve_from_path(get_shared_chroma_path(slug), query_embedding, top_k=top_k, origin=f"shared:{slug}")
+            _retrieve_from_path(get_shared_chroma_path(slug), query_embedding, top_k=fetch_k, origin=f"shared:{slug}")
         )
 
     all_results = await asyncio.gather(*tasks)
@@ -116,17 +124,24 @@ async def retrieve(
     # Optional lightweight hybrid ranking:
     # keep vector ranking as base, then apply a small keyword-overlap boost.
     if flags["rag_hybrid_enabled"] and merged:
-        q_tokens = {t for t in query.lower().split() if len(t) > 2}
+        from app.llm.signals import STOPWORDS, WORD_RE, fold
+
+        # Content words, without accents or punctuation: «oficina?» matches «Oficina».
+        q_tokens = {t for t in WORD_RE.findall(fold(query)) if t not in STOPWORDS}
         if q_tokens:
             for item in merged:
-                snippet = (item.get("snippet") or "").lower()
-                overlap = sum(1 for t in q_tokens if t in snippet)
+                words = set(WORD_RE.findall(fold(item.get("snippet") or "")))
+                overlap = len(q_tokens & words)
                 # Lower score remains better because base is distance.
                 item["_hybrid_score"] = (item["distance"] if item["distance"] is not None else 2.0) - (0.02 * overlap)
             merged.sort(key=lambda x: x.get("_hybrid_score", x["distance"] if x["distance"] is not None else 2.0))
 
-    candidate_k = min(len(merged), max(top_k * 2, top_k))
-    merged = merged[:candidate_k]
+    merged = merged[:fetch_k]
+
+    if port:
+        from app.rag import hints as rag_hints
+
+        merged = rag_hints.apply(merged, rag_hints.project_hints(project, port), query)
 
     if flags["rag_rerank_enabled"] and merged:
         from app.rag.rerank import rerank_chunks

@@ -2,8 +2,8 @@
 
 Leitura, contra o código da `main` de 10/nov/2026, de dois documentos da raiz:
 
-- [`prioridades_paraBikeAnjo.md`](../prioridades_paraBikeAnjo.md) — S1 a S4, pedido do Bike Anjo;
-- [`AVALIACAO_ARQUITETURA_E_ECOSSISTEMA_ITCS.md`](../AVALIACAO_ARQUITETURA_E_ECOSSISTEMA_ITCS.md) — § 1.2 (pontos técnicos), § 3.2 e § 5.
+- prioridades do Bike Anjo (S1 a S4), cujo texto está em `llm_api/contracts/bikeanjo/SOLICITACOES_AI2TCS.md`;
+- revisão de arquitetura e ecossistema de 9/nov/2026, hoje organizada em [23](./23-ecosystem-panorama.md).
 
 Critério de todo o plano: o que entra no ai2tcs é **genérico** (vale para qualquer projeto
 por configuração; ver [README § Princípio](../README.md#princípio-serviço-de-vários-projetos))

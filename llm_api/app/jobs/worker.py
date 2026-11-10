@@ -470,7 +470,7 @@ async def run_rag_job(
         chunks: list[dict] = []
         if rag_mode != "disabled":
             await db_module.job_update_status(job_id, "working", progress="retrieving_context")
-            chunks = await retrieve(project_id, question, top_k=top_k, embedding_model=embed_model)
+            chunks = await retrieve(project_id, question, top_k=top_k, embedding_model=embed_model, port="ask")
             max_dist = policies.get("max_chunk_distance", MAX_CHUNK_DISTANCE)
             chunks = _filter_chunks_by_distance(chunks, max_distance=max_dist)
 
@@ -480,14 +480,14 @@ async def run_rag_job(
                 logger.info("Deep search triggered for job %s (depth=%s, chunks_found=%d)", job_id, depth, len(chunks))
                 deep_top_k = 12
                 deep_max_dist = max_dist * 1.3  # 30% more permissive
-                more_chunks = await retrieve(project_id, question, top_k=deep_top_k, embedding_model=embed_model)
+                more_chunks = await retrieve(project_id, question, top_k=deep_top_k, embedding_model=embed_model, port="ask")
                 more_chunks = _filter_chunks_by_distance(more_chunks, max_distance=deep_max_dist)
 
                 existing_ids = {c.get("id") for c in chunks if c.get("id")}
                 for c in more_chunks:
                     if c.get("id") not in existing_ids:
                         chunks.append(c)
-                chunks.sort(key=lambda x: x.get("distance", 2.0))
+                chunks.sort(key=lambda x: x.get("adjusted_distance", x.get("distance", 2.0)))
                 chunks = chunks[:10]
 
             chunks = _rerank_for_diversity(chunks)
@@ -543,6 +543,9 @@ async def run_rag_job(
             client_system_prompt_prefix=client_system_prefix,
             llm_config=llm_config,
         )
+        # What the model saw from this question's context: a link only counts as supported
+        # when it is here, never because an approved example (below) carried it.
+        seen_prompt = f"{system_msg}\n{user_msg}"
         # Approved answers as examples, only for a project that turned it on (docs/22).
         rated_examples = int(policies.get("rated_examples") or 0)
         if rated_examples > 0:
@@ -591,7 +594,7 @@ async def run_rag_job(
             guard_hit=guarded != sanitized,
             metrics=recorded,
             distance_reference=float(policies.get("max_chunk_distance", MAX_CHUNK_DISTANCE)),
-            prompt_text=f"{system_msg}\n{user_msg}",
+            prompt_text=seen_prompt,
             reflection_changed=answer != guarded,
         )
         merge_ctx: dict = {**({"__metrics": recorded} if recorded else {}), "__signals": answer_signals}

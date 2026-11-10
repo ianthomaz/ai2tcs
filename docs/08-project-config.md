@@ -553,3 +553,18 @@ Detalhe: [20-text-tasks.md](./20-text-tasks.md).
 Número de respostas julgadas «ótimas» que entram no prompt do `/ask` quando a pergunta se
 parece com a delas (padrão 0, desligado). Ligar depois do `scripts/eval_gate.py`. Detalhe:
 [22-answer-ratings.md § 4](./22-answer-ratings.md#4-exemplos-aprovados-no-ask).
+
+### `retrieval_hints` — o que o canal prefere na busca
+
+Mesmo formato do arquivo de contrato de um cliente (ex.: `contracts/bikeanjo/rag/retrieval-hints.json`):
+`ports.<canal>.boost_path_substrings` / `downrank_path_substrings` / `exclude_path_substrings`
+e `intent_clusters.<nome>.keywords` + `boost_path_substrings` + `extra_downrank`. O `/ask` e o
+`/router` leem o canal `ask`. Só reordenam; o limiar continua na distância crua. Ordem completa
+da busca: [12 § Busca](./12-llm-fleet-rag-operations.md#busca-como-um-trecho-chega-ao-prompt).
+
+### `policies.embedding_query_instruction` — instrução de busca na pergunta
+
+`true` põe, antes da pergunta, a instrução que o modelo de embedding pede para busca
+(`mxbai-embed-large`: «Represent this sentence for searching relevant passages: »). Não exige
+reindexar, mas muda as distâncias: ligar depois do `scripts/eval_gate.py` e rever
+`max_chunk_distance`. Padrão desligado.

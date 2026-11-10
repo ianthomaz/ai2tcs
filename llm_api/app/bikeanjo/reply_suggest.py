@@ -23,14 +23,13 @@ from app.bikeanjo.common import (
     load_retrieval_hints,
 )
 from app.config import settings
+from app.rag import hints as rag_hints
 from app.rag.retrieve import retrieve
 from app.registry import get_rag_policies
 
 PROMPT_VERSION = "reply-v1"
 PORT = "replySuggest"
 
-BOOST = 0.05
-DOWNRANK = 0.08
 
 # bikeanjo.org and every subdomain of it; any other host blocks the suggestion.
 ALLOWED_URL_DOMAIN = "bikeanjo.org"
@@ -76,25 +75,9 @@ def doc_name(path: str) -> str:
 
 
 def apply_port_hints(chunks: list[dict], port: str = PORT) -> list[dict]:
-    """Boost / downrank by path substring (lower distance = better), then re-sort."""
-    hints = (load_retrieval_hints().get("ports") or {}).get(port) or {}
-    boost = hints.get("boost_path_substrings") or []
-    down = hints.get("downrank_path_substrings") or []
-    exclude = hints.get("exclude_path_substrings") or []
-    out = []
-    for c in chunks:
-        path = c.get("path") or ""
-        if any(s in path for s in exclude):
-            continue
-        d = c.get("distance")
-        adj = float(d) if d is not None else 2.0
-        if any(s in path for s in boost):
-            adj -= BOOST
-        if any(s in path for s in down):
-            adj += DOWNRANK
-        out.append({**c, "adjusted_distance": adj})
-    out.sort(key=lambda c: c["adjusted_distance"])
-    return out
+    """Boost / downrank by path substring from the contract hints (app/rag/hints.py)."""
+    port_hints = (load_retrieval_hints().get("ports") or {}).get(port) or {}
+    return rag_hints.apply(chunks, {"port": port_hints, "intent_clusters": {}})
 
 
 async def retrieve_context(project_id: str, project: dict, req: ReplySuggestRequest) -> list[dict]:

@@ -7,6 +7,7 @@ import asyncio
 import json
 import os
 import uuid
+from pathlib import Path
 
 import asyncpg
 
@@ -60,6 +61,44 @@ Lexicon BR: celular/telefone — nunca "telemóvel". Sem CTA de manutenção de 
 """
 
 
+# Retrieval hints of the bot channel, from the Bike Anjo contract (contracts/bikeanjo/rag/).
+_HINTS_FILE = Path(__file__).resolve().parents[1] / "contracts" / "bikeanjo" / "rag" / "retrieval-hints.json"
+
+
+def bot_retrieval_hints() -> dict:
+    """config_json.retrieval_hints for /ask and /router: the contract's `ask` port + intent clusters."""
+    raw = json.loads(_HINTS_FILE.read_text(encoding="utf-8"))
+    ask = {k: v for k, v in (raw.get("ports") or {}).get("ask", {}).items()
+           if k in ("boost_path_substrings", "downrank_path_substrings", "exclude_path_substrings")}
+    clusters = {name: {k: v for k, v in c.items() if k in ("keywords", "boost_path_substrings", "extra_downrank")}
+                for name, c in (raw.get("intent_clusters") or {}).items()}
+    return {"ports": {"ask": ask}, "intent_clusters": clusters}
+
+
+async def keep_approved_terms(conn, project_id: str, config: dict) -> dict:
+    """The seed config plus the forbidden terms people approved in /ratings (docs/22).
+
+    The seed replaces config_json whole; without this, re-running it would drop every term
+    approved in the Bike Anjo panel.
+    """
+    try:
+        rows = await conn.fetch(
+            """SELECT value FROM "rating_proposals"
+               WHERE project_id = $1 AND kind = 'forbidden_term' AND status = 'approved'""",
+            project_id,
+        )
+    except asyncpg.UndefinedTableError:
+        rows = []
+    terms = list(config["policies"].get("forbidden_terms") or [])
+    known = {t.lower() for t in terms}
+    for r in rows:
+        if r["value"].lower() not in known:
+            terms.append(r["value"])
+            known.add(r["value"].lower())
+    config["policies"]["forbidden_terms"] = terms
+    return config
+
+
 async def main():
     database_url = os.environ.get("DATABASE_URL", "postgresql://localhost:5432/llmapi")
     conn = await asyncpg.connect(database_url)
@@ -84,9 +123,11 @@ async def main():
             project_id,
             "Bike Anjo 2026 (site + PDFs)",
             sources,
-            json.dumps({
+            json.dumps(await keep_approved_terms(conn, project_id, {
                 "chunking": {"chunk_size": 512, "chunk_overlap": 64, "separator": "\n\n"},
                 "embedding_model": "mxbai-embed-large",
+                # /ask and /router reorder the search by these (app/rag/hints.py).
+                "retrieval_hints": bot_retrieval_hints(),
                 "policies": {
                     "prefer_cite_sources": True,
                     "when_no_answer": "no_answer",
@@ -154,7 +195,7 @@ async def main():
                     # Clearance (NOIA) não entra aqui: é autorização, não contexto.
                     "glossary": {"journey_kind": {}},
                 },
-            }),
+            })),
         )
         for theme in ("bikeanjo", "institucional"):
             await conn.execute(

@@ -34,6 +34,32 @@ Chat creative (ex.: `aiclaudia`) costuma ter ambos `false` e `rag_mode: disabled
 
 ---
 
+## Busca: como um trecho chega ao prompt
+
+Ordem, para `/ask` e `/router` (`app/rag/retrieve.py`):
+
+1. **Corte no ingest** (`app/ingest/chunking.py`): por seção markdown (`##`/`###`); seção maior
+   que `chunk_size` vira pedaços que **todos** começam com o título da seção; parágrafo maior
+   que `chunk_size` é cortado no fim de frase; pedaços vizinhos repetem as partes curtas finais
+   até `chunk_overlap`. Nenhum pedaço passa de `chunk_size`, então o embedding (que lê até
+   1.000 caracteres) vê o pedaço inteiro. Mudança no corte só vale depois de um ingest novo.
+2. **Pergunta → embedding**, com a instrução de busca do modelo quando o projeto liga
+   `policies.embedding_query_instruction` (só o lado da pergunta; muda as distâncias).
+3. **Pool de 2 × `top_k`** por índice (projeto e bibliotecas compartilhadas), ordenado por
+   distância.
+4. **Palavra-chave** (`rag_hybrid_enabled`): palavras de conteúdo, sem acento e sem pontuação,
+   em comum com o trecho tiram 0,02 da distância cada.
+5. **Dicas do projeto** (`config_json.retrieval_hints`, `app/rag/hints.py`): arquivo que o canal
+   prefere sobe (−0,05), o que atrapalha desce (+0,08), grupo de palavras-chave da pergunta
+   (`intent_clusters`) sobe os seus arquivos (−0,08). Só reordena: o limiar lê a distância crua.
+6. **Reordenação por modelo** (`rag_rerank_enabled`) ou corte em `top_k`.
+7. **Limiar** `max_chunk_distance` (padrão 1,0) e, sem nenhum trecho, segunda busca com 12
+   trechos e limiar ×1,3.
+
+Para comparar uma mudança (corte, dicas, instrução): `scripts/eval_gate.py --project <id>
+--save-baseline` antes; a mudança (seed ou config; ingest quando for o corte); `eval_gate.py
+--project <id>` depois, que compara com a referência.
+
 ## Ingest e chunks skipped
 
 Durante `POST /ingest`, falhas Ollama (ex.: HTTP 500) fazem **skip** de chunks individuais (vector zero + log `Skipping chunk`). No fim do job, logs e resposta incluem `indexed` e `skipped`.

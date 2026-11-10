@@ -8,6 +8,12 @@ import httpx
 from app.config import settings
 
 DEFAULT_MODEL = "mxbai-embed-large"
+# Instruction the model card asks for on the search side only (passages are embedded as is).
+# A project turns it on with policies.embedding_query_instruction; it shifts distances, so
+# max_chunk_distance is re-checked with scripts/eval_gate.py before.
+QUERY_INSTRUCTIONS = {
+    "mxbai-embed-large": "Represent this sentence for searching relevant passages: ",
+}
 # Ollama embedding models have context limits; truncate to avoid 500
 MAX_PROMPT_CHARS = 1000
 RETRY_ATTEMPTS = 3

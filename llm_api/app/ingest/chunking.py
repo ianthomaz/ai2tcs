@@ -118,13 +118,13 @@ def split_text(
     """Split text by markdown sections first, then by separator/size with overlap.
 
     Markdown files are split by headings (## / ###) so each chunk corresponds to
-    a thematic section. The heading is preserved at the top of each chunk for
-    retrieval context. Non-markdown text falls back to separator-based splitting.
+    a thematic section. Every piece of a long section starts with the section heading,
+    so a piece found by the search still says what it is about.
+    Non-markdown text falls back to separator-based splitting.
     """
     if not text or not text.strip():
         return []
 
-    # Try section-based splitting for markdown-like content
     sections = _split_by_sections(text)
     if len(sections) > 1:
         chunks: list[str] = []
@@ -133,15 +133,47 @@ def split_text(
             if len(section_text) <= chunk_size:
                 if section_text:
                     chunks.append(section_text)
-            else:
-                # Section too large: split by separator, prepend heading to first sub-chunk
-                sub_chunks = _split_by_separator(section_text, chunk_size, chunk_overlap, separator)
-                if heading and sub_chunks and not sub_chunks[0].startswith(heading):
-                    sub_chunks[0] = f"{heading}\n\n{sub_chunks[0]}"
-                chunks.extend(sub_chunks)
+                continue
+            room = chunk_size - (len(heading) + 2 if heading else 0)
+            for piece in _split_by_separator(body, max(room, chunk_size // 2), chunk_overlap, separator):
+                chunks.append(f"{heading}\n\n{piece}" if heading else piece)
         return chunks if chunks else _split_by_separator(text, chunk_size, chunk_overlap, separator)
 
     return _split_by_separator(text, chunk_size, chunk_overlap, separator)
+
+
+_SENTENCE_END = re.compile(r"(?<=[.!?;:])\s+|\n+")
+
+
+def _split_long_part(part: str, chunk_size: int) -> list[str]:
+    """A paragraph longer than chunk_size, cut at sentence ends (or spaces) into pieces that fit.
+
+    The embedding model only reads the first characters of a text, so an oversized chunk
+    would leave its tail out of the search.
+    """
+    pieces: list[str] = []
+    current = ""
+    for sentence in (s.strip() for s in _SENTENCE_END.split(part)):
+        if not sentence:
+            continue
+        while len(sentence) > chunk_size:
+            cut = sentence.rfind(" ", 0, chunk_size)
+            cut = cut if cut > chunk_size // 2 else chunk_size
+            head, sentence = sentence[:cut].strip(), sentence[cut:].strip()
+            if current:
+                pieces.append(current)
+                current = ""
+            pieces.append(head)
+        if not current:
+            current = sentence
+        elif len(current) + 1 + len(sentence) <= chunk_size:
+            current = f"{current} {sentence}"
+        else:
+            pieces.append(current)
+            current = sentence
+    if current:
+        pieces.append(current)
+    return pieces
 
 
 def _split_by_separator(
@@ -150,37 +182,39 @@ def _split_by_separator(
     chunk_overlap: int = 64,
     separator: str = "\n\n",
 ) -> list[str]:
-    """Original separator-based splitting logic."""
-    parts = text.split(separator)
+    """Group separator-delimited parts into chunks up to chunk_size.
+
+    Consecutive chunks share their last parts up to chunk_overlap characters, so an answer
+    that sits across two paragraphs is found from either side. A part longer than
+    chunk_size is cut at sentence ends first.
+    """
+    parts: list[str] = []
+    for raw in text.split(separator):
+        raw = raw.strip()
+        if raw:
+            parts.extend(_split_long_part(raw, chunk_size) if len(raw) > chunk_size else [raw])
     chunks: list[str] = []
     current: list[str] = []
     current_len = 0
-    for i, part in enumerate(parts):
-        part = part.strip()
-        if not part:
-            continue
-        part_len = len(part) + (len(separator) if current else 0)
-        if current_len + part_len <= chunk_size and current:
-            current.append(part)
-            current_len += part_len
-        else:
-            if current:
-                chunk = separator.join(current)
-                chunks.append(chunk)
-                # overlap: keep last segment(s) that fit in overlap
-                overlap_len = 0
-                overlap_parts: list[str] = []
-                for j in range(len(current) - 1, -1, -1):
-                    seg = current[j]
-                    if overlap_len + len(seg) <= chunk_overlap:
-                        overlap_parts.insert(0, seg)
-                        overlap_len += len(seg)
-                    else:
-                        break
-                current = overlap_parts
-                current_len = overlap_len
-            current = [part] if part else []
-            current_len = len(part)
+    for part in parts:
+        add = len(part) + (len(separator) if current else 0)
+        if current and current_len + add > chunk_size:
+            chunks.append(separator.join(current))
+            overlap: list[str] = []
+            overlap_len = 0
+            for seg in reversed(current):
+                if overlap_len + len(seg) > chunk_overlap:
+                    break
+                overlap.insert(0, seg)
+                overlap_len += len(seg) + len(separator)
+            # Overlap only when the next part still fits beside it.
+            if overlap and overlap_len + len(part) <= chunk_size:
+                current, current_len = overlap, overlap_len - len(separator)
+            else:
+                current, current_len = [], 0
+            add = len(part) + (len(separator) if current else 0)
+        current.append(part)
+        current_len += add
     if current:
         chunks.append(separator.join(current))
     return chunks
