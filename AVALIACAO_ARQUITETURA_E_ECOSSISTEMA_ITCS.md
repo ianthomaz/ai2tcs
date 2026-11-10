@@ -4,6 +4,8 @@
 **Escopo:** Revisao arquitetural do repositorio `ai2tcs` em conjunto com o ecossistema `0MM_ITCS` e `0mmS_Tasks`, desenho de integracao via MCP para ambientes Antigravity, estrategia de autonomia/fallback offline e arquitetura hibrida Chat vs. UI (Link-First).
 **Natureza:** Documento de revisao e desenho arquitetural (nenhum codigo ou container de producao foi alterado).
 
+> **PRIORIDADES Bike Anjo (ler agora):** as solicitacoes de atualizacao atuais para o trabalho Bike Anjo no `ai2tcs` estao em **[`./prioridades_paraBikeAnjo.md`](./prioridades_paraBikeAnjo.md)** (raiz deste repo). Ordem: S1 `/ask` confidence → S3 shadow learning → S2 `/healthNormalize` v2 → S4 `/feedbackTriage`.
+
 ---
 
 ## 1. Avaliacao Geral do Projeto `ai2tcs`
@@ -239,6 +241,8 @@ Para deixar a experiencia de "chat entrega o link e voce termina no site" ainda 
 
 ## 5. Resumo do Roadmap Sugerido (Em Ordem de Retorno sobre Esforco)
 
+> **Bike Anjo — prioridades de atualizacao (paralelo ao roadmap abaixo):** ver **[`./prioridades_paraBikeAnjo.md`](./prioridades_paraBikeAnjo.md)**. Ordem S1 → S3 → S2 → S4. O modo conservador (§5.1) continua valendo: fatiar pequeno, confirmar e verificar antes de declarar feito.
+
 - [ ] **Passo 1 (Saneamento Rapido no `ai2tcs`):** Ajustar o hash de deduplicacao do `/ask` para considerar contexto/usuario (`1.2.1`) e apontar o check do `itcsManifest.yaml` para `/health`.
 - [ ] **Passo 2 (Ponte Antigravity <-> Ecossistema ITCS):** Criar o servidor MCP local (`stdio`) unificando `ai2tcs` (`:28471`), `0mmS_Tasks` (`:28501`) e `0MM_ITCS` (`:28500`), permitindo operar tarefas, consultar RAG e rodar inferencias locais direto deste chat.
 - [ ] **Passo 3 (Resiliencia Offline "Segurar a Onda + Fila"):**
@@ -259,3 +263,5 @@ A visao das secoes anteriores permanece valida. O que muda e **como** avancar: o
 5. **GitHub reversivel.** Quando o padrao da sessao for testar pacote localmente, manter o remoto reversivel (branch/PR, sem force-push destrutivo, sem deploy sem ordem).
 
 **Re-priorizacao curta:** Passo 1 primeiro e fechado com prova; Passo 2 (MCP) em seguida; Passos 3–4 e o restante da visao (offline, few-shot, Link-First) sem empilhar varias frentes ao mesmo tempo.
+
+**Prioridades Bike Anjo (contrato operacional atual):** enquanto o roadmap acima cobre ecossistema/MCP/offline, o trabalho pedido pelo cliente Bike Anjo esta listado em **[`./prioridades_paraBikeAnjo.md`](./prioridades_paraBikeAnjo.md)** (S1, S3, S2, S4).
