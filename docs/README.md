@@ -14,3 +14,4 @@ Contribuições ao código e contratos: [../CONTRIBUTING.md](../CONTRIBUTING.md)
 - [18-bikeanjo-ops-ports.md](18-bikeanjo-ops-ports.md) — portas exclusivas do Bike Anjo: triagem de feedback/chamados, higienização de saúde e sugestão de resposta (shadow).
 - [19-optimization-review.md](19-optimization-review.md) — revisão de otimização da LLM (out/2026): achados medidos, plano em ondas sem mudar contrato, decisões em aberto.
 - [20-text-tasks.md](20-text-tasks.md) — tarefas de texto para qualquer projeto: `POST /task/{task_id}`, tarefa em arquivo, vocabulário na configuração do projeto (`text_triage`).
+- [21-review-nov2026.md](21-review-nov2026.md) — avaliação, contra o código, das prioridades do Bike Anjo (S1–S4) e da revisão de arquitetura; plano em fatias F0–F4.

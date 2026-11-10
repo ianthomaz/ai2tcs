@@ -5,7 +5,8 @@
 **Origem:** Bike Anjo Sistema 2026 (`BikeAnjo_Sistema2026`)  
 **Destino:** Repositório `ai2tcs` (`~/Documents/projects/ai2tcs` / `llm_api/`)  
 **Status:** Proposta de evolução técnica e alinhamento de contratos HTTP.  
-**Ordem de prioridade:** S1 → S3 → S2 → S4
+**Ordem de prioridade:** S1 → S3 → S2 → S4  
+**Avaliação contra o código e plano:** [docs/21](docs/21-review-nov2026.md) (S2 já está quase coberto pelo `health-v2`).
 
 ---
 
