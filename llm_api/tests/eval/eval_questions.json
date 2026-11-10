@@ -2,7 +2,11 @@
   {
     "project_id": "bikeanjoall_2026",
     "question": "O que é o Bike Anjo?",
-    "expected_keywords": ["voluntário", "ciclismo", "bike"]
+    "expected_keywords": [
+      "voluntário",
+      "ciclismo",
+      "bike"
+    ]
   },
   {
     "project_id": "aiclaudia",
@@ -25,7 +29,13 @@
     "system_prompt": "Responda DIRECTO em 2 frases curtas. Modo horóscopo surreal.",
     "expected_keywords": [],
     "max_chars": 420,
-    "forbidden_keywords": ["mobi", "mobicontabil", "voz aiclaudia", "com base no contexto", "personas criativas"]
+    "forbidden_keywords": [
+      "mobi",
+      "mobicontabil",
+      "voz aiclaudia",
+      "com base no contexto",
+      "personas criativas"
+    ]
   },
   {
     "project_id": "aiclaudia",
@@ -34,7 +44,13 @@
     "model": "fast",
     "expected_keywords": [],
     "max_chars": 250,
-    "forbidden_keywords": ["voz aiclaudia", "com base no contexto", "personas criativas", "documentação", "session_id"]
+    "forbidden_keywords": [
+      "voz aiclaudia",
+      "com base no contexto",
+      "personas criativas",
+      "documentação",
+      "session_id"
+    ]
   },
   {
     "project_id": "aiclaudia",
@@ -42,11 +58,1110 @@
     "system_prompt": "Responda DIRECTO em 2 frases curtas. Modo motivacional absurdo: coach de nuvens.",
     "expected_keywords": [],
     "max_chars": 420,
-    "forbidden_keywords": ["voz aiclaudia", "segundo o conteúdo", "esquerda, humanitarismo", "brincadeira literária"]
+    "forbidden_keywords": [
+      "voz aiclaudia",
+      "segundo o conteúdo",
+      "esquerda, humanitarismo",
+      "brincadeira literária"
+    ]
   },
   {
     "project_id": "estudosmobi",
     "question": "Como abrir uma empresa MEI?",
-    "expected_keywords": ["mei", "empresa"]
+    "expected_keywords": [
+      "mei",
+      "empresa"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Olá, Ian! Obrigado pela mensagem. São 11 anos de BA e 50 de pedal... Bora para mais e mais! Grande abraço!",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Quero o link para fazer checkin no evento recife-pe/eba",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "😍😍",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Estou na rua",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Mas posso ir amanhã independente disso?",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Mande o link novamente pfv. Cheguei em casa agora\n\nAcho q o link expirou",
+    "max_chars": 600
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Quero o link para fazer checkin no evento sp/eba",
+    "max_chars": 600
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Oi",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar",
+      "oi"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Obrigado",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "O que precisa ler .??\n\nOnde leio os termos de uso.??\n\nOnde será o próximo encontro.?",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "[image]\n\nRealmente nao estou conseguindo. Tá dando sempre erro\n\nAmanhã tento ajuda pessoalmente para conseguir a rir o link",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Boa noite! Desculpe, só vi as mensagens agora.\n\nMelhor do Google. danimasselani@gmail.com",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Quero o link para fazer checkin no evento curitiba-pr/eba",
+    "max_chars": 600
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "60351230",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Bom dia!\n\nComo funciona para uma criança de 7 anos aprender a andar de bicicleta?",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Já me cadastrei\n\nComo fico sabendo do calendário",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "[image]",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Olá! Quero me cadastrar na Bike Anjo.",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Pois é...problemas familiares,aí o sonho vai sendo adiado,mas na próxima vai dá certo  🙏",
+    "max_chars": 600
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Não consigo fazer",
+    "max_chars": 600
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Criança de 7 anos aprender a pedalar. 60351230",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Bom dia\n\nVou vê se dá pra eu ir",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Bom dia! quando vai ter de novo aula para iniciante?",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Olá!! 🌻Será um prazer falar com você! Deixe seu nome e o que deseja, que em breve iremos te atender 😘\n\nOlá sou Meiry Coiffeur! Será um prazer falar com você; já conhece meu trabalho?! Me diga seu nome e como posso te ajudar?",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Bom dia,qual dia vai ter aula na ilha são João?",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Obg ,vou fazer",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Nossa super merecido.\nVocês mudam a história de muita gente. \nSomos muito gratos por termos conhecido vocês.",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Olá, nós da SOUZA & SOUZA REPRESENTAÇÃO agradecemos seu contato!\nRepresentamos marcas líderes no mercado da construção civil, com seriedade e comprometimento. \nRJ 🇧🇷\n\n‎Souza jr agradece seu contato. Como podemos ajudar?🇧🇷🇵🇹",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar",
+      "como posso ajudar?",
+      "away"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Olá! 😊 \n\nAqui é a Liz, especialista em alisamentos e extensões de cílios. Seja muito bem-vinda(o)! \nEm que posso ajudar?\n\n💖 Aproveita e me acompanha  também no Instagram: https://www.instagram.com/liz_pamella?igsh=MWFhdGxidm9wM2RpYw==",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Agradeço o seu contato!\nComo posso ajudar? Por favor, digite sobre qual assunto deseja falar.",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Oi. Gabi aqui. Agradeço o seu contato. Como posso lhe ajudar? ⭐️",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "‎olá eu agradeço seu contato. Se for para oferecer ofertas falsas de emprego extra por curtidas, likes, ou qualquer algo do tipo de redes sociais, desde ja informo que seu número, info, contatos, metadados de fotos e arquivos,  e IP serao encaminhados por relatorios, com toda fundamentação, para as autoridades competentes🚓🚨🚔. Nao sendo esse o caso, como posso te ajudar?\n\n[reaction 👏 -> c3RjZERgA=]",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Agradeço sua mensagem. Não estou disponível no momento, mas responderei assim que possível. 🍀",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Meu Nome é Flávia trabalho em Centro Cirúrgico. Caso não consiga falar comigo é pq estarei em procedimento.\nAssim que puder responderei a mensagem. Muito Obrigada 😊\n\nOi!? Tudo bem? \nMeu nome é Flávia trabalho em Centro Cirúrgico. Caso mande msg e eu demore responder é porque estou em procedimento. Assim que puder responderei a msg.\nObrigada!!\n😷🏥",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Necessário habilitar acesso como articulador para criar novos itens/projetos/eventos.",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Não encontrei nenhum ponto de articulação próximo a mim",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Gostaria de aprender a pedalar do zero.\n\nMaceió-Al",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Boa noite\n\nAinda tem vaga para o domingo dia 16?\n\nP/aprender andar de bike",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "https://www.facebook.com/share/p/1CCHS1DqDL/",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Já completei",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Completei",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "https://www.instagram.com/reel/DcN4gwEBxdE/?igsh=Ym9tdTZzdzhxeHR5&igsi=Ym9tdTZzdzhxeHR5",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Bom dia!  Tive um imprevisto\n\nGostaria de ser informada da próxima data",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Me cadastrei. Como faço para aprender a pedalar?",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Como vou saber quando vão né ajudar?\n\nVão poder me ajudar?",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Bom dia! Ontem estive na Ilha São João em Volta Redonda com meu filho de 10 anos. Gostaria de saber com o faço para entrar em contato com o André. Agradeço o apoio",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Ah, que delicadeza!",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar",
+      "Silêncio. Não respondo…"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Alguém????",
+    "max_chars": 600
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Coloquei pra avançar sem querer",
+    "max_chars": 600
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Rsrsrs, até levei um susto, pois está empoeirada mesmo ☺️",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar",
+      "pronto",
+      "você já tira a poeira e poderá usar o sistema"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Paz total\n\nParaíso\n\n[image]\n\n[image]",
+    "max_chars": 600
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Oi! Aqui é a Elisa. Esta é uma msg automática, o que significa que sua msg pra mim chegou e que responderei de modo não automático assim que for possível.",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Olá! 👋🏿\nAqui, o cinema e a cultura se encontram, estamos sempre conectando histórias e abrindo caminhos.\n\nFique à vontade, pra deixar a sua pergunta, assim que possível alguém da equipe irá lhe responder",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Boa tarde. Por favor ainda ensinam crianças a pedalar sem\nRodinhas no Taquaral?",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar",
+      "taquaral"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Eu preciso ter bike ou vcs\nEmprestam a bike?",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Quero aprender",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Boa tarde\n\nComo faço pra ter a primeira aula de Bike?",
+    "max_chars": 600
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Fiquei sem bateria\n\nEntrei agora",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Eu já fiz minha inscrição",
+    "max_chars": 600
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Bom dia tudo bem com vc?? Eu quero muito aprender anda bicicleta",
+    "max_chars": 600
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Aprender a pedalar",
+    "max_chars": 600
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Tenho 31 anos\n\nQuando será a próxima vez que vocês irão ensinar\n\n?",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Ok",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "‎Vila Nativa agradece seu contato. Fazemos entregas seg. a sex. a tarde mas precisamos seu endereço completo por escrito, *taxa de entrega 5 reais*. Confirmaremos tudo antes via whatsapp. 😀 pra ver o cardápio clique no link https://wa.me/c/5527992560848",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Oi. Infelizmente me apareceu um emprevisto em cima da hora e eu acabei faltando. :( moro em icoaraci ia cedo até",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Pk\n\nOk",
+    "max_chars": 600
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Mandei errado\n\nEra pro grupo",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Obrigado por avisar. Terá outro pra compensar ou só no último domingo do próximo mês???",
+    "forbidden_keywords": [
+      "manter informado",
+      "Te avisaremos de uma próxima oportunidade"
+    ],
+    "max_chars": 600
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "[audio]",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Sim",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Sábado não poderei, infelizmente 😔",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Quero sim",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Não estou conseguindo logar",
+    "max_chars": 600
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Q pena ! Não poderei ir , vou aguardar a próxima 🫶👏\n\n[sticker]",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Boa",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "[video]",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "O projeto ainda existe?",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar",
+      "A Bike Anjo segue ativa desde 2014!"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Bom dia! Tem algum projeto para crianças de 11 anos?\n\nEm Fortaleza Ce",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "E para minha esposa aprender a pedalar",
+    "max_chars": 600
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Boa tarde \n\nAgradeço imensamente a oportunidade. \nPassei por cirugia e estou em recuperação. \n\nGostaria muito,  mas infelizmente não poderei fazer desta vez. \n\n\nPeço a chance de fazer na próxima vez que for planejado.\n\nMuito agradecida \nCris de Mogi",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Já fiz",
+    "forbidden_keywords": [
+      "celular",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Olá\n\nGostaria de saber se consegui a vaga para 01/11",
+    "forbidden_keywords": [
+      "celular",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Fiz meu cadastro"
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Quero me cadastrar na Bike Anjo, link de acesso inicial!\n\nOlá bom dia tudo bem ?\n\nMeu nome é Amanda sou de campo Grande MS, tenho um sonho muito grande na minha vida que é aprender andar de bicicleta, nunca tive quando era criança por conta disse nunca tive contato com ela\n\nQuando encontrei a página de você fiquei tão feliz é como achasse uma luz no fim do túnel..vocês conseguem me ajudar\n\n?",
+    "max_chars": 600
   }
 ]
