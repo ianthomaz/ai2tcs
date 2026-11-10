@@ -38,7 +38,7 @@ def _triage_request(c: dict) -> dict:
         "event_id": None,
         "locale": "pt-BR",
         "fields": c["fields"],
-        "scales": {},
+        "scales": c.get("scales", {}),
     }
 
 

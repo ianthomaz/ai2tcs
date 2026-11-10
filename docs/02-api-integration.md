@@ -598,7 +598,8 @@ Calibração de RAG e anti-bleed entre projectos vivem no **seed**; o cliente s�
   "stt_metadata": null,
   "signals": {
     "best_distance": 0.41, "chunks_kept": 3, "sanitize_hit": false, "guard_hit": false,
-    "reflection_changed": false, "answer_chars": 118, "prompt_tokens": 2610, "near_ctx_limit": false
+    "reflection_changed": false, "answer_chars": 118, "prompt_tokens": 2610, "near_ctx_limit": false,
+    "grounding": 0.86, "unsupported_links": [], "answer_confidence": 0.72, "confidence_basis": "signals-v1"
   }
 }
 ```
@@ -607,6 +608,12 @@ Calibração de RAG e anti-bleed entre projectos vivem no **seed**; o cliente s�
 continua igual (`high` quando houve trecho). `best_distance` é a distância do melhor trecho
 (menor = mais perto); `guard_hit`/`sanitize_hit` dizem se a trava do projeto ou a limpeza de
 frase mexeu no texto; `near_ctx_limit` diz se o prompt chegou a 90% da janela de contexto.
+`grounding` é a parte das palavras de conteúdo da resposta que aparece nos trechos (0–1);
+`unsupported_links` lista os links da resposta que o modelo não viu (nem nos trechos, nem no
+prompt). `answer_confidence` (0–1) sai só desses sinais: média da proximidade do melhor
+trecho (`1 − best_distance / max_chunk_distance` do projeto) com o `grounding`, pela metade
+com trava ou link fora da base, ×0,8 perto do limite; `null` sem resposta.
+`confidence_basis` nomeia a receita (`signals-v1`) e muda quando a conta mudar.
 O `/router` devolve o mesmo bloco (sem `reflection_changed`). Campo aditivo: cliente que não
 lê não muda ([19 § 7](./19-optimization-review.md)).
 

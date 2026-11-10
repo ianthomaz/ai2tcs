@@ -104,8 +104,9 @@ def test_examples_match_their_own_schema(stem):
 
 def test_prompts_load_without_the_paste_notes():
     from app.bikeanjo.common import load_prompt
+    from app.bikeanjo.feedback_triage import PROMPT_VERSION
 
-    body = load_prompt("feedback-triage-v1.md")
+    body = load_prompt(f"feedback-{PROMPT_VERSION}.md")
     assert not body.startswith("# System prompt")
     assert "grave" in body and "Colar no ai2tcs" not in body
 

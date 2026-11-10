@@ -46,7 +46,7 @@ urgência, scores, âncora. **Sem RAG.**
   "theme_free": null,
   "confidence": 0.86,
   "model": "…",
-  "prompt_version": "triage-v2",
+  "prompt_version": "triage-v3",
   "warnings": []
 }
 ```

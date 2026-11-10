@@ -31,11 +31,11 @@ novo nem de migration.
 
 | Fatia | O quê | Onde | Tamanho |
 |---|---|---|---|
-| **F0** | dedup do `/ask` passa a incluir quem pergunta e o contexto (`user_id`, hash de `user_context`, `history`, `system_prompt`); sai o ramo `id_contato`; monitor do manifesto em `/health` | ai2tcs `api/ask.py`, `itcsManifest.yaml` | pequeno |
-| **F1 (S1)** | `signals.grounding` determinístico: fração das palavras de conteúdo e dos links da resposta que aparecem nos trechos; `signals.unsupported_links` (link fora dos trechos e da allowlist); `signals.answer_confidence` 0–1 composto só dos sinais (nunca autodeclarado). Calibração com a tabela confiança × nota do shadow | ai2tcs `llm/signals.py`, contrato `ask.schema.json`; Bike Anjo: pílula do `/adm/shadow-llm` usa o número do `/ask` para a hipótese do `/ask` | médio |
-| **F2 (S4)** | `triage-v3`: o prompt usa `historico.*` para ler evolução (dificuldade antes + relato de avanço hoje → `aprendizado`); casos novos no `feedback-triage.eval.jsonl` | prompt nos dois repos, `prompt_version` novo | pequeno |
+| **F0** [feito 10/nov] | dedup do `/ask` passa a incluir quem pergunta e o contexto (`user_id`, hash de `user_context`, `history`, `system_prompt`); sai o ramo `id_contato`; monitor do manifesto em `/health?strict=1` (503 quando degradado); `/health` não mostra mais texto de erro do Postgres (endpoint público) | ai2tcs `api/ask.py`, `api/health.py`, `itcsManifest.yaml` | pequeno |
+| **F1 (S1)** [feito 10/nov] | `signals.grounding` determinístico: fração das palavras de conteúdo e dos links da resposta que aparecem nos trechos; `signals.unsupported_links` (link que o modelo não viu: fora dos trechos e do prompt); `signals.answer_confidence` 0–1 composto só dos sinais (nunca autodeclarado). Calibração com a tabela confiança × nota do shadow | ai2tcs `llm/signals.py`, contrato `ask.schema.json`; Bike Anjo: pílula do `/adm/shadow-llm` usa o número do `/ask` para a hipótese do `/ask` | médio |
+| **F2 (S4)** [feito 10/nov] | `triage-v3`: o prompt usa `historico.*` para ler evolução (dificuldade antes + relato de avanço hoje → `aprendizado`); casos novos no `feedback-triage.eval.jsonl` | prompt nos dois repos, `prompt_version` novo | pequeno |
 | **F3 (S3)** | porta genérica de julgamentos: o projeto manda o julgamento (pergunta, resposta, nota, motivo); o ai2tcs vira caso de eval, **propõe** padrão proibido a partir dos motivos (`link_inventado`, `prometeu_fora_da_regra`) e guarda respostas `great` como exemplo para few-shot no `/ask` (§ 3.2.1 da avaliação) | ai2tcs nova porta + `config_json`; Bike Anjo: o script do deploy passa a chamar a porta | médio a grande |
-| **F4 (S2)** | resposta por campo (`allergies`, `limitations`, `conditions`) no `health-v3` | os dois repos | pequeno |
+| **F4 (S2)** | o prompt «saúde inteira» do Bike Anjo (`alergias:` · `limitacoes:` · `condicoes:`) chega ao ai2tcs pela sincronia do contrato [feito 10/nov]; resposta separada por campo só com caso real | os dois repos | pequeno |
 
 Fora deste ramo (não é demanda do Bike Anjo e a avaliação manda fatiar): MCP do ecossistema
 (§ 2), fila offline (§ 3.1), `/edu` (§ 3.2.3), prefill no `/router` (§ 4.3), corte de
@@ -46,10 +46,9 @@ trechos do rerank (§ 1.2.3, só com `eval_gate`).
 - **F3:** padrão proibido aprendido entra sozinho na geração, ou fica como proposta até o
   operador aprovar? Recomendação: aprovar primeiro, coerente com «nada responde nem executa
   sem aprovação no `/adm/shadow-llm`».
-- **F2:** S4 pede `answer_solidity: 5` no caso «medo antes + nota 5». Hoje `answer_solidity` mede
-  coerência entre escalas e texto. Recomendação: o histórico entra na leitura de **impacto**
-  (tag `aprendizado`, `information_value`), e `answer_solidity` mantém o sentido.
-- **F4:** fazer agora ou esperar caso real de resíduo misturado entre campos. Recomendação: esperar.
+- **F2 (decidido no código, 10/nov):** o histórico entra na leitura de **impacto** (tag
+  `aprendizado`, `information_value`); `answer_solidity` mantém o sentido de coerência de hoje.
+- **F4:** resposta separada por campo espera caso real de resíduo misturado.
 
 ---
 

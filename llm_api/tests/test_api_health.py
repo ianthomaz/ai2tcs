@@ -38,6 +38,23 @@ async def test_health_endpoint(client):
         assert "checks" in data
         assert "uptime_seconds" in data
 
+        strict = await client.get("/health?strict=1")
+        assert strict.status_code == 503
+        assert strict.json()["status"] == "degraded"
+
+
+@pytest.mark.asyncio
+async def test_health_never_shows_error_text(client):
+    with patch("app.api.health.httpx.AsyncClient") as mock_httpx, \
+         patch("app.api.health.db_module.get_pool", side_effect=Exception("postgres://user:secret@host/db")):
+        mock_httpx.return_value.__aenter__ = AsyncMock(return_value=MagicMock(
+            get=AsyncMock(side_effect=Exception("connection refused"))
+        ))
+        mock_httpx.return_value.__aexit__ = AsyncMock(return_value=False)
+        response = await client.get("/health")
+        assert "secret" not in response.text
+        assert response.json()["checks"]["postgres"] == {"status": "error"}
+
 
 @pytest.mark.asyncio
 async def test_metrics_endpoint(client):

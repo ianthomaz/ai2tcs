@@ -579,6 +579,8 @@ async def run_rag_job(
             sanitize_hit=sanitized != raw_answer,
             guard_hit=guarded != sanitized,
             metrics=recorded,
+            distance_reference=float(policies.get("max_chunk_distance", MAX_CHUNK_DISTANCE)),
+            prompt_text=f"{system_msg}\n{user_msg}",
             reflection_changed=answer != guarded,
         )
         merge_ctx: dict = {**({"__metrics": recorded} if recorded else {}), "__signals": answer_signals}

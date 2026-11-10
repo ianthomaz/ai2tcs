@@ -193,7 +193,9 @@ def test_signals_describe_the_pipeline_not_the_model():
         guard_hit=True,
         metrics={"prompt_tokens": 2100, "near_ctx_limit": False},
     )
-    assert out == {
+    assert {k: out[k] for k in (
+        "best_distance", "chunks_kept", "sanitize_hit", "guard_hit", "answer_chars", "prompt_tokens", "near_ctx_limit",
+    )} == {
         "best_distance": 0.41,
         "chunks_kept": 3,
         "sanitize_hit": False,
@@ -202,6 +204,8 @@ def test_signals_describe_the_pipeline_not_the_model():
         "prompt_tokens": 2100,
         "near_ctx_limit": False,
     }
+    assert out["grounding"] is None  # passages without text
+    assert out["answer_confidence"] == round((1 - 0.41) / 2 * 0.5, 3)
     assert signals.build(chunks=[], answer=None)["best_distance"] is None
 
 

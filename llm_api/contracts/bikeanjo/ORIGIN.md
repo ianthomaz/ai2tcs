@@ -1,6 +1,6 @@
 # Origin
 
-Synced from BikeAnjo_Sistema2026 main `8655e614` (AC1 handoff, 2026-10-29).
+Synced from bikeanjo2026all `d3907acf` (branch `claude/bike-anjo-llm-integration-7fsuhp`, 2026-11-10): `triage-v3`, `signals` do `/ask`, saúde inteira no `health-normalize-v1.md`. Fora da cópia: `runs/`.
 
 ## Intent v1 (2º roteador semântico do `/ask`) · 2026-10-30
 

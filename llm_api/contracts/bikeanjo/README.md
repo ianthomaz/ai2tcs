@@ -30,7 +30,7 @@ porta (eval, re-ingest RAG): [CHECKLIST](CHECKLIST_AI2TCS.md).
 | `POST /ask` (+ status/result) | esquema + exemplos | **produção** (`api/ask.py`) | idem |
 | `POST /extract` · `/extract-multi` | esquema + exemplos | **produção** (`api/extract.py`); passos: onboarding, `reply_intent`, `payment_boleto_confirmation` | zap |
 | `GET /health` | — | **produção** | smoke |
-| `POST /feedbackTriage` | esquema + exemplos + eval + prompt | **produção** (`triage-v2` no mini62) | `itcs-feedback-triage.ts` (fila `feedback_triage`) |
+| `POST /feedbackTriage` | esquema + exemplos + eval + prompt | **produção** (`triage-v3` no mini62) | `itcs-feedback-triage.ts` (fila `feedback_triage`) |
 | `POST /healthNormalize` | esquema + exemplos + eval + prompt | **produção** | `itcs-health-normalize.ts` (fila `health_normalize`) |
 | `POST /replySuggest` | esquema + exemplos + eval + prompt | **produção** | `itcs-reply-suggest.ts` (`/admin/suporte` → Responder) |
 | `POST /task/text_triage` | esquema + exemplos | **produção** — porta genérica (docs/20), categorias no seed | `itcs-text-triage.ts` · `scripts/text-triage.ts` (bot da caixa = médio prazo, [10h § 2](../../10h_ai2tcs_portas_de_texto.md)) |
@@ -50,7 +50,7 @@ Outras rotas no serviço que **não** têm pasta aqui (fora do escopo Bike Anjo 
 | `/router` | `router.schema.json` | `router.examples.json` | shadow → eval set | (já no serviço) |
 | `/ask` | `ask.schema.json` | `ask.examples.json` | idem | (já no serviço) |
 | `/extract` | `extract.schema.json` | `extract.examples.json` | — | (já no serviço) |
-| `/feedbackTriage` | `feedback-triage.schema.json` | `feedback-triage.examples.json` | `feedback-triage.eval.jsonl` | `prompts/feedback-triage-v2.md` |
+| `/feedbackTriage` | `feedback-triage.schema.json` | `feedback-triage.examples.json` | `feedback-triage.eval.jsonl` | `prompts/feedback-triage-v3.md` |
 | `/healthNormalize` | `health-normalize.schema.json` | `health-normalize.examples.json` | `health-normalize.eval.jsonl` | `prompts/health-normalize-v1.md` |
 | `/replySuggest` | `reply-suggest.schema.json` | `reply-suggest.examples.json` | `reply-suggest.eval.jsonl` | `prompts/reply-suggest-v1.md` |
 | `/task/text_triage` | `text-triage.schema.json` | `text-triage.examples.json` | — | (no serviço: `llm_api/tasks/prompts/text-triage-v1.md`) |
@@ -74,7 +74,8 @@ Porta única no código: `sistemaBA/src/lib/itcs-token.ts` · `zapzap/lib/itcs-t
 
 **`.env` que levam a chave** (sistemaBA prod/stage, `ignore/zapzap.env.prod`, `zapzap/.env`,
 env do `llm-ingest-bikeanjo.sh`): `LLM_API_TOKEN`, `ITCS_NF_EXTRACT_TOKEN` e, se
-definidos, `ITCS_FEEDBACK_TRIAGE_TOKEN` / `ITCS_HEALTH_NORMALIZE_TOKEN`.
+definidos, `ITCS_FEEDBACK_TRIAGE_TOKEN` / `ITCS_HEALTH_NORMALIZE_TOKEN` /
+`ITCS_REPLY_SUGGEST_TOKEN`.
 
 **Estado (28/set/2026):** a chave `itcs_bikeanjoall_2026_…` já está nos `ignore/env.*`,
 `ignore/zapzap.env.*`, `sistemaBA/.env.local` e `zapzap/.env.local` **neste Mac e no
@@ -119,7 +120,7 @@ modelo. Detalhe: `ai2tcs/docs/18-bikeanjo-ops-ports.md` § 6.
 - **`*.eval.jsonl`** — uma linha por caso (`expect` + `why`). Calibração de prompt; não é
   teste determinístico — mede taxa. Critérios de pronto: [CHECKLIST](CHECKLIST_AI2TCS.md).
 - **`prompts/*-v1.md`** — system prompt sugerido; a string `prompt_version` na resposta
-  (`triage-v2`, `health-v2`, `reply-v1`) tem de bater com o arquivo usado.
+  (`triage-v3`, `health-v2`, `reply-v1`) tem de bater com o arquivo usado.
 
 ---
 

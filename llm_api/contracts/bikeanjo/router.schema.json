@@ -176,6 +176,31 @@
                 "null"
               ],
               "description": "o prompt chegou a 90% da janela de contexto"
+            },
+            "grounding": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "parte das palavras de conteúdo da resposta que aparece nos trechos (0–1); null sem trechos"
+            },
+            "unsupported_links": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "links da resposta que o modelo não viu (nem nos trechos, nem no prompt)"
+            },
+            "answer_confidence": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "0–1 calculado só dos sinais (distância, apoio, trava, link fora da base); null sem resposta"
+            },
+            "confidence_basis": {
+              "type": "string",
+              "description": "receita do answer_confidence (signals-v1); muda quando a conta muda"
             }
           }
         }

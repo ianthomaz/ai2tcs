@@ -29,9 +29,9 @@ monitor:
   tier: server
   cadence: daily
   checks:
-    - id: http-apex
+    - id: http-health
       type: http
-      url: https://llm.webplace.cc/
+      url: https://llm.webplace.cc/health?strict=1
       expectStatus: 200
 hub:
   manifestRevision: 1

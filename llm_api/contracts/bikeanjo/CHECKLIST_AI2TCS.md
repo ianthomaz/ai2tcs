@@ -40,15 +40,15 @@ implementar lá. Ordem pensada para uma sessão; não pular o critério de «pro
 ## 2. `POST /feedbackTriage` (primeira porta nova)
 
 Arquivos: `feedback-triage.schema.json` · `.examples.json` · `.eval.jsonl` ·
-`prompts/feedback-triage-v2.md`.
+`prompts/feedback-triage-v3.md`.
 
 - [x] Rota JSON sync em `app/bikeanjo/` (módulo do projeto, não `app/api/`) + `include_router` em `main.py`
 - [x] Modelos de entrada/saída alinhados ao esquema (ou validação runtime)
-- [x] **Publicar `triage-v2`:** prompt = `prompts/feedback-triage-v2.md` **+**
+- [ ] **Publicar `triage-v3`:** prompt = `prompts/feedback-triage-v3.md` **+**
       `prompts/feedback-triage-fewshots.md` (exemplos G–I), resposta com
-      `"prompt_version": "triage-v2"`; publicado no ai2tcs (mini62, 2/out/2026) +
-      `FEEDBACK_TRIAGE_PROMPT_VERSION = 'triage-v2'` no BA.
-      No git do ai2tcs desde out/2026: `PROMPT_VERSION = "triage-v2"`, o modelo recebe
+      `"prompt_version": "triage-v3"` + `FEEDBACK_TRIAGE_PROMPT_VERSION = 'triage-v3'` no BA.
+      O v3 lê `historico.*` como evolução da mesma pessoa (regra 10).
+      No ai2tcs: `PROMPT_VERSION = "triage-v3"`, o modelo recebe
       `subject.kind` (`adult` · `dependent` · `none`, nunca o id) e o serviço garante a
       regra 9 (texto sobre o filho com sujeito adulto → `watch`, confiança ≤ 0,5).
 - [x] Allowlist no serviço: tags, urgência, sources do esquema — valor fora da lista →
@@ -57,7 +57,7 @@ Arquivos: `feedback-triage.schema.json` · `.examples.json` · `.eval.jsonl` ·
       sucesso valida `response_ok`
 - [x] **Eval (pronto):** no `feedback-triage.eval.jsonl` (2/out/2026, mini62):
       hard failures 0 · rate 85% → PRONTO (t11–t15 ok; miss cosmético t08/t16).
-- [x] Smoke: `curl` Bearer projeto `bikeanjoall_2026` → `prompt_version: triage-v2`
+- [ ] Eval `triage-v3` no mini62 (t17–t18: histórico) e smoke: `curl` Bearer projeto `bikeanjoall_2026` → `prompt_version: triage-v3`
 
 **O que o Bike Anjo faz depois (não bloqueia a rota):** CLI lote + tabelas
 `form_submission_triages` / `support_ticket_triages` + cron + digest + UI —

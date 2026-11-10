@@ -20,7 +20,7 @@
         },
         "locale": { "const": "pt-BR" },
         "known_codes": { "type": "array", "items": { "$ref": "#/$defs/code" }, "uniqueItems": true },
-        "free_text": { "type": "string", "minLength": 1, "maxLength": 500, "description": "Resíduo de `outras`, caixa baixa, sem contato ([contato]/[documento])." }
+        "free_text": { "type": "string", "minLength": 1, "maxLength": 500, "description": "Saúde inteira em resíduo: pedaços `alergias:` / `limitacoes:` / `condicoes:` (caixa baixa, sem contato)." }
       }
     },
     "response_ok": {

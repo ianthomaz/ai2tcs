@@ -1,22 +1,27 @@
 """GET /health, GET /metrics - improved with real checks."""
+import logging
 import shutil
 import time
 
 import httpx
 from fastapi import APIRouter
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 
 from app import db as db_module
 from app.config import settings
 
 router = APIRouter(tags=["health"])
+logger = logging.getLogger(__name__)
 
 _start_time = time.time()
 
 
 @router.get("/health")
-async def health():
-    """Liveness: check Ollama, PostgreSQL, and disk space."""
+async def health(strict: bool = False):
+    """Liveness: check Ollama, PostgreSQL, and disk space.
+
+    Public (no token): the body never carries error text. `?strict=1` answers 503 when
+    degraded, so an HTTP monitor (itcsManifest.yaml) sees Ollama or Postgres down."""
     checks = {}
 
     # Ollama
@@ -36,8 +41,9 @@ async def health():
         async with pool.acquire() as conn:
             await conn.fetchval("SELECT 1")
         checks["postgres"] = {"status": "ok"}
-    except Exception as e:
-        checks["postgres"] = {"status": "error", "detail": str(e)}
+    except Exception:
+        logger.exception("health: postgres check failed")
+        checks["postgres"] = {"status": "error"}
 
     # Disk space
     try:
@@ -50,11 +56,14 @@ async def health():
     all_ok = all(c.get("status") == "ok" for c in checks.values())
     uptime_seconds = round(time.time() - _start_time)
 
-    return {
+    body = {
         "status": "ok" if all_ok else "degraded",
         "uptime_seconds": uptime_seconds,
         "checks": checks,
     }
+    if strict and not all_ok:
+        return JSONResponse(body, status_code=503)
+    return body
 
 
 @router.get("/metrics", response_class=PlainTextResponse)

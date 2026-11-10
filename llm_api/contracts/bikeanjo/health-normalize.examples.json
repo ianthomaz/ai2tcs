@@ -9,7 +9,7 @@
         "person": { "kind": "dependent", "id": "D_AABC4_A" },
         "locale": "pt-BR",
         "known_codes": ["tea"],
-        "free_text": "epilepsia controlada, pressao alta as vezes"
+        "free_text": "condicoes: epilepsia controlada, pressao alta as vezes"
       },
       "response_ok": {
         "status": "ok",
@@ -31,7 +31,7 @@
         "person": { "kind": "user", "id": "AABC4" },
         "locale": "pt-BR",
         "known_codes": [],
-        "free_text": "saude de ferro gracas a deus"
+        "free_text": "condicoes: saude de ferro gracas a deus"
       },
       "response_ok": {
         "status": "ok",

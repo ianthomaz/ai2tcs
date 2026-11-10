@@ -525,7 +525,12 @@ async def route_message(
     finalized = finalized.model_copy(
         update={
             "signals": llm_signals.build(
-                chunks=chunks, answer=finalized.answer, guard_hit=guard_hit, metrics=call_metrics
+                chunks=chunks,
+                answer=finalized.answer,
+                guard_hit=guard_hit,
+                metrics=call_metrics,
+                distance_reference=float(max_dist),
+                prompt_text=f"{system_prompt}\n{user_content}",
             )
         }
     )

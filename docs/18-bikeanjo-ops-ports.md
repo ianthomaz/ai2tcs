@@ -167,6 +167,7 @@ Avaliado e mantido JSON:
 ## 9. Revisão de 28 set 2026 — problemas e pendências
 
 - [ x ] **`triage-v2` no git (out/2026).** `PROMPT_VERSION = "triage-v2"`, prompt `feedback-triage-v2.md` + few-shots G–I. O modelo recebe `subject.kind` (`adult` · `dependent` · `none`), nunca o id; o serviço garante a regra 9 (texto sobre o filho com sujeito adulto → `watch`, confiança ≤ 0,5, aviso `subject_minor_mismatch`) e a rede de `grave` cobre queda com lesão e falta de socorro (caso t11).
+- [ x ] **`triage-v3` (nov/2026).** Regra 10: `historico.*` é a mesma pessoa antes da oficina; dificuldade antes + avanço hoje → `aprendizado` e `information_value` maior; âncora só do texto de hoje; `answer_solidity` segue sendo coerência de hoje. Casos t17–t18.
 
 Visto no código já mergeado no mini62 (pull request #7), antes de tratar isto como serviço pronto. Nada disto foi corrigido nesta anotação.
 

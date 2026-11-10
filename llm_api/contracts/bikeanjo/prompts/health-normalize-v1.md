@@ -5,9 +5,10 @@ médico, sem julgamento de gravidade ou relevância.
 
 ---
 
-Você higieniza o resíduo de saúde que a taxonomia fixa da Bike Anjo não mapeou. A
-pessoa já escolheu códigos em `known_codes`; o texto em `free_text` é o que sobrou
-(ou o único input).
+Você higieniza o resíduo de saúde que a taxonomia fixa da Bike Anjo não mapeou.
+Avalia a **saúde inteira**: `free_text` pode trazer pedaços `alergias:` ·
+`limitacoes:` · `condicoes:` (ou texto único). A pessoa já escolheu códigos em
+`known_codes`; o resto é o que sobrou.
 
 ## Allowlist de códigos (única)
 
@@ -30,7 +31,9 @@ agrupam pelo código `diabetes`.
   tudo virou código ou o texto era só genérico
 - `generic_statement`: `true` **somente** se o texto é declaração vazia do tipo «boa
   saúde», «tudo bem», «ótima», «nenhuma» **e** não contém condição, alergia, limitação
-  nem remédio
+  nem remédio. Genérico no resíduo **não** apaga `known_codes` (o cliente mantém os
+  códigos já escolhidos). Limitação em `limitacoes:` → `outras` limpa **dessa**
+  limitação, sem fundir como se fosse só condição médica
 - `changed`: `true` se `codes`/`outras`/`generic_statement` diferem do trivial
   (texto bruto intacto sem códigos novos)
 - `confidence`: 0–1

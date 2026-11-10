@@ -20,7 +20,7 @@ from app.bikeanjo.common import (
     load_prompt,
 )
 
-PROMPT_VERSION = "triage-v2"
+PROMPT_VERSION = "triage-v3"
 
 TAGS = ("grave", "construtiva", "elogio_pessoa", "elogio_geral", "bug_sistema", "logistica", "aprendizado", "outro")
 URGENCIES = ("none", "watch", "urgent")
@@ -30,7 +30,7 @@ THEME_MAX = 40
 NAMED_PEOPLE_MAX = 5
 
 _MARKER_RE = re.compile(r"\[(contato|documento)\]", re.IGNORECASE)
-# Rule 9 of triage-v2: adult subject, text says the child is the one who took the workshop.
+# Rule 9 of triage-v3: adult subject, text says the child is the one who took the workshop.
 # Matched on fold(text). Recall over precision — the outcome is only "a person reviews it".
 _CHILD_MENTION = re.compile(r"\b(meu|minha|nosso|nossa) (filh[oa]s?|net[oa]s?|crianca|menin[oa])\b")
 _CHILD_DID = re.compile(r"\b(fez|fizeram|aprendeu|aprenderam|participou|pedalou|conseguiu|adorou|amou)\b")
@@ -92,7 +92,7 @@ def _scales(raw: dict[str, Any]) -> dict[str, int]:
 
 def system_prompt() -> str:
     return (
-        load_prompt("feedback-triage-v2.md")
+        load_prompt("feedback-triage-v3.md")
         + "\n\n"
         + load_prompt("feedback-triage-fewshots.md")
         + "\n\nResponda com UM objeto JSON com as chaves scores, tags, urgency, anchor_quote, "
@@ -102,7 +102,7 @@ def system_prompt() -> str:
 
 def user_prompt(req: FeedbackTriageRequest) -> str:
     # Only what the classification needs: no submission, person or event ids. The subject
-    # goes as its kind (adult / dependent / none) — rule 9 of triage-v2 needs it.
+    # goes as its kind (adult / dependent / none) — rule 9 of triage-v3 needs it.
     return compact_json(
         {
             "source": req.source,

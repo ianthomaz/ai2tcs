@@ -65,5 +65,7 @@ projeto) + `action_payload`. Em `user_system` o serviço salta o RAG e deixa `an
 vazio. Seed `bikeanjoall_2026` inclui `event_interest_lookup` (+ duas actions reservadas)
 e regras duras no `system_instruction`.
 
-**No Bike Anjo (próximo):** ler `intent.action` → executar consulta → mensagem padrão
-(shadow primeiro). Sem o executor, o contrato já existe para plugar.
+**No Bike Anjo:** `askDetailed` lê `intent`; lookup BD + frase fixa (found · none/uncertain
+igual); grava no shadow sempre (`live_sent`); live envia só com
+`flow_switches.event_interest_lookup` (default off). ADM: link **revisar respostas** →
+`/adm/shadow-llm?askPath=interest`.

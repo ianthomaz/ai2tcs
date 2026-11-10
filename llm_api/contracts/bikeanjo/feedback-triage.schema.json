@@ -59,7 +59,7 @@
         "urgency": { "$ref": "#/$defs/urgency" },
         "anchor_quote": { "type": "string", "maxLength": 160, "description": "Trecho quase literal de algum fields.*" },
         "named_people": { "type": "array", "items": { "type": "string" }, "maxItems": 5 },
-        "theme_free": { "type": ["string", "null"], "maxLength": 40 },
+        "theme_free": { "type": ["string", "null"], "maxLength": 80 },
         "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
         "model": { "type": "string" },
         "prompt_version": { "type": "string", "minLength": 1 },
