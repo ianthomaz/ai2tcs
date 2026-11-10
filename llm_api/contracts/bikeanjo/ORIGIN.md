@@ -1,6 +1,6 @@
 # Origin
 
-Synced from bikeanjo2026all `d3907acf` (branch `claude/bike-anjo-llm-integration-7fsuhp`, 2026-11-10): `triage-v3`, `signals` do `/ask`, saúde inteira no `health-normalize-v1.md`. Fora da cópia: `runs/`.
+Synced from bikeanjo2026all `805d740d` (branch `claude/bike-anjo-llm-integration-7fsuhp`, 2026-11-10): regra 10 no `triage-v2`, `signals` do `/ask`, `answer-ratings`, saúde inteira no `health-normalize-v1.md`. Fora da cópia: `runs/`.
 
 ## Intent v1 (2º roteador semântico do `/ask`) · 2026-10-30
 

@@ -25,6 +25,44 @@ model Project {
   userProfiles    UserProfile[]
   convSummaries   ConversationSummary[]
   apiKeys         ProjectApiKey[]
+  answerRatings   AnswerRating[]
+  ratingProposals RatingProposal[]
+}
+
+/// Human judgment of an answer, sent by the project (docs/22-answer-ratings.md).
+model AnswerRating {
+  id         BigInt    @id @default(autoincrement())
+  projectId  String    @map("project_id")
+  sourceRef  String    @map("source_ref")
+  question   String
+  answer     String
+  rating     String    // stop | bad | good | great
+  reason     String?
+  signals    Json?
+  ratedAt    DateTime? @map("rated_at")
+  receivedAt DateTime  @default(now()) @map("received_at")
+  project    Project   @relation(fields: [projectId], references: [projectId], onDelete: Cascade)
+
+  @@unique([projectId, sourceRef])
+  @@index([projectId, rating])
+  @@map("answer_ratings")
+}
+
+/// Change the ratings suggest; applied to the project only after a person approves.
+model RatingProposal {
+  id         BigInt    @id @default(autoincrement())
+  projectId  String    @map("project_id")
+  kind       String    // forbidden_term
+  value      String
+  sourceRefs String[]  @default([]) @map("source_refs")
+  status     String    @default("pending") // pending | approved | rejected
+  createdAt  DateTime  @default(now()) @map("created_at")
+  decidedAt  DateTime? @map("decided_at")
+  decidedBy  String?   @map("decided_by")
+  project    Project   @relation(fields: [projectId], references: [projectId], onDelete: Cascade)
+
+  @@unique([projectId, kind, value])
+  @@map("rating_proposals")
 }
 
 model ProjectApiKey {

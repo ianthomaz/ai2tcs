@@ -48,6 +48,11 @@ que se constrói aqui é **para qualquer projeto**:
 - Antes de escrever código para um projeto, perguntar: outro projeto usaria isto trocando só
   a configuração? Se sim, é tarefa genérica.
 
+## Mudanças e deploy
+
+O que muda em cada publicação, e o que o deploy precisa fazer, fica no
+[CHANGELOG.md](CHANGELOG.md) (seção «Não publicado» até subir).
+
 ## Convenções
 
 - **Código e comentários técnicos:** inglês.

@@ -547,3 +547,9 @@ projeto e guarda o vocabulário dela. Sem a chave, a tarefa responde 403 ao proj
 ```
 
 Detalhe: [20-text-tasks.md](./20-text-tasks.md).
+
+### `policies.rated_examples` — exemplos aprovados no `/ask`
+
+Número de respostas julgadas «ótimas» que entram no prompt do `/ask` quando a pergunta se
+parece com a delas (padrão 0, desligado). Ligar depois do `scripts/eval_gate.py`. Detalhe:
+[22-answer-ratings.md § 4](./22-answer-ratings.md#4-exemplos-aprovados-no-ask).

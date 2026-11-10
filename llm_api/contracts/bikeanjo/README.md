@@ -30,9 +30,10 @@ porta (eval, re-ingest RAG): [CHECKLIST](CHECKLIST_AI2TCS.md).
 | `POST /ask` (+ status/result) | esquema + exemplos | **produção** (`api/ask.py`) | idem |
 | `POST /extract` · `/extract-multi` | esquema + exemplos | **produção** (`api/extract.py`); passos: onboarding, `reply_intent`, `payment_boleto_confirmation` | zap |
 | `GET /health` | — | **produção** | smoke |
-| `POST /feedbackTriage` | esquema + exemplos + eval + prompt | **produção** (`triage-v3` no mini62) | `itcs-feedback-triage.ts` (fila `feedback_triage`) |
+| `POST /feedbackTriage` | esquema + exemplos + eval + prompt | **produção** (`triage-v2` no mini62) | `itcs-feedback-triage.ts` (fila `feedback_triage`) |
 | `POST /healthNormalize` | esquema + exemplos + eval + prompt | **produção** | `itcs-health-normalize.ts` (fila `health_normalize`) |
 | `POST /replySuggest` | esquema + exemplos + eval + prompt | **produção** | `itcs-reply-suggest.ts` (`/admin/suporte` → Responder) |
+| `POST /ratings` · `GET /ratings/proposals` · `POST /ratings/proposals/{id}/decision` | esquema + exemplos | **implementada, não publicada** (ai2tcs docs/22) | `zapzap/lib/ai2tcs-ratings.js` (nota do `/adm/shadow-llm`; propostas no mesmo painel) |
 | `POST /task/text_triage` | esquema + exemplos | **produção** — porta genérica (docs/20), categorias no seed | `itcs-text-triage.ts` · `scripts/text-triage.ts` (bot da caixa = médio prazo, [10h § 2](../../10h_ai2tcs_portas_de_texto.md)) |
 | erro comum | `common.schema.json` | NF/boleto mandam `errors:[]`; `error` ao lado é aceito | todos os clientes leem `error.message`, depois `errors[0]` |
 
@@ -50,9 +51,10 @@ Outras rotas no serviço que **não** têm pasta aqui (fora do escopo Bike Anjo 
 | `/router` | `router.schema.json` | `router.examples.json` | shadow → eval set | (já no serviço) |
 | `/ask` | `ask.schema.json` | `ask.examples.json` | idem | (já no serviço) |
 | `/extract` | `extract.schema.json` | `extract.examples.json` | — | (já no serviço) |
-| `/feedbackTriage` | `feedback-triage.schema.json` | `feedback-triage.examples.json` | `feedback-triage.eval.jsonl` | `prompts/feedback-triage-v3.md` |
+| `/feedbackTriage` | `feedback-triage.schema.json` | `feedback-triage.examples.json` | `feedback-triage.eval.jsonl` | `prompts/feedback-triage-v2.md` |
 | `/healthNormalize` | `health-normalize.schema.json` | `health-normalize.examples.json` | `health-normalize.eval.jsonl` | `prompts/health-normalize-v1.md` |
 | `/replySuggest` | `reply-suggest.schema.json` | `reply-suggest.examples.json` | `reply-suggest.eval.jsonl` | `prompts/reply-suggest-v1.md` |
+| `/ratings` | `answer-ratings.schema.json` | `answer-ratings.examples.json` | — | — |
 | `/task/text_triage` | `text-triage.schema.json` | `text-triage.examples.json` | — | (no serviço: `llm_api/tasks/prompts/text-triage-v1.md`) |
 | erro | `common.schema.json` | — | — | — |
 
@@ -120,7 +122,7 @@ modelo. Detalhe: `ai2tcs/docs/18-bikeanjo-ops-ports.md` § 6.
 - **`*.eval.jsonl`** — uma linha por caso (`expect` + `why`). Calibração de prompt; não é
   teste determinístico — mede taxa. Critérios de pronto: [CHECKLIST](CHECKLIST_AI2TCS.md).
 - **`prompts/*-v1.md`** — system prompt sugerido; a string `prompt_version` na resposta
-  (`triage-v3`, `health-v2`, `reply-v1`) tem de bater com o arquivo usado.
+  (`triage-v2`, `health-v2`, `reply-v1`) tem de bater com o arquivo usado.
 
 ---
 
@@ -172,7 +174,8 @@ o velho sai.
 2. Valor novo em lista fechada → esquema **e** constante no mesmo commit (teste falha se só um).
 3. Contexto novo no Zap → `ROUTER_CONTEXT_KEYS` / `ASK_CONTEXT_KEYS` **e** esquema **e** inject no prompt ai2tcs.
 4. Quebra → rota ou `$id` com `/2`; antiga fica até migrar.
-5. Prompt mudou → `prompt_version` novo; BA grava a versão ao lado do resultado.
+5. `prompt_version` muda quando muda o formato da resposta; ajuste de regra no mesmo formato
+   mantém o nome, e os dois lados sobem juntos (dono, 10/nov/2026). BA grava a versão ao lado do resultado.
 
 ---
 

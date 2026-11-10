@@ -1,6 +1,6 @@
 # Few-shots — `feedbackTriage` (sem RAG)
 
-Incluir **depois** do system prompt principal (`feedback-triage-v3.md`). Casos
+Incluir **depois** do system prompt principal (`feedback-triage-v2.md`). Casos
 anonimizados alinhados ao `feedback-triage.eval.jsonl`. O modelo devolve só o
 JSON de classificação.
 

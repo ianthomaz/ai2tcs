@@ -94,7 +94,8 @@ curl -X POST "$LLM_API_URL/task/text_triage" -H "Authorization: Bearer itcs_<pro
 3. O projeto liga em `config_json.tasks.<task_id>` (com o vocabulário, se a tarefa pedir).
 4. Antes de usar de verdade: casos no `scripts/eval_gate.py` do projeto.
 
-Mudou o prompt → `prompt_version` novo.
+`prompt_version` muda quando muda o formato da saída; ajuste de regra no mesmo formato mantém
+o nome, e o cliente sobe junto.
 
 ---
 

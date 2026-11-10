@@ -259,11 +259,11 @@ async def test_no_context_is_no_answer_without_calling_the_model():
     chat.assert_not_called()
 
 
-# ---------------------------------------------------------------- triage-v3
+# ---------------------------------------------------------------- triage-v2
 
 
 def test_triage_serves_v2_prompt_and_version():
-    assert ft.PROMPT_VERSION == "triage-v3"
+    assert ft.PROMPT_VERSION == "triage-v2"
     assert "Sujeito ≠ texto" in ft.system_prompt()
     assert "Exemplo G" in ft.system_prompt()
 

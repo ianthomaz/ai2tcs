@@ -15,10 +15,10 @@ from typing import Any
 
 CONFIDENCE_BASIS = "signals-v1"
 
-_URL = re.compile(r"https?://[^\s)>\]\"']+", re.IGNORECASE)
-_WORD = re.compile(r"[a-z0-9]{4,}")
+URL_RE = re.compile(r"https?://[^\s)>\]\"']+", re.IGNORECASE)
+WORD_RE = re.compile(r"[a-z0-9]{4,}")
 # Frequent pt-BR words of 4+ letters that say nothing about the content.
-_STOP = frozenset(
+STOPWORDS = frozenset(
     "para pelo pela pelos pelas como mais mas muito muita isso esse essa este esta estas estes "
     "aqui voce voces vamos pode podem fazer temos quando onde qual quais sobre entre depois "
     "antes ainda tambem cada todo toda todos todas outro outra seja sera ser sao estao esta "
@@ -32,12 +32,12 @@ def best_distance(chunks: list[dict]) -> float | None:
     return round(min(values), 3) if values else None
 
 
-def _fold(text: str) -> str:
+def fold(text: str) -> str:
     t = unicodedata.normalize("NFKD", text.lower())
     return "".join(ch for ch in t if not unicodedata.combining(ch))
 
 
-def _norm_url(url: str) -> str:
+def norm_url(url: str) -> str:
     u = url.lower().rstrip(".,;:!?")
     u = re.sub(r"^https?://(www\.)?", "", u)
     return u.rstrip("/")
@@ -52,18 +52,18 @@ def grounding(chunks: list[dict], answer: str | None, prompt_text: str = "") -> 
     `url`) and nowhere in the prompt (project instruction, profile, history).
     """
     text = answer or ""
-    links = [_norm_url(u) for u in _URL.findall(text)]
+    links = [norm_url(u) for u in URL_RE.findall(text)]
     passages = " ".join(f"{c.get('snippet') or ''} {c.get('url') or ''}" for c in chunks)
-    passages_folded = _fold(passages)
+    passages_folded = fold(passages)
     seen = f"{passages} {prompt_text}"
-    seen_links = {_norm_url(u) for u in _URL.findall(seen)}
-    seen_folded = _fold(seen)
+    seen_links = {norm_url(u) for u in URL_RE.findall(seen)}
+    seen_folded = fold(seen)
     unsupported = sorted({u for u in links if u not in seen_links and u not in seen_folded})
-    words = [w for w in _WORD.findall(_fold(_URL.sub(" ", text))) if w not in _STOP]
+    words = [w for w in WORD_RE.findall(fold(URL_RE.sub(" ", text))) if w not in STOPWORDS]
     if not chunks or not words:
         share = None
     else:
-        vocab = set(_WORD.findall(passages_folded))
+        vocab = set(WORD_RE.findall(passages_folded))
         share = round(sum(1 for w in words if w in vocab) / len(words), 3)
     return {"grounding": share, "unsupported_links": unsupported[:5]}
 

@@ -33,8 +33,8 @@ novo nem de migration.
 |---|---|---|---|
 | **F0** [feito 10/nov] | dedup do `/ask` passa a incluir quem pergunta e o contexto (`user_id`, hash de `user_context`, `history`, `system_prompt`); sai o ramo `id_contato`; monitor do manifesto em `/health?strict=1` (503 quando degradado); `/health` não mostra mais texto de erro do Postgres (endpoint público) | ai2tcs `api/ask.py`, `api/health.py`, `itcsManifest.yaml` | pequeno |
 | **F1 (S1)** [feito 10/nov] | `signals.grounding` determinístico: fração das palavras de conteúdo e dos links da resposta que aparecem nos trechos; `signals.unsupported_links` (link que o modelo não viu: fora dos trechos e do prompt); `signals.answer_confidence` 0–1 composto só dos sinais (nunca autodeclarado). Calibração com a tabela confiança × nota do shadow | ai2tcs `llm/signals.py`, contrato `ask.schema.json`; Bike Anjo: pílula do `/adm/shadow-llm` usa o número do `/ask` para a hipótese do `/ask` | médio |
-| **F2 (S4)** [feito 10/nov] | `triage-v3`: o prompt usa `historico.*` para ler evolução (dificuldade antes + relato de avanço hoje → `aprendizado`); casos novos no `feedback-triage.eval.jsonl` | prompt nos dois repos, `prompt_version` novo | pequeno |
-| **F3 (S3)** | porta genérica de julgamentos: o projeto manda o julgamento (pergunta, resposta, nota, motivo); o ai2tcs vira caso de eval, **propõe** padrão proibido a partir dos motivos (`link_inventado`, `prometeu_fora_da_regra`) e guarda respostas `great` como exemplo para few-shot no `/ask` (§ 3.2.1 da avaliação) | ai2tcs nova porta + `config_json`; Bike Anjo: o script do deploy passa a chamar a porta | médio a grande |
+| **F2 (S4)** [feito 10/nov] | regra 10 no prompt `triage-v2` (o nome fica; dono, 10/nov): usa `historico.*` para ler evolução (dificuldade antes + relato de avanço hoje → `aprendizado`); casos novos no `feedback-triage.eval.jsonl` | prompt nos dois repos | pequeno |
+| **F3 (S3)** [feito 10/nov, [22](./22-answer-ratings.md)] | porta genérica de julgamentos: o projeto manda o julgamento (pergunta, resposta, nota, motivo); o ai2tcs vira caso de eval, **propõe** padrão proibido a partir dos motivos (`link_inventado`, `prometeu_fora_da_regra`) e guarda respostas `great` como exemplo para few-shot no `/ask` (§ 3.2.1 da avaliação) | ai2tcs nova porta + `config_json`; Bike Anjo: o script do deploy passa a chamar a porta | médio a grande |
 | **F4 (S2)** | o prompt «saúde inteira» do Bike Anjo (`alergias:` · `limitacoes:` · `condicoes:`) chega ao ai2tcs pela sincronia do contrato [feito 10/nov]; resposta separada por campo só com caso real | os dois repos | pequeno |
 
 Fora deste ramo (não é demanda do Bike Anjo e a avaliação manda fatiar): MCP do ecossistema
@@ -43,9 +43,7 @@ trechos do rerank (§ 1.2.3, só com `eval_gate`).
 
 ## 3. Decisões do dono
 
-- **F3:** padrão proibido aprendido entra sozinho na geração, ou fica como proposta até o
-  operador aprovar? Recomendação: aprovar primeiro, coerente com «nada responde nem executa
-  sem aprovação no `/adm/shadow-llm`».
+- **F3 (decidido, dono 10/nov):** fazer já; o termo proibido aprendido fica como proposta até uma pessoa aprovar no `/adm/shadow-llm`.
 - **F2 (decidido no código, 10/nov):** o histórico entra na leitura de **impacto** (tag
   `aprendizado`, `information_value`); `answer_solidity` mantém o sentido de coerência de hoje.
 - **F4:** resposta separada por campo espera caso real de resíduo misturado.

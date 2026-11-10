@@ -1,0 +1,27 @@
+{
+  "description": "POST /ratings com a chave do Bike Anjo. Texto inventado.",
+  "cases": [
+    {
+      "name": "resposta reprovada com link inventado",
+      "request": {
+        "items": [
+          {
+            "source_ref": "zap:log:4821",
+            "rating": "bad",
+            "question": "Tem oficina em Belém amanhã?",
+            "answer": "Tem sim, inscreva-se em https://bikeanjo.org/belem",
+            "reason": "inventou link",
+            "signals": { "unsupported_links": ["bikeanjo.org/belem"] },
+            "rated_at": "2026-11-10T14:03:00.000Z"
+          }
+        ]
+      },
+      "response_ok": { "status": "ok", "stored": 1, "removed": 0, "new_proposals": 1 }
+    },
+    {
+      "name": "nota desfeita",
+      "request": { "items": [{ "source_ref": "zap:log:4821", "rating": null }] },
+      "response_ok": { "status": "ok", "stored": 0, "removed": 1, "new_proposals": 0 }
+    }
+  ]
+}

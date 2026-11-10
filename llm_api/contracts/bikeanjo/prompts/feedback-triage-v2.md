@@ -1,6 +1,6 @@
-# System prompt — `feedbackTriage` · `prompt_version: triage-v3`
+# System prompt — `feedbackTriage` · `prompt_version: triage-v2`
 
-Prompt em uso (`FEEDBACK_TRIAGE_PROMPT_VERSION = 'triage-v3'` em
+Prompt em uso (`FEEDBACK_TRIAGE_PROMPT_VERSION = 'triage-v2'` em
 `sistemaBA/src/lib/feedback-triage-shared.ts`). Colar no ai2tcs como system (ou equivalente). O modelo devolve **só JSON** no molde
 `response_ok` do esquema. Sem markdown, sem prosa fora do JSON.
 
@@ -34,7 +34,7 @@ Objeto JSON com exatamente:
 
 O serviço acrescenta `status`, `model`, `prompt_version`, `warnings` — **não** invente
 esses campos no JSON do modelo se o wrapper os injeta; se o wrapper pedir o objeto
-completo, use `status: "ok"`, `prompt_version: "triage-v3"`, `warnings: []`.
+completo, use `status: "ok"`, `prompt_version: "triage-v2"`, `warnings: []`.
 
 ## Regras de tag e urgência
 

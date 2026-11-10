@@ -12,6 +12,8 @@ from app.config import settings
 from app.llm import get_provider
 from app.llm import metrics as llm_metrics
 from app.llm import signals as llm_signals
+from app.ratings import logic as ratings_logic
+from app.ratings import store as ratings_store
 from app.registry import (
     get_ask_intent_config,
     get_project,
@@ -541,6 +543,15 @@ async def run_rag_job(
             client_system_prompt_prefix=client_system_prefix,
             llm_config=llm_config,
         )
+        # Approved answers as examples, only for a project that turned it on (docs/22).
+        rated_examples = int(policies.get("rated_examples") or 0)
+        if rated_examples > 0:
+            examples = ratings_logic.pick_examples(
+                question, await ratings_store.great_examples(project_id), rated_examples
+            )
+            block = ratings_logic.examples_block(examples)
+            if block:
+                system_msg = f"{system_msg}\n\n{block}"
         await db_module.job_update_status(job_id, "working", progress="generating")
 
         model_name = settings.get_model_name(model_alias, default_alias="smart")
