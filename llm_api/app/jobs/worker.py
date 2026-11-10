@@ -49,6 +49,29 @@ def _filter_chunks_by_distance(chunks: list[dict], max_distance: float = MAX_CHU
     return [c for c in chunks if c.get("distance") is None or c["distance"] <= max_distance]
 
 
+FOLLOWUP_MAX_WORDS = 3
+
+
+def followup_search_query(question: str, history: list[dict] | None) -> str:
+    """A short follow-up («e em Curitiba?») searches together with the previous user turn.
+
+    Only the search query changes; the model still answers the question as asked. Content
+    words as in signals (4+ letters, no stopwords); more than FOLLOWUP_MAX_WORDS → as is.
+    """
+    from app.llm.signals import STOPWORDS, WORD_RE, fold
+
+    words = [w for w in WORD_RE.findall(fold(question or "")) if w not in STOPWORDS]
+    if len(words) > FOLLOWUP_MAX_WORDS or not history:
+        return question
+    previous = next(
+        (str(t.get("content") or "").strip() for t in reversed(history)
+         if isinstance(t, dict) and t.get("role") == "user" and str(t.get("content") or "").strip()
+         and str(t.get("content") or "").strip() != (question or "").strip()),
+        "",
+    )
+    return f"{previous}\n{question}" if previous else question
+
+
 def _rerank_for_diversity(chunks: list[dict], max_per_doc: int = 2) -> list[dict]:
     """Re-rank chunks to limit redundancy from the same document.
 
@@ -470,7 +493,10 @@ async def run_rag_job(
         chunks: list[dict] = []
         if rag_mode != "disabled":
             await db_module.job_update_status(job_id, "working", progress="retrieving_context")
-            chunks = await retrieve(project_id, question, top_k=top_k, embedding_model=embed_model, port="ask")
+            search_query = question
+            if policies.get("retrieval_query_with_history"):
+                search_query = followup_search_query(question, client_conversation_override)
+            chunks = await retrieve(project_id, search_query, top_k=top_k, embedding_model=embed_model, port="ask")
             max_dist = policies.get("max_chunk_distance", MAX_CHUNK_DISTANCE)
             chunks = _filter_chunks_by_distance(chunks, max_distance=max_dist)
 
@@ -480,7 +506,7 @@ async def run_rag_job(
                 logger.info("Deep search triggered for job %s (depth=%s, chunks_found=%d)", job_id, depth, len(chunks))
                 deep_top_k = 12
                 deep_max_dist = max_dist * 1.3  # 30% more permissive
-                more_chunks = await retrieve(project_id, question, top_k=deep_top_k, embedding_model=embed_model, port="ask")
+                more_chunks = await retrieve(project_id, search_query, top_k=deep_top_k, embedding_model=embed_model, port="ask")
                 more_chunks = _filter_chunks_by_distance(more_chunks, max_distance=deep_max_dist)
 
                 existing_ids = {c.get("id") for c in chunks if c.get("id")}

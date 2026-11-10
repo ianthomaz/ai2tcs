@@ -568,3 +568,9 @@ da busca: [12 § Busca](./12-llm-fleet-rag-operations.md#busca-como-um-trecho-ch
 (`mxbai-embed-large`: «Represent this sentence for searching relevant passages: »). Não exige
 reindexar, mas muda as distâncias: ligar depois do `scripts/eval_gate.py` e rever
 `max_chunk_distance`. Padrão desligado.
+
+### `policies.retrieval_query_with_history` — pergunta curta de continuação
+
+`true`: quando a pergunta do `/ask` tem até 3 palavras de conteúdo («e em Curitiba?»), a busca
+usa também a pergunta anterior da pessoa (do histórico que o cliente manda). Só a busca muda;
+o modelo responde à pergunta como veio. Padrão desligado; ligar depois do `scripts/eval_gate.py`.

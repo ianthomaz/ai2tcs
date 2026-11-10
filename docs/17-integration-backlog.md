@@ -1,5 +1,8 @@
 # 17 — Integração com o hub ITCS e o canal WhatsApp (mapa e backlog)
 
+> **Plano de 2026.** O que daqui segue aberto está na lista única do ai2tcs, [docs/23 § 8](./23-ecosystem-panorama.md#8-roteiro-único-do-ai2tcs); o resto já está no código.
+
+
 **Natureza deste doc:** mapa de **recursos** e backlog aberto. Nada aqui está
 decidido — serve para que uma sessão nova perceba o que o `ai2tcs` já oferece à
 restante malha, o que dele ainda não é consumido, e que opções existem.
@@ -66,8 +69,8 @@ serviço partido**.
 
 ## 3. O que o hub ainda não consome
 
-- [ ] `/health` rico em vez de `200` no apex (`monitor.checks` deste repo)
-- [ ] `/metrics` — jobs por projeto/estado dariam um painel de uso quase de graça
+- [x] `/health` rico em vez de `200` no apex (`monitor.checks` deste repo) — feito (nov/2026): `/health?strict=1`
+- [x] `/metrics` — jobs por projeto/estado dariam um painel de uso quase de graça — feito: inclui `llm_calls_heavy_24h`
 - [ ] `spec.envs` deste manifesto não declara `port` nem `pathRemote` (o do
       `webplaceZap` declara) — assimetria que trava automação que leia envs
 - [ ] `hub.lastHarvestAt` continua `null`: o cartão existe, o hub nunca o leu
@@ -115,16 +118,16 @@ com o que devia diagnosticar. Fica registado, não planeado.
 
 ## 6. Backlog
 
-- [ ] `monitor.checks` a apontar para `/health` e a validar `status: "ok"` no corpo
+- [x] `monitor.checks` a apontar para `/health` e a validar `status: "ok"` no corpo — feito: `?strict=1` responde 503 quando degradado
 - [ ] Declarar `port` e `pathRemote` em `spec.envs` (alinhar com o BD, não adivinhar)
-- [ ] Documentar `/metrics` em `02-api-integration.md` como superfície de monitorização
+- [x] Documentar `/metrics` em `02-api-integration.md` como superfície de monitorização — feito (02 § 3.6)
 - [ ] Endpoint ou nota que liste `project_id` activos (hoje só se sabe pelos seeds)
 - [ ] Confirmar `spec.llm` do `webplacecc` com o dono do repo do zap
 - [ ] Rever `06-edu-contract.md` e `12-llm-fleet-rag-operations.md` face ao estado actual
 - [ ] Migrar cada projeto para a chave própria e pô-lo em `SCOPED_KEY_REQUIRED_PROJECTS`
       ([02 § 2.1](02-api-integration.md)); o log `auth=global` diz quem falta. Bike Anjo é o
       primeiro ([18 § 7](18-bikeanjo-ops-ports.md)); com todos migrados, o global sai das integrações
-- [ ] Porta genérica de triagem de texto (feedback, chamado, e-mail) multi-projeto —
+- [x] Porta genérica de triagem de texto (feedback, chamado, e-mail) multi-projeto — — feito: `POST /task/{task_id}` (docs/20)
       [18 § 8](18-bikeanjo-ops-ports.md)
 
 ---
@@ -132,7 +135,7 @@ com o que devia diagnosticar. Fica registado, não planeado.
 ## 7. Perguntas em aberto
 
 - [ ] `/health` e `/metrics` devem ficar públicos (para o hub sondar sem chave) ou atrás de token? Hoje os dois respondem sem Bearer; o middleware de sessão só cobre `/dashboard`.
-- [ ] O `degraded` do `/health` deve devolver `200` ou `503`? Hoje é `200` — decide se a sonda do hub precisa de ler o corpo.
+- [x] O `degraded` do `/health` deve devolver `200` ou `503`? Hoje é `200` — decide se a sonda do hub precisa de ler o corpo. — decidido: 200 por padrão, 503 com `?strict=1`
 - [ ] A lista de projetos activos deve sair para o catálogo do hub, ou fica só aqui?
 
 ---

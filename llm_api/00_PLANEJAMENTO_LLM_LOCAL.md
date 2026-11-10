@@ -1,5 +1,8 @@
 # Planejamento: LLM local 24/7 no Mac mini (M4, 32GB) + API FastAPI + Tailscale
 
+> **Plano de início de 2026.** O que daqui segue aberto está na lista única do ai2tcs, [docs/23 § 8](../docs/23-ecosystem-panorama.md#8-roteiro-único-do-ai2tcs); o resto já está no código.
+
+
 **Objetivo:** Motor de inferência local com RAG multi-projeto, API assíncrona, acesso seguro via Tailscale, sem expor porta pública.
 
 ---
@@ -242,28 +245,28 @@ Para `no_answer` ou `need_more_info`, `answer` pode ser uma mensagem padrão e `
 
 **MVP (1 dia)**
 
-- [ ] Ambiente Python (venv), FastAPI, dependências (ollama client, Prisma Client Python ou asyncpg, lib de embeddings/vector store leve).
-- [ ] PostgreSQL local (ou Docker): banco criado; Prisma schema com `Project`, `ProjectTheme`, `Job`; migrações aplicadas.
-- [ ] Config estática de 1 projeto de teste (project_id, path, chunking, temáticas opcionais).
-- [ ] Pipeline de ingestão mínima: listar arquivos, chunk, embed, gravar índice (um backend simples, ex.: Chroma ou sqlite-vss).
-- [ ] Endpoint POST `/ask`: criar job, enfileirar, retornar job_id (worker único, síncrono no mesmo processo para MVP).
-- [ ] Worker: pegar pergunta, RAG no índice do projeto, chamar Ollama, salvar resposta em `jobs`; marcar status done/no_answer.
-- [ ] GET `/status/{job_id}` e GET `/result/{job_id}`.
-- [ ] API em localhost na porta **28471**; auth por token no header.
-- [ ] Documentar como expor via Tailscale (serve na porta 28471). Ver `../docs/refs/operacao-tailscale.md`.
+- [x] Ambiente Python (venv), FastAPI, dependências (ollama client, Prisma Client Python ou asyncpg, lib de embeddings/vector store leve).
+- [x] PostgreSQL local (ou Docker): banco criado; Prisma schema com `Project`, `ProjectTheme`, `Job`; migrações aplicadas.
+- [x] Config estática de 1 projeto de teste (project_id, path, chunking, temáticas opcionais).
+- [x] Pipeline de ingestão mínima: listar arquivos, chunk, embed, gravar índice (um backend simples, ex.: Chroma ou sqlite-vss).
+- [x] Endpoint POST `/ask`: criar job, enfileirar, retornar job_id (worker único, síncrono no mesmo processo para MVP).
+- [x] Worker: pegar pergunta, RAG no índice do projeto, chamar Ollama, salvar resposta em `jobs`; marcar status done/no_answer.
+- [x] GET `/status/{job_id}` e GET `/result/{job_id}`.
+- [x] API em localhost na porta **28471**; auth por token no header.
+- [x] Documentar como expor via Tailscale (serve na porta 28471). Ver `../docs/refs/operacao-tailscale.md`.
 
 **Melhorias (1 semana)**
 
-- [ ] POST `/ingest` com suporte incremental e fila de ingest.
-- [ ] Fila de jobs no Postgres com limite de workers (ex.: 2) e estados claros (queued/working/done/failed/cancelled).
-- [ ] Project Registry completo no Postgres (CRUD ou config por arquivo), temáticas (ProjectTheme) e roteamento por project_id em todos os endpoints.
-- [ ] Auto-router opcional (temáticas e palavras-chave).
-- [ ] Deduplicação de perguntas (hash + janela de tempo).
-- [ ] Timeout e cancelamento de job.
+- [x] POST `/ingest` com suporte incremental e fila de ingest.
+- [x] Fila de jobs no Postgres com limite de workers (ex.: 2) e estados claros (queued/working/done/failed/cancelled).
+- [x] Project Registry completo no Postgres (CRUD ou config por arquivo), temáticas (ProjectTheme) e roteamento por project_id em todos os endpoints.
+- [x] Auto-router opcional (temáticas e palavras-chave).
+- [x] Deduplicação de perguntas (hash + janela de tempo).
+- [x] Timeout e cancelamento de job.
 - [ ] Rate limit por project_id.
-- [ ] `/health` e `/metrics`; logs estruturados (JSON).
-- [ ] launchd plist e rotação de logs; instruções para “não dormir”.
-- [ ] Políticas por projeto (no_answer vs need_more_info) e anti-alucinação (limiar de confiança).
+- [ ] Logs estruturados (JSON). (`/health` e `/metrics` existem.)
+- [x] launchd plist e rotação de logs; instruções para “não dormir”.
+- [x] Políticas por projeto (no_answer vs need_more_info) e anti-alucinação (limiar de confiança).
 
 ### 7.2 Estrutura de pastas do repositório
 

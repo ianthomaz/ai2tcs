@@ -23,6 +23,7 @@ _MAGIC = (
     (b"OggS", "ogg"),
     (b"RIFF", "wav"),
     (b"\x00\x00\x00", "mp4_m4a"),  # ftyp box often at offset 4
+    (b"\x1a\x45\xdf\xa3", "webm"),  # EBML header (WebM / Matroska)
 )
 
 

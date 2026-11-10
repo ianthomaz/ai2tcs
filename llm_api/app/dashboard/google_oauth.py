@@ -61,6 +61,9 @@ async def fetch_google_email(access_token: str) -> str:
     email = (data.get("email") or "").strip().lower()
     if not email:
         raise ValueError("Google did not return an email")
+    # The email is the identity checked against the allowlist: only a verified one counts.
+    if data.get("email_verified") is not True:
+        raise ValueError("Google email is not verified")
     return email
 
 

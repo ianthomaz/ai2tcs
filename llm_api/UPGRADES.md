@@ -1,5 +1,8 @@
 # LLM API — Roadmap de Upgrades e Melhorias Futuras
 
+> **Plano de mar/2026.** O que daqui segue aberto está na lista única do ai2tcs, [docs/23 § 8](../docs/23-ecosystem-panorama.md#8-roteiro-único-do-ai2tcs); o resto já está no código.
+
+
 **Versão:** 1.0 (Marco/2026)
 **Status:** Planejamento em progresso
 

@@ -43,7 +43,9 @@ Ordem, para `/ask` e `/router` (`app/rag/retrieve.py`):
    que `chunk_size` é cortado no fim de frase; pedaços vizinhos repetem as partes curtas finais
    até `chunk_overlap`. Nenhum pedaço passa de `chunk_size`, então o embedding (que lê até
    1.000 caracteres) vê o pedaço inteiro. Mudança no corte só vale depois de um ingest novo.
-2. **Pergunta → embedding**, com a instrução de busca do modelo quando o projeto liga
+2. **Pergunta → embedding**. Pergunta curta de continuação soma a pergunta anterior da pessoa
+   quando o projeto liga `policies.retrieval_query_with_history`; a instrução de busca do
+   modelo entra quando o projeto liga
    `policies.embedding_query_instruction` (só o lado da pergunta; muda as distâncias).
 3. **Pool de 2 × `top_k`** por índice (projeto e bibliotecas compartilhadas), ordenado por
    distância.

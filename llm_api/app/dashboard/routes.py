@@ -1,6 +1,8 @@
 """Dashboard routes (HTML pages via Jinja2 + HTMX)."""
 import asyncio
+import hmac
 import secrets
+import time
 from pathlib import Path
 from typing import Any
 
@@ -20,8 +22,39 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 _templates_dir = Path(__file__).parent / "templates"
 templates = Jinja2Templates(directory=str(_templates_dir))
 
-# Simple in-memory session store
-_sessions: set[str] = set()
+# In-memory sessions: id -> expiry (monotonic seconds). The server ends a session after
+# SESSION_TTL_S whatever the browser does with the cookie; a restart ends all of them.
+SESSION_TTL_S = 86400
+_sessions: dict[str, float] = {}
+
+
+def _new_session() -> str:
+    session_id = secrets.token_urlsafe(32)
+    _sessions[session_id] = time.monotonic() + SESSION_TTL_S
+    return session_id
+
+
+def _session_valid(session_id: str | None) -> bool:
+    if not session_id:
+        return False
+    expires = _sessions.get(session_id)
+    if expires is None:
+        return False
+    if expires < time.monotonic():
+        _sessions.pop(session_id, None)
+        return False
+    return True
+
+
+def _cookie_secure(request: Request) -> bool:
+    """Secure cookie when the browser reached us over https (directly or behind the proxy)."""
+    proto = (request.headers.get("x-forwarded-proto") or "").split(",")[0].strip().lower()
+    return request.url.scheme == "https" or proto == "https"
+
+
+def _same(a: str | None, b: str | None) -> bool:
+    """Constant-time comparison for secrets typed or echoed by the browser."""
+    return bool(a) and bool(b) and hmac.compare_digest(str(a).encode(), str(b).encode())
 
 # Paths that don't require auth
 _PUBLIC_PATHS = frozenset(
@@ -37,16 +70,14 @@ class DashboardAuthMiddleware(BaseHTTPMiddleware):
     """Redirect to login if accessing /dashboard/* without valid session."""
     async def dispatch(self, request: Request, call_next):
         if request.url.path.startswith("/dashboard") and request.url.path not in _PUBLIC_PATHS:
-            session_id = request.cookies.get("dashboard_session")
-            if not session_id or session_id not in _sessions:
+            if not _session_valid(request.cookies.get("dashboard_session")):
                 return RedirectResponse(url="/dashboard/login", status_code=302)
         return await call_next(request)
 
 
 def _require_dashboard_auth(request: Request) -> None:
     """Dependency that verifies dashboard session (backup check)."""
-    session_id = request.cookies.get("dashboard_session")
-    if not session_id or session_id not in _sessions:
+    if not _session_valid(request.cookies.get("dashboard_session")):
         raise HTTPException(status_code=401, detail="not authenticated")
 
 
@@ -163,6 +194,7 @@ async def google_oauth_start():
         httponly=True,
         max_age=600,
         samesite="lax",
+        secure=_cookie_secure(request),
         path="/dashboard",
     )
     return response
@@ -183,7 +215,7 @@ async def google_oauth_callback(request: Request, code: str = "", state: str = "
     if not _google_oauth_enabled():
         return RedirectResponse(url="/dashboard/login", status_code=302)
     cookie_state = request.cookies.get("dashboard_oauth_state")
-    if not cookie_state or not state or cookie_state != state:
+    if not _same(cookie_state, state):
         return templates.TemplateResponse(
             request,
             "login.html",
@@ -251,10 +283,12 @@ async def google_oauth_callback(request: Request, code: str = "", state: str = "
             },
         )
 
-    session_id = secrets.token_urlsafe(32)
-    _sessions.add(session_id)
+    session_id = _new_session()
     response = RedirectResponse(url="/dashboard", status_code=302)
-    response.set_cookie("dashboard_session", session_id, httponly=True, max_age=86400, samesite="lax", path="/")
+    response.set_cookie(
+        "dashboard_session", session_id, httponly=True, max_age=SESSION_TTL_S, samesite="lax",
+        secure=_cookie_secure(request), path="/",
+    )
     response.delete_cookie("dashboard_oauth_state", path="/dashboard")
     return response
 
@@ -281,7 +315,9 @@ async def login_submit(request: Request, username: str = Form(...), password: st
                 "password_login_enabled": False,
             },
         )
-    if username != settings.dashboard_user or password != settings.dashboard_password:
+    user_ok = _same(username, settings.dashboard_user)
+    password_ok = _same(password, settings.dashboard_password)
+    if not (user_ok and password_ok):
         return templates.TemplateResponse(
             request,
             "login.html",
@@ -291,18 +327,20 @@ async def login_submit(request: Request, username: str = Form(...), password: st
                 "password_login_enabled": _password_login_enabled(),
             },
         )
-    session_id = secrets.token_urlsafe(32)
-    _sessions.add(session_id)
+    session_id = _new_session()
     response = RedirectResponse(url="/dashboard", status_code=302)
-    response.set_cookie("dashboard_session", session_id, httponly=True, max_age=86400, samesite="lax", path="/")
+    response.set_cookie(
+        "dashboard_session", session_id, httponly=True, max_age=SESSION_TTL_S, samesite="lax",
+        secure=_cookie_secure(request), path="/",
+    )
     return response
 
 
 @router.get("/logout")
 async def logout(request: Request):
     session_id = request.cookies.get("dashboard_session")
-    if session_id and session_id in _sessions:
-        _sessions.discard(session_id)
+    if session_id:
+        _sessions.pop(session_id, None)
     response = RedirectResponse(url="/dashboard/login", status_code=302)
     response.delete_cookie("dashboard_session", path="/")
     response.delete_cookie("dashboard_oauth_state", path="/dashboard")

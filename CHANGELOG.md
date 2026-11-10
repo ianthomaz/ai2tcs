@@ -42,7 +42,16 @@ deploy ela ganha a data e começa outra vazia.
   grupos de palavras-chave), lido pelo `/ask` e pelo `/router`; `policies.embedding_query_instruction`
   (instrução de busca do modelo de embedding na pergunta, desligada). [docs/12 § Busca](docs/12-llm-fleet-rag-operations.md#busca-como-um-trecho-chega-ao-prompt)
 
+- **`policies.retrieval_query_with_history`:** pergunta curta de continuação busca junto com
+  a pergunta anterior da pessoa (desligada; [docs/08](docs/08-project-config.md)).
+
 ### Muda
+
+- **`policies.rated_examples` chega ao `/ask`:** a política nunca saía de `get_rag_policies`
+  (que devolve um conjunto fixo); agora sai, de 0 a 5.
+- **Dashboard:** sessão vale 24 h no servidor; login Google exige e-mail verificado; cookie
+  `secure` em https; senha, `state` e token global comparados em tempo constante.
+- **Áudio `.webm`** reconhecido pela assinatura (nada passa a ser recusado).
 
 - **Corte dos trechos no ingest:** nenhum trecho passa de `chunk_size` (parágrafo longo é
   cortado no fim de frase), todo pedaço de seção longa começa com o título da seção, e a
@@ -56,7 +65,9 @@ deploy ela ganha a data e começa outra vazia.
 - **`/health`:** o corpo (público) não traz texto de erro; o erro vai para o log.
 - **Seed do Bike Anjo:** soma os termos aprovados em `/ratings` aos da configuração.
 - **Docs:** os dois documentos da raiz (revisão de arquitetura e prioridades do Bike Anjo)
-  viram [docs/23](docs/23-ecosystem-panorama.md) e [docs/21](docs/21-review-nov2026.md).
+  viram [docs/23](docs/23-ecosystem-panorama.md) e [docs/21](docs/21-review-nov2026.md). Os planos
+  antigos (00, UPGRADES, 11, 13, 16, 17) marcam o que está feito e apontam para a lista única
+  do que segue aberto, [docs/23 § 8](docs/23-ecosystem-panorama.md#8-roteiro-único-do-ai2tcs).
 - **Triagem do Bike Anjo (`triage-v2`):** regra 10, o histórico da mesma pessoa
   (`historico.*`) conta como evolução; o nome da versão fica.
 - **Contrato do Bike Anjo** sincronizado (`contracts/bikeanjo/ORIGIN.md`): o prompt de saúde lê

@@ -1,5 +1,8 @@
 # 13 — Plano de Execução: Otimização Inteligente sem Quebra
 
+> **Plano de 2026.** O que daqui segue aberto está na lista única do ai2tcs, [docs/23 § 8](./23-ecosystem-panorama.md#8-roteiro-único-do-ai2tcs); o resto já está no código.
+
+
 > Objetivo: aplicar melhorias de alto impacto com baixo risco, preservando a utilização atual da API.
 
 ## Princípios
@@ -138,14 +141,14 @@ Critério de pronto:
 
 ## Checklist operacional
 
-- [ ] Criar baseline com 20–30 perguntas reais (curadoria manual do time)
+- [x] Criar baseline com 20–30 perguntas reais (curadoria manual do time) — feito: `tests/eval/eval_questions.json` (90 casos)
 - [ ] Definir limite de latência p95 por rota crítica
 - [ x ] Ativar logs com `request_id` e `duration_ms`
 - [ x ] Adicionar flags no `.env.example`
 - [ x ] Implementar reranker sob flag — `app/rag/rerank.py`, `RAG_RERANK_ENABLED`
 - [ x ] Implementar cache sob flag
 - [ x ] Implementar híbrido sob flag
-- [ ] Validar regressão com testes + smoke
+- [x] Validar regressão com testes + smoke — feito: `scripts/eval_gate.py`
 
 ---
 

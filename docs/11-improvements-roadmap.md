@@ -1,5 +1,8 @@
 # 11 — Roadmap de Melhorias: Mais Inteligente, Rápido e Acessível
 
+> **Plano de 2026.** O que daqui segue aberto está na lista única do ai2tcs, [docs/23 § 8](./23-ecosystem-panorama.md#8-roteiro-único-do-ai2tcs); o resto já está no código.
+
+
 > Contexto: Mac com 32 GB RAM dedicado (Apple Silicon), Ollama como backend, Chroma para vetores, FastAPI + PostgreSQL.
 
 ---
@@ -506,7 +509,7 @@ Ver `scripts/llm_docker_autostart.sh` como base — adaptar para launchctl.
 - [ x ] Trocar embedding por `mxbai-embed-large` — default em `app/ingest/embeddings.py`. Índice de 768 (nomic) não mistura com 1024; `webplacecc` ainda precisa de re-ingest (QA 28 set 2026, [12](./12-llm-fleet-rag-operations.md))
 - [ x ] Adicionar `gemma3:12b` como `smart` — default em `app/config.py` ([09](./09-model-upgrade.md))
 - [ x ] Implementar cache de embeddings — LRU em `app/ingest/embeddings.py` (ligado por defeito)
-- [ ] Configurar `OLLAMA_KEEP_ALIVE=-1` para modelos principais
+- [x] Configurar `OLLAMA_KEEP_ALIVE=-1` para modelos principais — feito: `OLLAMA_KEEP_ALIVE` no `.env`
 
 ### Sprint 2 (qualidade RAG, ~2 semanas)
 - [ x ] Adicionar reranker `cross-encoder/ms-marco-MiniLM-L-6-v2` — `app/rag/rerank.py`, ligado em `retrieve.py`; desligado por defeito
@@ -514,13 +517,13 @@ Ver `scripts/llm_docker_autostart.sh` como base — adaptar para launchctl.
 - [ x ] Adicionar `callback_url` no job request — `app/api/ask.py`
 
 ### Sprint 3 (acessibilidade, ~2 semanas)
-- [ ] SDK Python simples em `llm_api/sdk/`
+- [x] SDK Python simples em `llm_api/sdk/` — feito: `llm_api/sdk/client.py`
 - [ ] Endpoint OpenAI-compatible `/v1/chat/completions`
 - [ x ] Script de evals automatizados — `scripts/eval_rag.py` (+ `scripts/import_eval_set.py`)
 
 ### Sprint 4 (inteligência, ~1 mês)
 - [ x ] Self-RAG / reflexão automática — `_reflect_on_answer` em `app/jobs/worker.py`; desligado por defeito
-- [ ] Memória de longo prazo por usuário
+- [x] Memória de longo prazo por usuário — em parte: perfil (`user_profile`) e resumo mensal da conversa (`conversation_maintenance`)
 - [ ] Roteamento automático por complexidade
 - [ ] MCP Server para Claude Code
 

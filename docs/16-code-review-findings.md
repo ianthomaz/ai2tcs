@@ -18,9 +18,11 @@ intenção, e a intenção não está no código. Nada da secção 1 foi alterad
 
 ---
 
-## 1. Em aberto — nada foi alterado
+## 1. Achados (situação em 10/nov/2026 no topo de cada um)
 
 ### 1.1 O dedup do `/ask` não distingue contatos
+
+**Situação (10/nov/2026): resolvido.** A chave do dedup inclui `user_id` e o contexto enviado (perfil, histórico, prompt, modelo, callback); `tests/test_ask_dedup.py`.
 
 **O que o código faz.** A chave de dedup usa projeto e texto da pergunta
 (`llm_api/app/api/ask.py:21`):
@@ -64,6 +66,8 @@ resposta, o mesmo mecanismo passa a devolver resposta personalizada de outra pes
 
 ### 1.2 `id_contato` é lido mas nunca existe
 
+**Situação (10/nov/2026): resolvido.** O zapzap manda `user_id`; o ramo `id_contato` saiu.
+
 **O que o código faz.** Em `llm_api/app/api/ask.py:64`:
 
 ```python
@@ -104,6 +108,8 @@ em silêncio.
 
 ### 1.3 `_rerank_for_diversity` reordena, não corta
 
+**Situação (10/nov/2026): aberto.** Cortar muda o que entra no prompt de todo projeto; só com o portão de avaliação ([23 § 8](./23-ecosystem-panorama.md#8-roteiro-único-do-ai2tcs)).
+
 **O que o código faz.** `llm_api/app/jobs/worker.py:45`. A docstring descreve o
 problema como desperdício de janela de contexto e a solução como *"keep at most
 max_per_doc chunks per source document"*. A implementação termina em
@@ -137,6 +143,8 @@ No mesmo bloco convivem uma docstring que diz cortar e um comentário que diz
 
 ### 1.4 Login do dashboard
 
+**Situação (10/nov/2026): (a)–(d) resolvidos.** Sessão com validade de 24 h no servidor (`SESSION_TTL_S`); login Google exige `email_verified`; cookie `secure` quando o acesso é https (direto ou `X-Forwarded-Proto`); senha, `state` do OAuth e token global comparados com `hmac.compare_digest`. `tests/test_dashboard_security.py`. Fica aberto: limite de tentativas no `POST /dashboard/login` (nada no código; pode estar na borda).
+
 Quatro pontos no mesmo território. O risco de cada um depende de como o serviço está
 exposto, o que não se vê deste repo.
 
@@ -159,6 +167,8 @@ exposto, o que não se vê deste repo.
   `POST /dashboard/login`? Não há nenhum no código, mas pode estar na borda.
 
 ### 1.5 `status: "ok"` mesmo com a LLM totalmente indisponível
+
+**Situação (10/nov/2026): aberto, decisão do dono** ([23 § 8](./23-ecosystem-panorama.md#8-roteiro-único-do-ai2tcs)).
 
 **O que o código faz.** `llm_api/app/nfextract/llm_client.py:110-132`:
 quando `enrich_with_local_llm` esgota as tentativas (erro HTTP, timeout,
@@ -185,6 +195,8 @@ fica registado, não decidido.
 
 ### 1.6 `nf_number` sem validação de formato
 
+**Situação (10/nov/2026): aberto, decisão do dono.**
+
 **O que o código faz.** `llm_api/app/nfextract/parser.py:619-649`
 (`_sanitize_nf_number_field`): só substitui o valor da LLM se a regex sobre
 `extracted_text` encontrar um número; se não encontrar, mantém o que a LLM
@@ -200,6 +212,8 @@ não é chamada para o código decidir sozinho.
 
 ### 1.7 Sniff de formato de áudio nunca bloqueia
 
+**Situação (10/nov/2026):** `.webm` ganhou assinatura (cabeçalho EBML). Bloquear o desconhecido continua decisão.
+
 **O que o código faz.** `llm_api/app/stt/audio_validate.py:77-79`: `sniff_format`
 compara os primeiros bytes contra assinaturas conhecidas; quando não reconhece
 nenhuma, só regista `logger.warning`, nunca rejeita. A única barreira real é a
@@ -213,6 +227,8 @@ válidos. Registado, não implementado.
 
 ### 1.8 Ingest não lê PDF/DOCX (agora visível, ainda não suportado)
 
+**Situação (10/nov/2026): aberto** (funcionalidade nova).
+
 Nesta sessão, `iter_files` passou a reportar ficheiros descartados por extensão
 não suportada (`llm_api/app/ingest/chunking.py`, `run_ingest` regista e loga —
 ver secção 2). Isso fecha o **silêncio**, não a lacuna: o parser de ingest
@@ -221,6 +237,8 @@ para o pipeline de NF/boleto. Adicionar suporte real é funcionalidade nova, nã
 correcção de bug — fica registado para decisão, não implementado aqui.
 
 ### 1.9 Sem fallback entre providers LLM
+
+**Situação (10/nov/2026): aberto** (funcionalidade nova).
 
 **O que o código faz.** `llm_api/app/llm/factory.py` selecciona um único
 provider por `config_json.llm_provider`; não há tentativa de trocar para outro
@@ -269,6 +287,9 @@ Alterado na segunda sessão (ago/2026), depois do merge do gap §1.1:
 ---
 
 ## 3. As três perguntas que decidem o resto
+
+Respondidas em nov/2026: 1 (o zap manda `user_id`), 2 (o dedup absorve rajada do mesmo
+contato, nunca junta pessoas), 3 (continua aberta, depende do portão de avaliação).
 
 1. **O zap envia `user_id` ou `id_contato`?** Decide se [1.2](#12-id_contato-é-lido-mas-nunca-existe)
    é código morto ou personalização desligada, e condiciona [1.1](#11-o-dedup-do-ask-não-distingue-contatos).

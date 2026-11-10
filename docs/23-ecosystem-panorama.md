@@ -43,7 +43,7 @@ disco falham), declarado em `itcsManifest.yaml`.
 | Reordenação (palavra-chave, dicas, modelo) presa aos mesmos 5 trechos | **corrigido**: pool de 2 × `top_k` |
 | Palavra-chave com acento e pontuação («oficina?» não casava com «Oficina») | **corrigido** |
 | Instrução de busca do `mxbai-embed-large` na pergunta | **disponível**, desligada: `policies.embedding_query_instruction`, ligar depois do portão |
-| Pergunta curta de continuação («e em Curitiba?») busca sem o contexto da conversa | **aberto**: o `/router` já soma contexto à busca; no `/ask`, somar a última pergunta quando a atual for curta, por política do projeto |
+| Pergunta curta de continuação («e em Curitiba?») busca sem o contexto da conversa | **disponível**, desligada: `policies.retrieval_query_with_history` soma a pergunta anterior da pessoa quando a atual tem até 3 palavras de conteúdo (só a busca muda); o `/router` já soma contexto |
 | Corte de trechos repetidos do mesmo documento (`_rerank_for_diversity` só reordena) | **aberto**, só com o portão de avaliação |
 
 Ordem completa da busca: [12 § Busca](./12-llm-fleet-rag-operations.md#busca-como-um-trecho-chega-ao-prompt).
@@ -100,6 +100,40 @@ combinado antes.
 | S4 histórico na triagem | feito: regra 10 do `triage-v2` |
 
 Texto do pedido: `llm_api/contracts/bikeanjo/SOLICITACOES_AI2TCS.md`.
+
+## 8. Roteiro único do ai2tcs
+
+Lista única do que segue aberto no serviço, conferida contra o código em 10/nov/2026. Os
+planos antigos ([00](../llm_api/00_PLANEJAMENTO_LLM_LOCAL.md), [UPGRADES](../llm_api/UPGRADES.md),
+[11](./11-improvements-roadmap.md), [13](./13-optimization-execution-plan.md),
+[16](./16-code-review-findings.md), [17](./17-integration-backlog.md), [19](./19-optimization-review.md))
+apontam para cá; o que eles marcam como feito está no código.
+
+| Frente | Item | De onde | Tamanho |
+|---|---|---|---|
+| Segurança e operação | limite de chamadas por projeto (hoje nenhum) | 00 | médio |
+| | limite de tentativas no login do dashboard (nada no código; pode estar na borda) | 16 § 1.4 | pequeno |
+| | migrar os outros projetos para a chave própria e pô-los em `SCOPED_KEY_REQUIRED_PROJECTS` | 17 | operação |
+| | logs estruturados (JSON) | 00 | pequeno |
+| | troca de provider quando o principal cai | 16 § 1.9 | médio |
+| Qualidade da resposta | cortar trechos repetidos do mesmo documento | 16 § 1.3 | pequeno, com o portão |
+| | ingest de PDF e DOCX (as bibliotecas já estão instaladas) | 16 § 1.8 | médio |
+| | variação do system prompt para respostas menos repetidas | UPGRADES nível 3 | pequeno, com o portão |
+| | limite de latência p95 por rota | 13 | pequeno |
+| API | `/ask/stream` (resposta em pedaços) | 11 | médio |
+| | `/v1/chat/completions` compatível com OpenAI | 11 | médio |
+| | roteamento por complexidade (modelo pequeno ou grande pela pergunta) | 11 | médio |
+| | `/router` devolve o que a pessoa já disse (`extracted_prefill`) | § 5 | pequeno |
+| | roteador guiado pelos sinais; robô que age no sistema | § 4, etapas 6 e 8 | médio a grande |
+| Ecossistema | MCP local para ai2tcs, Tasks e 0MM | § 5, 11 | médio |
+| | `itcsManifest.yaml`: `port` e `pathRemote` em `spec.envs`; o hub nunca leu o cartão (`lastHarvestAt`) | 17 | pequeno |
+| | lista dos projetos ativos para o hub | 17 | pequeno |
+| | fila para quando o serviço cai (nasce no cliente) | § 5 | médio |
+| | tutor que lembra dos erros e exercício sem LLM (`/edu`) | § 5 | pequeno cada |
+| Decisões do dono | extração de NF/boleto responde `status: "ok"` mesmo com a LLM fora (só `warnings` avisa) | 16 § 1.5 | — |
+| | `nf_number` recusar o que não parece número de nota (troca recall por segurança) | 16 § 1.6 | — |
+| | recusar áudio de formato desconhecido (o `.webm` já é reconhecido) | 16 § 1.7 | — |
+| | `/health` e `/metrics` seguem públicos ou vão para trás de token | 17 | — |
 
 ---
 

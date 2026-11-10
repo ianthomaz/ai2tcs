@@ -56,6 +56,10 @@ def get_rag_policies(project: dict) -> dict:
             dedup_ttl = int(dedup_raw)
         except (TypeError, ValueError):
             dedup_ttl = 600
+        try:
+            rated_examples = min(max(int(p.get("rated_examples") or 0), 0), 5)
+        except (TypeError, ValueError):
+            rated_examples = 0
         return {
             "prefer_cite_sources": p.get("prefer_cite_sources", True),
             "when_no_answer": p.get("when_no_answer", "no_answer"),
@@ -63,6 +67,10 @@ def get_rag_policies(project: dict) -> dict:
             "max_chunk_distance": p.get("max_chunk_distance", 1.0),
             "search_depth": p.get("search_depth", "standard"),
             "dedup_ttl_seconds": max(0, dedup_ttl),
+            # Approved answers as examples in the /ask prompt (docs/22 § 4); 0 = off, at most 5.
+            "rated_examples": rated_examples,
+            # Short follow-up question searches with the previous user turn (docs/12 § Busca).
+            "retrieval_query_with_history": bool(p.get("retrieval_query_with_history", False)),
         }
     return {
         "prefer_cite_sources": True,
@@ -71,6 +79,8 @@ def get_rag_policies(project: dict) -> dict:
         "max_chunk_distance": 1.0,
         "search_depth": "standard",
         "dedup_ttl_seconds": 600,
+        "rated_examples": 0,
+        "retrieval_query_with_history": False,
     }
 
 

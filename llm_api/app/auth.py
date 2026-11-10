@@ -8,6 +8,7 @@ Two kinds of Bearer token:
   it (403); every use is logged with `auth=global` so the migration can be followed.
 """
 import hashlib
+import hmac
 import logging
 
 from fastapi import HTTPException, Security, Request
@@ -56,7 +57,7 @@ async def require_token(
         raise HTTPException(status_code=401, detail="Missing authentication token")
 
     # 1. Global token
-    if settings.llm_api_token and token == settings.llm_api_token:
+    if settings.llm_api_token and hmac.compare_digest(token.encode(), settings.llm_api_token.encode()):
         requested = await requested_project_ids(request)
         logger.info("auth=global path=%s projects=%s", request.url.path, ",".join(sorted(requested)) or "-")
         blocked = requested & settings.scoped_key_required_project_set()
