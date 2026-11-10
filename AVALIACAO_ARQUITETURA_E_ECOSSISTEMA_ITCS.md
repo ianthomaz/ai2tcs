@@ -247,3 +247,15 @@ Para deixar a experiencia de "chat entrega o link e voce termina no site" ainda 
 - [ ] **Passo 4 (Mais Inteligencia com o Mesmo Hardware):**
   - Indexar exemplos `great` do shadow numa collection de few-shot dinamico por projeto no ChromaDB.
   - Injetar as palavras com maior taxa de erro do aluno (`edu/progress`) no system prompt do `/edu/chat`.
+
+### 5.1 Perspectiva de Execucao (Modo Conservador)
+
+A visao das secoes anteriores permanece valida. O que muda e **como** avancar: o historico operacional do dono no Project prioriza confirmacao passo a passo e verificacao antes de declarar "feito". Inferencia pratica para priorizar o roadmap acima sem big-bang:
+
+1. **Confirmar antes de destruir.** Operacoes destrutivas (`docker prune`, redeploy em massa, rotacao de chaves) so depois de confirmacao explicita nesta mensagem — nao encadear "ja que estou nisso".
+2. **Chaves: restaurar, nao mintar.** Se o cliente (ex. Bike Anjo) ja detem a API key, preferir restaurar o hash em `project_api_keys` no Postgres; nao emitir chave nova e forcar trocas em varios repositorios.
+3. **Trust but verify.** Claims de worker ("auth ok", "RAG ok", "done") so fecham depois de checagem local (`/health`, probe autenticado, contagem Chroma). Preferir worker no `mini62` para LLM/Docker; nao brigar com agentes SSH paralelos na mesma maquina.
+4. **Fatiar pequeno.** Ordem segura sugerida: (1) saneamento `/ask` + `/health` (Passo 1) **antes** de MCP; (2) MCP (Passo 2) depois que saude e auth estiverem estaveis; (3) alertas: health watch / Google Chat **antes** de templates Meta utility no WhatsApp; (4) re-ingest RAG **somente** se o Chroma estiver de fato vazio ou desalinhado — nao reindexar "por precaução"; (5) evitar evolucoes simultaneas em varios repos / builds multi-repo.
+5. **GitHub reversivel.** Quando o padrao da sessao for testar pacote localmente, manter o remoto reversivel (branch/PR, sem force-push destrutivo, sem deploy sem ordem).
+
+**Re-priorizacao curta:** Passo 1 primeiro e fechado com prova; Passo 2 (MCP) em seguida; Passos 3–4 e o restante da visao (offline, few-shot, Link-First) sem empilhar varias frentes ao mesmo tempo.
