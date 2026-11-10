@@ -54,15 +54,23 @@ Meta: o robô responder sozinho, em conversa que a pessoa começou por um aplica
 mensagem, sem prometer o que não pode. O caminho é medir antes de soltar, com a mesma
 porta para a medida e para o envio.
 
+Direção do dono (10/nov/2026): primeiro um robô que **informa** (pelo menos não deixa a
+pessoa no vácuo), pouco semântico. O passo grande depois é um robô que **age no sistema**,
+quase um MCP do sistema: «quero me inscrever na oficina X» → acha a oficina e inscreve. Isso
+vai além de responder pela base e, quando vier, abre espaço maior de uma vez. A confiança
+para cada passo vem da conta «o robô teria respondido sozinho?» (etapa 3), não de um número
+combinado antes.
+
 | Etapa | O que é | Situação |
 |---|---|---|
 | 1. Sinais honestos | confiança da resposta calculada só dos fatos (distância, apoio dos trechos, trava, link fora da base) | **feito** (`signals-v1`) |
 | 2. Critério de envio | o cliente decide, por uma porta, se o texto sairia (no Bike Anjo: `zapzap/lib/llm-send-gate.js`: confiança ≥ 0,70, sem trava, sem link fora da base, pergunta sobre a associação) | **feito**; o shadow grava em toda hipótese se ela passaria |
-| 3. Medida | por semana: quantas passariam e quantas destas foram julgadas boas (cartão «Evolução» no `/adm/shadow-llm`) | **feito**; precisa de julgamentos |
-| 4. Ligar o envio | `llm_send` ligado; sai só o que passa no critério, o resto fica no shadow | espera a medida e a decisão do dono |
+| 3. Medida | cartão «O robô teria respondido sozinho?» no `/adm/shadow-llm`: teria respondido e estava boa / ruim, teria ficado em silêncio e estava boa / ruim, e os motivos de silêncio; por semana no cartão «Evolução» | **feito**; precisa de julgamentos |
+| 4. Ligar o envio | `llm_send` ligado; sai só o que passa no critério, o resto fica no shadow | decisão do dono, quando a conta der confiança |
 | 5. Aprender com o que sai | julgamentos → termo proibido aprovado, exemplos aprovados no prompt (`policies.rated_examples`) | **feito** no serviço; exemplos desligados até o portão |
 | 6. Roteador guiado pelos sinais | `answer_now` do modelo pequeno rebaixado para `escalate` quando a busca não trouxe base | aberto |
 | 7. Outros aplicativos | qualquer cliente de conversa usa a mesma porta de critério e de julgamento | aberto; o ai2tcs já é genérico |
+| 8. Robô que age no sistema | a LLM escolhe uma ferramenta do sistema (buscar oficina, inscrever, consultar a própria situação) e o sistema executa e confere; o texto vem da ferramenta, não da base. Semente: a intenção do `/ask` (`intent.action`, já com `event_interest_lookup`) | direção; depois da etapa 4 |
 
 ## 5. Frentes de ecossistema (fora do trabalho do Bike Anjo)
 
