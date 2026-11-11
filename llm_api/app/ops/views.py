@@ -85,7 +85,7 @@ async def view_health(days: int | None = None, project_id: str | None = None) ->
         count(*) FILTER (WHERE status = 'working')::int AS working,
         count(*) FILTER (WHERE status = 'failed' AND created_at > NOW() - INTERVAL '24 hours')::int AS failed_24h,
         count(*) FILTER (WHERE status = 'done' AND created_at > NOW() - INTERVAL '24 hours')::int AS done_24h
-    FROM "jobs";
+    FROM "Job";
     """
     rows = await _run_readonly(query)
     return _json_safe(rows[0] if rows else {})
@@ -97,7 +97,7 @@ async def view_jobs_queue(days: int | None = None, project_id: str | None = None
         query = """
         SELECT project_id, model_alias, status, job_kind, count(*)::int AS count,
                min(created_at) AS oldest_job, max(created_at) AS newest_job
-        FROM "jobs"
+        FROM "Job"
         WHERE status IN ('queued', 'working') AND project_id = $1
         GROUP BY project_id, model_alias, status, job_kind
         ORDER BY count DESC;
@@ -107,7 +107,7 @@ async def view_jobs_queue(days: int | None = None, project_id: str | None = None
         query = """
         SELECT project_id, model_alias, status, job_kind, count(*)::int AS count,
                min(created_at) AS oldest_job, max(created_at) AS newest_job
-        FROM "jobs"
+        FROM "Job"
         WHERE status IN ('queued', 'working')
         GROUP BY project_id, model_alias, status, job_kind
         ORDER BY count DESC;
@@ -123,7 +123,7 @@ async def view_jobs_summary(days: int | None = None, project_id: str | None = No
         SELECT project_id, status, job_kind,
                count(*) FILTER (WHERE created_at > NOW() - INTERVAL '24 hours')::int AS count_24h,
                count(*)::int AS count_7d
-        FROM "jobs"
+        FROM "Job"
         WHERE created_at > NOW() - INTERVAL '7 days' AND project_id = $1
         GROUP BY project_id, status, job_kind
         ORDER BY count_7d DESC;
@@ -134,7 +134,7 @@ async def view_jobs_summary(days: int | None = None, project_id: str | None = No
         SELECT project_id, status, job_kind,
                count(*) FILTER (WHERE created_at > NOW() - INTERVAL '24 hours')::int AS count_24h,
                count(*)::int AS count_7d
-        FROM "jobs"
+        FROM "Job"
         WHERE created_at > NOW() - INTERVAL '7 days'
         GROUP BY project_id, status, job_kind
         ORDER BY count_7d DESC;
@@ -152,7 +152,7 @@ async def view_errors(days: int | None = None, project_id: str | None = None) ->
         query = f"""
         SELECT project_id, job_kind, model_alias, error_message, count(*)::int AS occurrences,
                max(created_at) AS last_seen
-        FROM "jobs"
+        FROM "Job"
         WHERE status = 'failed' AND created_at > NOW() - INTERVAL '{interval_str}' AND project_id = $1
         GROUP BY project_id, job_kind, model_alias, error_message
         ORDER BY occurrences DESC
@@ -163,7 +163,7 @@ async def view_errors(days: int | None = None, project_id: str | None = None) ->
         query = f"""
         SELECT project_id, job_kind, model_alias, error_message, count(*)::int AS occurrences,
                max(created_at) AS last_seen
-        FROM "jobs"
+        FROM "Job"
         WHERE status = 'failed' AND created_at > NOW() - INTERVAL '{interval_str}'
         GROUP BY project_id, job_kind, model_alias, error_message
         ORDER BY occurrences DESC
@@ -195,7 +195,7 @@ async def view_llm_heavy(days: int | None = None, project_id: str | None = None)
            (user_context_json->'__metrics'->>'heavy')::boolean AS heavy,
            (user_context_json->'__metrics'->>'near_ctx_limit')::boolean AS near_ctx_limit,
            created_at
-    FROM "jobs"
+    FROM "Job"
     WHERE created_at > NOW() - INTERVAL '24 hours'
       AND (
         (user_context_json->'__metrics'->>'heavy')::boolean = true
