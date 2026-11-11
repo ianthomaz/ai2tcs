@@ -17,3 +17,5 @@ Contribuições ao código e contratos: [../CONTRIBUTING.md](../CONTRIBUTING.md)
 - [21-review-nov2026.md](21-review-nov2026.md) — avaliação, contra o código, das prioridades do Bike Anjo (S1–S4) e da revisão de arquitetura; plano em fatias F0–F4.
 - [22-answer-ratings.md](22-answer-ratings.md) — julgamentos de resposta de qualquer projeto (`/ratings`): proposta de termo proibido com aprovação e exemplos aprovados no `/ask`.
 - [23-ecosystem-panorama.md](23-ecosystem-panorama.md) — panorama: o ai2tcs no ecossistema ITCS, como a base é lida, o caminho para o robô conversar com mais liberdade e as frentes abertas.
+- [24-ops-observe.md](24-ops-observe.md) — observação remota de operações (`GET /api/ops/observe`): stealth 404, cauda de logs limpos e visões SQL fixas com escopo por projeto.
+- [25-autonomia-mercado-e-estudos.md](25-autonomia-mercado-e-estudos.md) — autonomia de LLM local, aproveitamento de 70% de RAM (M4 32GB), novos modelos de mercado (Qwen 2.5 / Gemma 3), trilha de estudos no YouTube e backlog para Bike Anjo, Chinês e Claudia.

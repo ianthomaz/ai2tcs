@@ -25,6 +25,24 @@ def test_secure_cookie_follows_https():
     assert not routes._cookie_secure(req)
 
 
+@pytest.mark.asyncio
+async def test_google_oauth_start_sets_state_cookie():
+    """Regression: google_oauth_start must take Request (secure cookie helper)."""
+    req = MagicMock()
+    req.url.scheme = "http"
+    req.headers = {}
+    with patch.object(routes, "_google_oauth_enabled", return_value=True), \
+         patch.object(routes.settings, "dashboard_google_client_id", "cid"), \
+         patch.object(routes.settings, "dashboard_oauth_redirect_base", "http://localhost:28471"), \
+         patch.object(routes.google_oauth, "new_oauth_state", return_value="state123"), \
+         patch.object(routes.google_oauth, "build_authorize_redirect_uri", return_value="http://localhost:28471/dashboard/auth/google/callback"), \
+         patch.object(routes.google_oauth, "authorization_url", return_value="https://accounts.google.com/o"):
+        resp = await routes.google_oauth_start(req)
+    assert resp.status_code == 302
+    assert resp.headers.get("location") == "https://accounts.google.com/o"
+    assert "dashboard_oauth_state=state123" in (resp.headers.get("set-cookie") or "")
+
+
 def test_same_is_strict():
     assert routes._same("a", "a")
     assert not routes._same("a", "b")

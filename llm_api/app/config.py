@@ -173,6 +173,10 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     gemini_default_model: str = "gemini-2.0-flash"
 
+    # Agent remote observation (/api/ops/observe)
+    ops_observe_token: str = ""
+    pm2_log_dir: str = "/home/opc/.pm2/logs"
+
     def scoped_key_required_project_set(self) -> set[str]:
         return {p.strip() for p in self.scoped_key_required_projects.split(",") if p.strip()}
 

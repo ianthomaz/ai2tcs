@@ -173,6 +173,7 @@ Histórico da migração: [`03-api-reintegration.md`](03-api-reintegration.md).
 | POST | `/users/conversation/reset` | Resetar histórico de conversa |
 | POST | `/users/conversation/maintenance` | Forçar resumo + limpeza mensal |
 | GET | `/health` | Checar se API, Ollama e Postgres estão vivos |
+| GET | `/api/ops/observe` | Observação remota de operações (agente na nuvem) — `source` (logs limpos) ou `view` (SQL fixo sem dados pessoais). Stealth 404. Ver [24-ops-observe.md](./24-ops-observe.md) |
 | GET | `/metrics` | Métricas Prometheus — ver § 3.6 |
 | GET | `/dashboard` | Interface web (login Google OAuth e/ou user/senha do `.env`) |
 | POST | `/edu/chat` | Tutor **síncrono**; resposta sempre com `reply_structured` (modelo ou segmento fixo se falhar schema após retry) — § 3.8 |

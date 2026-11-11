@@ -35,6 +35,8 @@ Se o teu projecto **precisa de padrões específicos** (prompts, campos extra, n
 | Operações LLM / RAG (checklist enxuto) | [12-llm-fleet-rag-operations.md](./12-llm-fleet-rag-operations.md) |
 | Ian Zap pessoal (`ian_zap`, rota `cursor`) | [14-ian-zap-personal.md](./14-ian-zap-personal.md) |
 | Handoff: correções em projetos satélite | [15-cross-project-fixes.md](./15-cross-project-fixes.md) |
+| Observação remota de operações (`/api/ops/observe`) | [24-ops-observe.md](./24-ops-observe.md) |
+| Autonomia, novos modelos de mercado e estudos | [25-autonomia-mercado-e-estudos.md](./25-autonomia-mercado-e-estudos.md) |
 
 **NF Extract:** [refs/ManualNF_Extract](./refs/ManualNF_Extract). **Variáveis (sem segredos):** [`llm_api/.env.example`](../llm_api/.env.example). **Roadmap código:** [`llm_api/UPGRADES.md`](../llm_api/UPGRADES.md).
 

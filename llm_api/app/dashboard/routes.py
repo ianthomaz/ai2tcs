@@ -177,7 +177,7 @@ async def login_page(request: Request):
 
 
 @router.get("/auth/google")
-async def google_oauth_start():
+async def google_oauth_start(request: Request):
     if not _google_oauth_enabled():
         return RedirectResponse(url="/dashboard/login", status_code=302)
     state = google_oauth.new_oauth_state()

@@ -13,7 +13,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.db import close_pool, get_pool
-from app.api import ask, audio, boleto_extract, extract, edu, health, ingest, jobs, message_router, nabil_qualify, nf_extract, projects, users
+from app.api import ask, audio, boleto_extract, extract, edu, health, ingest, jobs, message_router, nabil_qualify, nf_extract, ops_observe, projects, users
 from app.bikeanjo.routes import router as bikeanjo_router
 from app.tasks.routes import router as tasks_router
 from app.ratings.routes import router as ratings_router
@@ -151,6 +151,8 @@ app.include_router(bikeanjo_router)
 app.include_router(tasks_router)
 # Human ratings of answers, for every project (app/ratings/)
 app.include_router(ratings_router)
+# Agent remote observation (/api/ops/observe)
+app.include_router(ops_observe.router)
 
 # Dashboard (HTMX + Jinja2)
 app.include_router(dashboard_router)

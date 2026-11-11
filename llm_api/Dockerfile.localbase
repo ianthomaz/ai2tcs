@@ -1,0 +1,10 @@
+# Offline rebuild when Docker Hub cannot supply python:3.12-slim.
+# Reuses local llm_api-api:latest layers; refreshes app tree + deps.
+FROM llm_api-api:latest
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+RUN npm install prisma@6 --save-dev
+EXPOSE 28471
+CMD ["sh", "-c", "npx prisma migrate deploy --schema=prisma/schema.prisma && uvicorn app.main:app --host 0.0.0.0 --port 28471"]
