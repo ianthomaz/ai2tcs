@@ -10,6 +10,7 @@ import httpx
 
 from app.config import settings
 from app.llm import metrics as llm_metrics
+from app.llm.doc_fallback import read_with_fallback
 
 
 def _extract_json(raw: str) -> dict[str, Any]:
@@ -102,5 +103,5 @@ async def enrich_boleto_with_local_llm(
             last_error = str(exc)
             if attempt < max_retries:
                 await asyncio.sleep(1.5 * (attempt + 1))
-    warnings.append(f"LLM enrichment failed: {last_error or 'unknown error'}")
-    return {}, warnings
+    warnings.append(f"LLM unavailable: {last_error or 'unknown error'}")
+    return await read_with_fallback("boleto_extract", payload["messages"], payload["options"], _extract_json, warnings)

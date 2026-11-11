@@ -4,10 +4,12 @@ import shutil
 import time
 
 import httpx
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, Request, Security
+from fastapi.security import HTTPAuthorizationCredentials
 from fastapi.responses import JSONResponse, PlainTextResponse
 
 from app import db as db_module
+from app.auth import require_operator, security, token_is_valid
 from app.config import settings
 
 router = APIRouter(tags=["health"])
@@ -17,11 +19,17 @@ _start_time = time.time()
 
 
 @router.get("/health")
-async def health(strict: bool = False):
+async def health(
+    request: Request,
+    strict: bool = False,
+    credentials: HTTPAuthorizationCredentials | None = Security(security),
+):
     """Liveness: check Ollama, PostgreSQL, and disk space.
 
-    Public (no token): the body never carries error text. `?strict=1` answers 503 when
-    degraded, so an HTTP monitor (itcsManifest.yaml) sees Ollama or Postgres down."""
+    Without a token the body is only `status` and `uptime_seconds` (the service is reachable
+    on the internet; model names and disk are not for everyone). With a valid key or the
+    operator token, `checks` too. The body never carries error text. `?strict=1` answers 503
+    when degraded, so an HTTP monitor (itcsManifest.yaml) sees Ollama or Postgres down."""
     checks = {}
 
     # Ollama
@@ -56,18 +64,19 @@ async def health(strict: bool = False):
     all_ok = all(c.get("status") == "ok" for c in checks.values())
     uptime_seconds = round(time.time() - _start_time)
 
-    body = {
+    body: dict = {
         "status": "ok" if all_ok else "degraded",
         "uptime_seconds": uptime_seconds,
-        "checks": checks,
     }
+    if await token_is_valid(request, credentials):
+        body["checks"] = checks
     if strict and not all_ok:
         return JSONResponse(body, status_code=503)
     return body
 
 
 @router.get("/metrics", response_class=PlainTextResponse)
-async def metrics():
+async def metrics(_: None = Depends(require_operator)):
     """Real metrics from job stats."""
     try:
         stats = await db_module.job_stats()

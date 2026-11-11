@@ -168,6 +168,11 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     openai_base_url: str = "https://api.openai.com/v1"
     openai_default_model: str = "gpt-4o-mini"
+    # Backup reader for NF / boleto when the local LLM is down (app/llm/doc_fallback.py).
+    # Empty = off. openai | anthropic | gemini, with that provider's key below. The document
+    # text goes to the provider: turning it on is the owner's decision.
+    doc_extract_fallback_provider: str = ""
+    doc_extract_fallback_model: str = ""
     anthropic_api_key: str = ""
     anthropic_default_model: str = "claude-haiku-4-5-20251001"
     gemini_api_key: str = ""

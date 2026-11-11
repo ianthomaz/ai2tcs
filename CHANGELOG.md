@@ -45,7 +45,17 @@ deploy ela ganha a data e começa outra vazia.
 - **`policies.retrieval_query_with_history`:** pergunta curta de continuação busca junto com
   a pergunta anterior da pessoa (desligada; [docs/08](docs/08-project-config.md)).
 
+- **Leitura de NF e boleto diz quem leu:** `llm_reading` = `local` · `fallback` · `unavailable`
+  (`unavailable`: a LLM caiu e só a heurística respondeu).
+- **Reserva para a leitura de documento:** `DOC_EXTRACT_FALLBACK_PROVIDER` (+ `DOC_EXTRACT_FALLBACK_MODEL`
+  e a chave do provedor) usa um provedor externo só quando a LLM local cai. Desligada; o texto
+  do documento vai para o provedor, ligar é decisão do dono.
+
 ### Muda
+
+- **`/health` sem chave** responde só `status` e `uptime_seconds`; com chave, também `checks`.
+  **`/metrics`** exige o token do operador.
+- **Áudio de formato desconhecido é recusado** (400); MP3 reconhecido em todas as variantes de quadro.
 
 - **`policies.rated_examples` chega ao `/ask`:** a política nunca saía de `get_rag_policies`
   (que devolve um conjunto fixo); agora sai, de 0 a 5.

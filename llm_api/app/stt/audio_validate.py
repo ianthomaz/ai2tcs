@@ -45,6 +45,9 @@ def sniff_format(head: bytes) -> str | None:
             return name
     if head[4:8] == b"ftyp":
         return "mp4_m4a"
+    # MPEG audio frame sync (11 bits set): every MP3 layer/version, also AAC in ADTS.
+    if head[0] == 0xFF and (head[1] & 0xE0) == 0xE0:
+        return "mp3"
     return None
 
 
@@ -75,8 +78,10 @@ async def validate_upload(file: UploadFile, max_bytes: int | None = None) -> tup
     if not raw:
         raise ValueError("empty audio upload")
 
+    # The extension is the client's word; the first bytes decide. Unknown format → refused.
     fmt = sniff_format(raw[:12])
     if fmt is None:
-        logger.warning("audio magic unknown for ext=%s size=%d", ext, len(raw))
+        logger.warning("audio magic unknown for ext=%s size=%d — refused", ext, len(raw))
+        raise ValueError("unsupported audio format (unrecognized file signature)")
 
     return raw, ext
