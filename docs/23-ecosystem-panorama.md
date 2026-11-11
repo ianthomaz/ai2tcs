@@ -111,7 +111,8 @@ apontam para cá; o que eles marcam como feito está no código.
 
 | Frente | Item | De onde | Tamanho |
 |---|---|---|---|
-| Segurança e operação | limite de chamadas por projeto (hoje nenhum) | 00 | médio |
+| Segurança e operação | Bike Anjo: assistente de pagamento usar `llm_reading` (mensagem «leitura indisponível, nota guardada» e «Tentar novamente» sem duplicar a nota na fila do Drive) | dono, 11/nov | pequeno |
+| | limite de chamadas por projeto (hoje nenhum) | 00 | médio |
 | | limite de tentativas no login do dashboard (nada no código; pode estar na borda) | 16 § 1.4 | pequeno |
 | | migrar os outros projetos para a chave própria e pô-los em `SCOPED_KEY_REQUIRED_PROJECTS` | 17 | operação |
 | | logs estruturados (JSON) | 00 | pequeno |
@@ -130,10 +131,7 @@ apontam para cá; o que eles marcam como feito está no código.
 | | lista dos projetos ativos para o hub | 17 | pequeno |
 | | fila para quando o serviço cai (nasce no cliente) | § 5 | médio |
 | | tutor que lembra dos erros e exercício sem LLM (`/edu`) | § 5 | pequeno cada |
-| Decisões do dono | extração de NF/boleto responde `status: "ok"` mesmo com a LLM fora (só `warnings` avisa) | 16 § 1.5 | — |
-| | `nf_number` recusar o que não parece número de nota (troca recall por segurança) | 16 § 1.6 | — |
-| | recusar áudio de formato desconhecido (o `.webm` já é reconhecido) | 16 § 1.7 | — |
-| | `/health` e `/metrics` seguem públicos ou vão para trás de token | 17 | — |
+| Decisões do dono | `nf_number` recusar o que não parece número de nota (troca recall por segurança) | 16 § 1.6 | — |
 
 ---
 

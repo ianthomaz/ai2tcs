@@ -15,7 +15,11 @@ def get_provider(project: dict) -> LLMProvider:
     """
     cfg = project.get("config_json") or {}
     provider_name = (cfg.get("llm_provider") if isinstance(cfg, dict) else None) or "ollama"
+    return provider_by_name(provider_name, project.get("project_id"))
 
+
+def provider_by_name(provider_name: str, project_id: str | None = None) -> LLMProvider:
+    """Provider for a name; unknown names fall back to ollama (logged)."""
     if provider_name == "ollama":
         return OllamaProvider()
 
@@ -40,5 +44,5 @@ def get_provider(project: dict) -> LLMProvider:
             default_model=settings.gemini_default_model,
         )
 
-    logger.warning("Unknown llm_provider '%s' for project %s — falling back to ollama", provider_name, project.get("project_id"))
+    logger.warning("Unknown llm_provider '%s' for project %s — falling back to ollama", provider_name, project_id)
     return OllamaProvider()

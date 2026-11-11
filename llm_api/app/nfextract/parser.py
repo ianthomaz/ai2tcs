@@ -11,6 +11,7 @@ from xml.etree import ElementTree as ET
 import httpx
 
 from app.extract_envelope import extract_error_dict
+from app.llm.doc_fallback import llm_reading
 from app.nfextract.llm_client import enrich_with_local_llm
 
 # Strings the LLM sometimes returns instead of JSON null; orchestrators expect real null.
@@ -1061,6 +1062,8 @@ async def run_extraction_pipeline(
         "confidence": confidence,
         "confidence_by_field": confidence_by_field,
         "warnings": warnings,
+        # Who read the document: local LLM, the backup provider, or nobody (heuristics only).
+        "llm_reading": llm_reading(warnings),
         "errors": errors,
         "raw_text_excerpt": extracted_text[:1200] if extracted_text else None,
     }

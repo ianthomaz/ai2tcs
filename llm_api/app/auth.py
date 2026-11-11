@@ -84,6 +84,15 @@ async def require_token(
     raise HTTPException(status_code=401, detail="Invalid or revoked token")
 
 
+async def token_is_valid(request: Request, credentials: HTTPAuthorizationCredentials | None) -> bool:
+    """Same check as require_token, without raising: for routes that answer less without a key."""
+    try:
+        await require_token(request, credentials)
+    except HTTPException:
+        return False
+    return True
+
+
 def key_project_id(request: Request) -> str | None:
     """Project of the API key that authenticated the request; None for the global token."""
     pid = getattr(request.state, "project_id", None)

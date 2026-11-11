@@ -7,7 +7,25 @@ deploy ela ganha a data e começa outra vazia.
 
 ## Não publicado
 
-*(vazio — última publicação 2026-11-11)*
+### Atenção no deploy
+
+1. Antes do `git pull` no mini62: `git status`; arquivo mexido no servidor → `git stash`.
+2. Sem migration. Variáveis novas opcionais (vazias = desligado): `DOC_EXTRACT_FALLBACK_PROVIDER`,
+   `DOC_EXTRACT_FALLBACK_MODEL` e a chave do provedor escolhido.
+3. Quem lê `/metrics` passa a mandar o token do operador.
+
+### Novo
+
+- **Leitura de NF e boleto diz quem leu:** `llm_reading` = `local` · `fallback` · `unavailable`
+  (`unavailable`: a LLM caiu e só a heurística respondeu).
+- **Reserva para a leitura de documento:** `DOC_EXTRACT_FALLBACK_PROVIDER` usa um provedor externo
+  só quando a LLM local cai. Desligada; o texto do documento vai para o provedor, ligar é decisão do dono.
+
+### Muda
+
+- **`/health` sem chave** responde só `status` e `uptime_seconds`; com chave, também `checks`.
+  **`/metrics`** exige o token do operador.
+- **Áudio de formato desconhecido é recusado** (400); MP3 reconhecido em todas as variantes de quadro.
 
 ## 2026-11-11 — ops observe + OAuth fix (mini62)
 
@@ -23,6 +41,7 @@ deploy ela ganha a data e começa outra vazia.
 
 - **`GET /api/ops/observe`** ([docs/24](docs/24-ops-observe.md)): observação remota só-leitura
   (logs redigidos + views SQL catalogadas). Auth: Bearer `OPS_OBSERVE_TOKEN`.
+
 
 ### Muda
 

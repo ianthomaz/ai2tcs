@@ -87,18 +87,10 @@ async def test_health_no_auth_ok(client, clear_global_token):
 
 
 @pytest.mark.asyncio
-async def test_metrics_no_auth_ok(client, clear_global_token):
-    with patch("app.api.health.db_module.job_stats", new_callable=AsyncMock) as mock_stats:
-        mock_stats.return_value = {
-            "total": 0,
-            "last_24h": 0,
-            "by_status": {},
-            "by_project": {},
-            "avg_duration_seconds": 0.0,
-        }
-        r = await client.get("/metrics")
-        assert r.status_code == 200
-        assert "llm_api_ready" in r.text
+async def test_metrics_needs_the_operator_token(client, clear_global_token):
+    """/metrics lists projects and calls: operator token only (health stays open, minimal)."""
+    r = await client.get("/metrics")
+    assert r.status_code == 401
 
 
 @pytest.mark.asyncio

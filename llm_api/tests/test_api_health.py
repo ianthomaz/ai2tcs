@@ -3,6 +3,15 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
+OPERATOR = {"Authorization": "Bearer test-token"}
+
+
+@pytest.fixture(autouse=True)
+def _operator_token():
+    with patch("app.config.settings.llm_api_token", "test-token"):
+        yield
+
+
 class _MockAcquireCM:
     def __init__(self, conn):
         self._conn = conn
@@ -31,12 +40,15 @@ async def test_health_endpoint(client):
         mock_pool_obj.acquire = MagicMock(return_value=_MockAcquireCM(mock_conn))
         mock_pool.return_value = mock_pool_obj
 
-        response = await client.get("/health")
+        response = await client.get("/health", headers=OPERATOR)
         assert response.status_code == 200
         data = response.json()
         assert "status" in data
         assert "checks" in data
         assert "uptime_seconds" in data
+
+        public = (await client.get("/health")).json()
+        assert set(public) == {"status", "uptime_seconds"}
 
         strict = await client.get("/health?strict=1")
         assert strict.status_code == 503
@@ -51,7 +63,7 @@ async def test_health_never_shows_error_text(client):
             get=AsyncMock(side_effect=Exception("connection refused"))
         ))
         mock_httpx.return_value.__aexit__ = AsyncMock(return_value=False)
-        response = await client.get("/health")
+        response = await client.get("/health", headers=OPERATOR)
         assert "secret" not in response.text
         assert response.json()["checks"]["postgres"] == {"status": "error"}
 
@@ -67,7 +79,7 @@ async def test_metrics_endpoint(client):
             "by_project": {"bikeanjoall_2026": 40},
             "avg_duration_seconds": 3.5,
         }
-        response = await client.get("/metrics")
+        response = await client.get("/metrics", headers=OPERATOR)
         assert response.status_code == 200
         text = response.text
         assert "llm_api_ready 1" in text
@@ -82,7 +94,7 @@ async def test_metrics_lists_heavy_llm_calls(client):
     ) as heavy:
         mock_stats.return_value = {"total": 1, "last_24h": 1, "by_status": {}, "by_project": {}}
         heavy.return_value = {"bikeanjoall_2026": {"heavy": 3, "near_limit": 1}}
-        text = (await client.get("/metrics")).text
+        text = (await client.get("/metrics", headers=OPERATOR)).text
     assert 'llm_calls_heavy_24h{project="bikeanjoall_2026"} 3' in text
     assert 'llm_calls_near_ctx_limit_24h{project="bikeanjoall_2026"} 1' in text
 
@@ -91,6 +103,11 @@ async def test_metrics_lists_heavy_llm_calls(client):
 async def test_metrics_is_plain_text(client):
     with patch("app.api.health.db_module.job_stats", new_callable=AsyncMock) as mock_stats:
         mock_stats.return_value = {"total": 1, "last_24h": 1, "by_status": {}, "by_project": {}}
-        r = await client.get("/metrics")
+        r = await client.get("/metrics", headers=OPERATOR)
     assert r.headers["content-type"].startswith("text/plain")
     assert r.text.startswith("llm_api_ready 1\n")
+
+
+@pytest.mark.asyncio
+async def test_metrics_needs_the_operator_token(client):
+    assert (await client.get("/metrics")).status_code == 401

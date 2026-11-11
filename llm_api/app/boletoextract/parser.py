@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 import httpx
 
 from app.boletoextract.llm_client import enrich_boleto_with_local_llm
+from app.llm.doc_fallback import llm_reading
 from app.extract_envelope import extract_error_dict
 from app.nfextract.parser import (
     _to_float,
@@ -556,6 +557,8 @@ async def run_boleto_extraction_pipeline(
         "confidence": round(populated / max(len(base), 1), 4),
         "confidence_by_field": confidence_by_field,
         "warnings": warnings,
+        # Who read the document: local LLM, the backup provider, or nobody (heuristics only).
+        "llm_reading": llm_reading(warnings),
         "errors": errors,
         "raw_text_excerpt": extracted_text[:1200] if extracted_text else None,
     }

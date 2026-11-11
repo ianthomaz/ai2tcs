@@ -10,6 +10,7 @@ import httpx
 
 from app.config import settings
 from app.llm import metrics as llm_metrics
+from app.llm.doc_fallback import read_with_fallback
 
 
 def _extract_json(raw: str) -> dict[str, Any]:
@@ -145,7 +146,7 @@ async def enrich_with_local_llm(
                 backoff *= 2
                 continue
             warnings.append(f"LLM unavailable: {last_error}")
-            return {}, warnings
+            return await read_with_fallback("nf_extract", payload["messages"], payload["options"], _extract_json, warnings)
         except (httpx.ReadTimeout, httpx.ConnectTimeout, httpx.ConnectError, httpx.WriteError) as exc:
             last_error = str(exc).strip() or exc.__class__.__name__
             if attempt < max_retries:
@@ -154,8 +155,8 @@ async def enrich_with_local_llm(
                 backoff *= 2
                 continue
             warnings.append(f"LLM unavailable: {last_error}")
-            return {}, warnings
+            return await read_with_fallback("nf_extract", payload["messages"], payload["options"], _extract_json, warnings)
         except Exception as exc:  # noqa: BLE001
             msg = str(exc).strip() or exc.__class__.__name__
             warnings.append(f"LLM unavailable: {msg}")
-            return {}, warnings
+            return await read_with_fallback("nf_extract", payload["messages"], payload["options"], _extract_json, warnings)
