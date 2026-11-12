@@ -1,0 +1,1011 @@
+{
+  "run": {
+    "timestamp": "2026-11-11T11:19:58.232422+00:00",
+    "dataset": "tests/eval/eval_questions.json",
+    "url": "http://127.0.0.1:28471",
+    "project_filter": "bikeanjoall_2026",
+    "unique": true
+  },
+  "projects": {
+    "bikeanjoall_2026": {
+      "tasks": {
+        "text_triage": {
+          "categories": [
+            "bike_anjo_request",
+            "volunteering",
+            "partnership",
+            "press",
+            "event",
+            "support",
+            "other"
+          ]
+        }
+      },
+      "router": {
+        "extra_system_block": "Projeto Bike Anjo. Tom pragmático e direto: sem conversinha, sem entusiasmo, sem emoji.\nUse action \"answer_now\" apenas quando a resposta couber em 1-2 frases curtas, já com o\nlink vindo do contexto quando houver, e sem pedir dado que o site coleta. Na dúvida,\nprefira \"escalate\".\nUse cidade, interesse, próximo evento e hora local para escolher a rota — nunca repita\nesses dados no texto da resposta. Campo ausente = a plataforma não sabe; não invente.\nSilêncio por defeito (Public_ROUTER): se a mensagem não tem \"?\" e não é pedido técnico\nclaro (cadastro, evento/check-in, CEP), prefira escalate — não invente bate-papo.\nLexicon BR: celular/telefone — nunca \"telemóvel\". Sem CTA de manutenção de conversa\n(\"De nada\", \"posso ajudar em mais alguma coisa?\").\n"
+      },
+      "chunking": {
+        "separator": "\n\n",
+        "chunk_size": 512,
+        "chunk_overlap": 64
+      },
+      "policies": {
+        "when_no_answer": "no_answer",
+        "forbidden_terms": [
+          "telemóvel",
+          "telemovel",
+          "De nada",
+          "posso ajudar em mais",
+          "algo mais",
+          "estou à disposição"
+        ],
+        "prefer_cite_sources": true,
+        "max_chunks_to_retrieve": 5
+      },
+      "ask_intent": {
+        "actions": [
+          {
+            "code": "event_interest_lookup",
+            "meaning": "A pessoa pergunta se já tem inscrição/interesse ou se o canal 'consegue ver' o status dela num evento."
+          },
+          {
+            "code": "registration_completeness_lookup",
+            "meaning": "Reservado — completude de cadastro da pessoa."
+          },
+          {
+            "code": "city_event_lookup",
+            "meaning": "Reservado — eventos na cidade da pessoa."
+          }
+        ],
+        "enabled": true
+      },
+      "llm_options": {
+        "num_ctx": 8192,
+        "message_size": "short",
+        "tone_of_voice": "direct"
+      },
+      "embedding_model": "mxbai-embed-large",
+      "profile_display": {
+        "labels": true,
+        "glossary": {
+          "journey_kind": {}
+        }
+      },
+      "retrieval_hints": {
+        "ports": {
+          "ask": {
+            "boost_path_substrings": [
+              "35_rag_prioridades_por_pergunta",
+              "24_instrucoes_resposta",
+              "31_zap_pragmatico_anti_promessa",
+              "32_shadow_licoes_silencio_e_local",
+              "33_transicao_sistema_e_calendario_local",
+              "37_shadow_aprendizado_deploy",
+              "16_identidade_assistente",
+              "23_whatsapp_canal_o_que_faz",
+              "17_exemplos_mensagens_whatsapp",
+              "02_como_funciona",
+              "03_faq_conheca_bike_anjo",
+              "28_sync_faq_institucional",
+              "04_mapa_quero_pedalar_cep",
+              "03_mapa_inbound_link_first",
+              "10_mapa_roteador_public_router_2026",
+              "27_fluxos_operacao_sistema_2026",
+              "06_operacao_usuario_novo",
+              "07_operacao_chegada_evento",
+              "09_operacao_recall_articulacao",
+              "36_sync_articulacoes_locais"
+            ],
+            "exclude_path_substrings": [],
+            "downrank_path_substrings": [
+              "22_estatuto",
+              "21_carta_valores",
+              "regimento-interno",
+              "00_INDEX",
+              "mapaFluxosLLM/README",
+              "25_campanha_",
+              "13_historico_rede",
+              "29_sync_our_story"
+            ]
+          }
+        },
+        "intent_clusters": {
+          "pedivela": {
+            "keywords": [
+              "pedivela",
+              "pendência",
+              "pendencia",
+              "vincular articulação",
+              "vincular articulacao"
+            ],
+            "boost_path_substrings": [
+              "26_campanha_pedivela1",
+              "08_operacao_pedivela",
+              "31_zap_pragmatico_anti_promessa"
+            ]
+          },
+          "silencio": {
+            "keywords": [
+              "obrigado",
+              "valeu",
+              "obrigada",
+              "👍",
+              "ok"
+            ],
+            "boost_path_substrings": [
+              "31_zap_pragmatico_anti_promessa",
+              "32_shadow_licoes_silencio_e_local"
+            ]
+          },
+          "cadastro_link": {
+            "keywords": [
+              "cadastro",
+              "cadastrar",
+              "magic",
+              "completar cadastro",
+              "criar conta"
+            ],
+            "boost_path_substrings": [
+              "24_instrucoes_resposta",
+              "06_operacao_usuario_novo",
+              "03_mapa_inbound_link_first",
+              "23_whatsapp_canal_o_que_faz"
+            ]
+          },
+          "governanca_legal": {
+            "keywords": [
+              "estatuto",
+              "regimento",
+              "assembleia",
+              "ago",
+              "diretoria",
+              "conselho fiscal"
+            ],
+            "boost_path_substrings": [
+              "19_sobre_bike_anjo",
+              "22_estatuto",
+              "21_carta_valores",
+              "regimento-interno"
+            ]
+          },
+          "identidade_canal": {
+            "keywords": [
+              "quem é você",
+              "quem e voce",
+              "o que você faz",
+              "voce e humana",
+              "é robô",
+              "e robo"
+            ],
+            "boost_path_substrings": [
+              "16_identidade_assistente",
+              "23_whatsapp_canal_o_que_faz",
+              "31_zap_pragmatico_anti_promessa"
+            ]
+          },
+          "parceria_contato": {
+            "keywords": [
+              "parceria",
+              "patrocínio",
+              "patrocinio",
+              "imprensa",
+              "contato@"
+            ],
+            "boost_path_substrings": [
+              "09_contato_e_parcerias",
+              "34_suporte_chamados_rascunho",
+              "18_bike_anjo_na_midia"
+            ]
+          },
+          "quero_pedalar_local": {
+            "keywords": [
+              "quero pedalar",
+              "aprender a pedalar",
+              "cep",
+              "eba",
+              "aula",
+              "próxima data",
+              "proxima data",
+              "tem bike anjo",
+              "vaga",
+              "calendário",
+              "calendario"
+            ],
+            "extra_downrank": [
+              "22_estatuto",
+              "21_carta_valores",
+              "19_sobre_bike_anjo"
+            ],
+            "boost_path_substrings": [
+              "04_mapa_quero_pedalar_cep",
+              "33_transicao_sistema_e_calendario_local",
+              "32_shadow_licoes_silencio_e_local",
+              "09_operacao_recall_articulacao",
+              "02_como_funciona",
+              "35_rag_prioridades_por_pergunta",
+              "36_sync_articulacoes_locais"
+            ]
+          }
+        }
+      },
+      "no_answer_fallback": "responda em no máximo uma linha, sem inventar serviço, link, evento, prazo ou valor, e sem convidar para contato.",
+      "system_instruction": "Canal: WhatsApp do Bike Anjo. Formato obrigatório:\n- Uma ideia por resposta, no máximo 2 frases curtas.\n- Havendo link no contexto, ele vai sozinho em uma linha, como URL crua.\n- Sem markdown (nada de **, ##, listas numeradas) e sem emoji decorativo.\n- Sem preâmbulo, sem saudação e sem \"posso ajudar em mais alguma coisa?\".\n\nContexto do contato (cidade, interesse, próximo evento):\n- Use para ESCOLHER o que responder: qual link, qual evento, qual próximo passo.\n- Não exiba nem comente esses dados. Nunca escreva \"vejo que você mora em X\" nem\n  repita slug ou caminho de URL interno.\n- Campo ausente significa que a plataforma não sabe: não suponha e não pergunte por ele.\n\nJornada aberta (POfR): quem sabe para onde ela aponta é o sistema, não você. Nunca\nmonte, adivinhe nem repita endereço, código ou identificador a partir dela.\n\nAutoridade: você não executa nada e não promete nada. Não cria, não resolve e não\nremove jornada, cadastro, inscrição ou link de acesso — quem resolve é o próprio\nsistema, quando a pessoa passa pela tela. Nunca diga que já fez nem que vai fazer.\n\nStatus da pessoa no sistema (2º roteador / intent):\n- Nunca afirme em prosa que alguém está inscrita, confirmada ou \"na lista\".\n- Nunca mande magic link nem link de cadastro quando a pergunta for status dela\n  (knowledge_kind=user_system, action=event_interest_lookup) — o cliente consulta\n  e escolhe a mensagem padrão.\n- Se perguntarem se já se inscreveram / se \"você consegue ver\" o status → isso é\n  fato de usuário (user_system), não procedimento genérico de inscrição no RAG.\n- História, o que é Bike Anjo, como funciona a Escola Bike Anjo / articulação →\n  conhecimento da org (org_general) com RAG.\n"
+    }
+  },
+  "summary": {
+    "total": 85,
+    "passed": 5,
+    "failed": 80,
+    "pass_rate": 0.0588,
+    "latency_p50": 3.09,
+    "latency_p95": 18.37,
+    "latency_max": 26.01
+  },
+  "rows": [
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "O que é o Bike Anjo?",
+      "model": "smart",
+      "pass": false,
+      "note": "missing keywords: ciclismo",
+      "latency_s": 24.97,
+      "answer_preview": "O Bike Anjo é uma rede de ciclistas voluntários que ajuda pessoas a aprenderem e promove mobilidade urbana. Tudo isso gr"
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Olá, Ian! Obrigado pela mensagem. São 11 anos de BA e 50 de pedal... Bora para mais e mais! Grande abraço!",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 8.71,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Quero o link para fazer checkin no evento recife-pe/eba",
+      "model": "smart",
+      "pass": true,
+      "note": "no keywords required",
+      "latency_s": 26.01,
+      "answer_preview": "O sistema envia um magic link com a inscrição ou check-in do evento. Abra no celular e complete se ainda não tiver cadas"
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "😍😍",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 7.68,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Estou na rua",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.06,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Mas posso ir amanhã independente disso?",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 4.62,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Mande o link novamente pfv. Cheguei em casa agora\n\nAcho q o link expirou",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.08,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Quero o link para fazer checkin no evento sp/eba",
+      "model": "smart",
+      "pass": true,
+      "note": "no keywords required",
+      "latency_s": 19.89,
+      "answer_preview": "O sistema enviará um magic link de inscrição ou check-in desse evento, abra no celular e complete se ainda não tiver cad"
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Oi",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.06,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Obrigado",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.6,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "O que precisa ler .??\n\nOnde leio os termos de uso.??\n\nOnde será o próximo encontro.?",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.07,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "[image]\n\nRealmente nao estou conseguindo. Tá dando sempre erro\n\nAmanhã tento ajuda pessoalmente para conseguir a rir o link",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 4.11,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Boa noite! Desculpe, só vi as mensagens agora.\n\nMelhor do Google. danimasselani@gmail.com",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.6,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Quero o link para fazer checkin no evento curitiba-pr/eba",
+      "model": "smart",
+      "pass": true,
+      "note": "no keywords required",
+      "latency_s": 17.84,
+      "answer_preview": "O sistema enviará o link de inscrição ou *check-in* desse evento. Abra no celular e complete se ainda não tiver cadastro"
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "60351230",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 4.11,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Bom dia!\n\nComo funciona para uma criança de 7 anos aprender a andar de bicicleta?",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.6,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Já me cadastrei\n\nComo fico sabendo do calendário",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.09,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "[image]",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.57,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Olá! Quero me cadastrar na Bike Anjo.",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.59,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Pois é...problemas familiares,aí o sonho vai sendo adiado,mas na próxima vai dá certo  🙏",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.07,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Não consigo fazer",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.59,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Criança de 7 anos aprender a pedalar. 60351230",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.06,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Bom dia\n\nVou vê se dá pra eu ir",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 4.61,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Bom dia! quando vai ter de novo aula para iniciante?",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.08,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Olá!! 🌻Será um prazer falar com você! Deixe seu nome e o que deseja, que em breve iremos te atender 😘\n\nOlá sou Meiry Coiffeur! Será um prazer falar com você; já conhece meu trabalho?! Me diga seu nome e como posso te ajudar?",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.08,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Bom dia,qual dia vai ter aula na ilha são João?",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.09,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Obg ,vou fazer",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.58,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Nossa super merecido.\nVocês mudam a história de muita gente. \nSomos muito gratos por termos conhecido vocês.",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.08,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Olá, nós da SOUZA & SOUZA REPRESENTAÇÃO agradecemos seu contato!\nRepresentamos marcas líderes no mercado da construção civil, com seriedade e comprometimento. \nRJ 🇧🇷\n\n‎Souza jr agradece seu contato. Como podemos ajudar?🇧🇷🇵🇹",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.08,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Olá! 😊 \n\nAqui é a Liz, especialista em alisamentos e extensões de cílios. Seja muito bem-vinda(o)! \nEm que posso ajudar?\n\n💖 Aproveita e me acompanha  também no Instagram: https://www.instagram.com/liz_pamella?igsh=MWFhdGxidm9wM2RpYw==",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.09,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Agradeço o seu contato!\nComo posso ajudar? Por favor, digite sobre qual assunto deseja falar.",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.57,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Oi. Gabi aqui. Agradeço o seu contato. Como posso lhe ajudar? ⭐️",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.09,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "‎olá eu agradeço seu contato. Se for para oferecer ofertas falsas de emprego extra por curtidas, likes, ou qualquer algo do tipo de redes sociais, desde ja informo que seu número, info, contatos, metadados de fotos e arquivos,  e IP serao encaminhados por relatorios, com toda fundamentação, para as autoridades competentes🚓🚨🚔. Nao sendo esse o caso, como posso te ajudar?\n\n[reaction 👏 -> c3RjZERgA=]",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.09,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Agradeço sua mensagem. Não estou disponível no momento, mas responderei assim que possível. 🍀",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.57,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Meu Nome é Flávia trabalho em Centro Cirúrgico. Caso não consiga falar comigo é pq estarei em procedimento.\nAssim que puder responderei a mensagem. Muito Obrigada 😊\n\nOi!? Tudo bem? \nMeu nome é Flávia trabalho em Centro Cirúrgico. Caso mande msg e eu demore responder é porque estou em procedimento. Assim que puder responderei a msg.\nObrigada!!\n😷🏥",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.61,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Necessário habilitar acesso como articulador para criar novos itens/projetos/eventos.",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.57,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Não encontrei nenhum ponto de articulação próximo a mim",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.08,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Gostaria de aprender a pedalar do zero.\n\nMaceió-Al",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 4.1,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Boa noite\n\nAinda tem vaga para o domingo dia 16?\n\nP/aprender andar de bike",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.6,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "https://www.facebook.com/share/p/1CCHS1DqDL/",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.06,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Já completei",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 4.11,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Completei",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 4.1,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "https://www.instagram.com/reel/DcN4gwEBxdE/?igsh=Ym9tdTZzdzhxeHR5&igsi=Ym9tdTZzdzhxeHR5",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.6,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Bom dia!  Tive um imprevisto\n\nGostaria de ser informada da próxima data",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.06,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Me cadastrei. Como faço para aprender a pedalar?",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 4.1,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Como vou saber quando vão né ajudar?\n\nVão poder me ajudar?",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 5.13,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Bom dia! Ontem estive na Ilha São João em Volta Redonda com meu filho de 10 anos. Gostaria de saber com o faço para entrar em contato com o André. Agradeço o apoio",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.08,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Ah, que delicadeza!",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.58,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Alguém????",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.08,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Coloquei pra avançar sem querer",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.58,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Rsrsrs, até levei um susto, pois está empoeirada mesmo ☺️",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.09,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Paz total\n\nParaíso\n\n[image]\n\n[image]",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.57,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Oi! Aqui é a Elisa. Esta é uma msg automática, o que significa que sua msg pra mim chegou e que responderei de modo não automático assim que for possível.",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.59,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Olá! 👋🏿\nAqui, o cinema e a cultura se encontram, estamos sempre conectando histórias e abrindo caminhos.\n\nFique à vontade, pra deixar a sua pergunta, assim que possível alguém da equipe irá lhe responder",
+      "model": "smart",
+      "pass": true,
+      "note": "no keywords required",
+      "latency_s": 18.37,
+      "answer_preview": "Olá! 👋🏿 Aqui, o cinema e a cultura se encontram, estamos sempre conectando histórias e abrindo caminhos. Fique à vontade"
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Boa tarde. Por favor ainda ensinam crianças a pedalar sem\nRodinhas no Taquaral?",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.09,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Eu preciso ter bike ou vcs\nEmprestam a bike?",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 4.61,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Quero aprender",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.08,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Boa tarde\n\nComo faço pra ter a primeira aula de Bike?",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.59,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Fiquei sem bateria\n\nEntrei agora",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.57,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Eu já fiz minha inscrição",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 5.14,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Bom dia tudo bem com vc?? Eu quero muito aprender anda bicicleta",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.57,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Aprender a pedalar",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.09,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Tenho 31 anos\n\nQuando será a próxima vez que vocês irão ensinar\n\n?",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.57,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Ok",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.09,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "‎Vila Nativa agradece seu contato. Fazemos entregas seg. a sex. a tarde mas precisamos seu endereço completo por escrito, *taxa de entrega 5 reais*. Confirmaremos tudo antes via whatsapp. 😀 pra ver o cardápio clique no link https://wa.me/c/5527992560848",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.59,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Oi. Infelizmente me apareceu um emprevisto em cima da hora e eu acabei faltando. :( moro em icoaraci ia cedo até",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.07,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Pk\n\nOk",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.6,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Mandei errado\n\nEra pro grupo",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.06,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Obrigado por avisar. Terá outro pra compensar ou só no último domingo do próximo mês???",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.6,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "[audio]",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.06,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Sim",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.6,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Sábado não poderei, infelizmente 😔",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.57,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Quero sim",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.09,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Não estou conseguindo logar",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 4.1,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Q pena ! Não poderei ir , vou aguardar a próxima 🫶👏\n\n[sticker]",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.6,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Boa",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 2.07,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "[video]",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.6,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "O projeto ainda existe?",
+      "model": "smart",
+      "pass": false,
+      "note": "forbidden keywords: A Bike Anjo segue ativa desde 2014!",
+      "latency_s": 15.94,
+      "answer_preview": "A Bike Anjo segue ativa desde 2014!"
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Bom dia! Tem algum projeto para crianças de 11 anos?\n\nEm Fortaleza Ce",
+      "model": "smart",
+      "pass": true,
+      "note": "no keywords required",
+      "latency_s": 20.57,
+      "answer_preview": "Sim, conseguimos ensinar crianças de 11 anos a pedalar se acompanhadas por um responsável. Procure a articulação local n"
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "E para minha esposa aprender a pedalar",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.08,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Boa tarde \n\nAgradeço imensamente a oportunidade. \nPassei por cirugia e estou em recuperação. \n\nGostaria muito,  mas infelizmente não poderei fazer desta vez. \n\n\nPeço a chance de fazer na próxima vez que for planejado.\n\nMuito agradecida \nCris de Mogi",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 4.1,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Já fiz",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 5.12,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Olá\n\nGostaria de saber se consegui a vaga para 01/11",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.08,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Fiz meu cadastro",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.09,
+      "answer_preview": ""
+    },
+    {
+      "project_id": "bikeanjoall_2026",
+      "question": "Quero me cadastrar na Bike Anjo, link de acesso inicial!\n\nOlá bom dia tudo bem ?\n\nMeu nome é Amanda sou de campo Grande MS, tenho um sonho muito grande na minha vida que é aprender andar de bicicleta, nunca tive quando era criança por conta disse nunca tive contato com ela\n\nQuando encontrei a página de você fiquei tão feliz é como achasse uma luz no fim do túnel..vocês conseguem me ajudar\n\n?",
+      "model": "smart",
+      "pass": false,
+      "note": "empty answer",
+      "latency_s": 3.08,
+      "answer_preview": ""
+    }
+  ]
+}

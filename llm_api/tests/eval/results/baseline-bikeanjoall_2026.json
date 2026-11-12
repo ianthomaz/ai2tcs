@@ -1,0 +1,533 @@
+{
+  "cases": {
+    "rag:O que é o Bike Anjo?": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Olá, Ian! Obrigado pela mensagem. São 11 anos de BA e 50 de pedal... Bora para mais e mais! Grande abraço!": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Quero o link para fazer checkin no evento recife-pe/eba": {
+      "pass": true,
+      "hard": false
+    },
+    "rag:😍😍": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Estou na rua": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Mas posso ir amanhã independente disso?": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Mande o link novamente pfv. Cheguei em casa agora\n\nAcho q o link expirou": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Quero o link para fazer checkin no evento sp/eba": {
+      "pass": true,
+      "hard": false
+    },
+    "rag:Oi": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Obrigado": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:O que precisa ler .??\n\nOnde leio os termos de uso.??\n\nOnde será o próximo encontro.?": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:[image]\n\nRealmente nao estou conseguindo. Tá dando sempre erro\n\nAmanhã tento ajuda pessoalmente para conseguir a rir o link": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Boa noite! Desculpe, só vi as mensagens agora.\n\nMelhor do Google. danimasselani@gmail.com": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Quero o link para fazer checkin no evento curitiba-pr/eba": {
+      "pass": true,
+      "hard": false
+    },
+    "rag:60351230": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Bom dia!\n\nComo funciona para uma criança de 7 anos aprender a andar de bicicleta?": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Já me cadastrei\n\nComo fico sabendo do calendário": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:[image]": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Olá! Quero me cadastrar na Bike Anjo.": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Pois é...problemas familiares,aí o sonho vai sendo adiado,mas na próxima vai dá certo  🙏": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Não consigo fazer": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Criança de 7 anos aprender a pedalar. 60351230": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Bom dia\n\nVou vê se dá pra eu ir": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Bom dia! quando vai ter de novo aula para iniciante?": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Olá!! 🌻Será um prazer falar com você! Deixe seu nome e o que deseja, que em breve iremos te atender 😘\n\nOlá sou Meiry Coiffeur! Será um prazer falar com você; já conhece meu trabalho?! Me diga seu nome e como posso te ajudar?": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Bom dia,qual dia vai ter aula na ilha são João?": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Obg ,vou fazer": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Nossa super merecido.\nVocês mudam a história de muita gente. \nSomos muito gratos por termos conhecido vocês.": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Olá, nós da SOUZA & SOUZA REPRESENTAÇÃO agradecemos seu contato!\nRepresentamos marcas líderes no mercado da construção civil, com seriedade e comprometimento. \nRJ 🇧🇷\n\n‎Souza jr agradece seu contato. Como podemos ajudar?🇧🇷🇵🇹": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Olá! 😊 \n\nAqui é a Liz, especialista em alisamentos e extensões de cílios. Seja muito bem-vinda(o)! \nEm que posso ajudar?\n\n💖 Aproveita e me acompanha  também no Instagram: https://www.instagram.com/liz_pamella?igsh=MWFhdGxidm9wM2RpYw==": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Agradeço o seu contato!\nComo posso ajudar? Por favor, digite sobre qual assunto deseja falar.": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Oi. Gabi aqui. Agradeço o seu contato. Como posso lhe ajudar? ⭐️": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:‎olá eu agradeço seu contato. Se for para oferecer ofertas falsas de emprego extra por curtidas, likes, ou qualquer algo do tipo de redes sociais, desde ja informo que seu número, info, contatos, metadados de fotos e arquivos,  e IP serao encaminhados por relatorios, com toda fundamentação, para as autoridades competentes🚓🚨🚔. Nao sendo esse o caso, como posso te ajudar?\n\n[reaction 👏 -> c3RjZERgA=]": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Agradeço sua mensagem. Não estou disponível no momento, mas responderei assim que possível. 🍀": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Meu Nome é Flávia trabalho em Centro Cirúrgico. Caso não consiga falar comigo é pq estarei em procedimento.\nAssim que puder responderei a mensagem. Muito Obrigada 😊\n\nOi!? Tudo bem? \nMeu nome é Flávia trabalho em Centro Cirúrgico. Caso mande msg e eu demore responder é porque estou em procedimento. Assim que puder responderei a msg.\nObrigada!!\n😷🏥": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Necessário habilitar acesso como articulador para criar novos itens/projetos/eventos.": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Não encontrei nenhum ponto de articulação próximo a mim": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Gostaria de aprender a pedalar do zero.\n\nMaceió-Al": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Boa noite\n\nAinda tem vaga para o domingo dia 16?\n\nP/aprender andar de bike": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:https://www.facebook.com/share/p/1CCHS1DqDL/": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Já completei": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Completei": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:https://www.instagram.com/reel/DcN4gwEBxdE/?igsh=Ym9tdTZzdzhxeHR5&igsi=Ym9tdTZzdzhxeHR5": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Bom dia!  Tive um imprevisto\n\nGostaria de ser informada da próxima data": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Me cadastrei. Como faço para aprender a pedalar?": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Como vou saber quando vão né ajudar?\n\nVão poder me ajudar?": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Bom dia! Ontem estive na Ilha São João em Volta Redonda com meu filho de 10 anos. Gostaria de saber com o faço para entrar em contato com o André. Agradeço o apoio": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Ah, que delicadeza!": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Alguém????": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Coloquei pra avançar sem querer": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Rsrsrs, até levei um susto, pois está empoeirada mesmo ☺️": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Paz total\n\nParaíso\n\n[image]\n\n[image]": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Oi! Aqui é a Elisa. Esta é uma msg automática, o que significa que sua msg pra mim chegou e que responderei de modo não automático assim que for possível.": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Olá! 👋🏿\nAqui, o cinema e a cultura se encontram, estamos sempre conectando histórias e abrindo caminhos.\n\nFique à vontade, pra deixar a sua pergunta, assim que possível alguém da equipe irá lhe responder": {
+      "pass": true,
+      "hard": false
+    },
+    "rag:Boa tarde. Por favor ainda ensinam crianças a pedalar sem\nRodinhas no Taquaral?": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Eu preciso ter bike ou vcs\nEmprestam a bike?": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Quero aprender": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Boa tarde\n\nComo faço pra ter a primeira aula de Bike?": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Fiquei sem bateria\n\nEntrei agora": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Eu já fiz minha inscrição": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Bom dia tudo bem com vc?? Eu quero muito aprender anda bicicleta": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Aprender a pedalar": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Tenho 31 anos\n\nQuando será a próxima vez que vocês irão ensinar\n\n?": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Ok": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:‎Vila Nativa agradece seu contato. Fazemos entregas seg. a sex. a tarde mas precisamos seu endereço completo por escrito, *taxa de entrega 5 reais*. Confirmaremos tudo antes via whatsapp. 😀 pra ver o cardápio clique no link https://wa.me/c/5527992560848": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Oi. Infelizmente me apareceu um emprevisto em cima da hora e eu acabei faltando. :( moro em icoaraci ia cedo até": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Pk\n\nOk": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Mandei errado\n\nEra pro grupo": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Obrigado por avisar. Terá outro pra compensar ou só no último domingo do próximo mês???": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:[audio]": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Sim": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Sábado não poderei, infelizmente 😔": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Quero sim": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Não estou conseguindo logar": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Q pena ! Não poderei ir , vou aguardar a próxima 🫶👏\n\n[sticker]": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Boa": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:[video]": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:O projeto ainda existe?": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Bom dia! Tem algum projeto para crianças de 11 anos?\n\nEm Fortaleza Ce": {
+      "pass": true,
+      "hard": false
+    },
+    "rag:E para minha esposa aprender a pedalar": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Boa tarde \n\nAgradeço imensamente a oportunidade. \nPassei por cirugia e estou em recuperação. \n\nGostaria muito,  mas infelizmente não poderei fazer desta vez. \n\n\nPeço a chance de fazer na próxima vez que for planejado.\n\nMuito agradecida \nCris de Mogi": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Já fiz": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Olá\n\nGostaria de saber se consegui a vaga para 01/11": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Fiz meu cadastro": {
+      "pass": false,
+      "hard": false
+    },
+    "rag:Quero me cadastrar na Bike Anjo, link de acesso inicial!\n\nOlá bom dia tudo bem ?\n\nMeu nome é Amanda sou de campo Grande MS, tenho um sonho muito grande na minha vida que é aprender andar de bicicleta, nunca tive quando era criança por conta disse nunca tive contato com ela\n\nQuando encontrei a página de você fiquei tão feliz é como achasse uma luz no fim do túnel..vocês conseguem me ajudar\n\n?": {
+      "pass": false,
+      "hard": false
+    },
+    "feedbackTriage:t01": {
+      "pass": true,
+      "hard": true
+    },
+    "feedbackTriage:t02": {
+      "pass": true,
+      "hard": true
+    },
+    "feedbackTriage:t03": {
+      "pass": true,
+      "hard": false
+    },
+    "feedbackTriage:t04": {
+      "pass": true,
+      "hard": false
+    },
+    "feedbackTriage:t05": {
+      "pass": true,
+      "hard": false
+    },
+    "feedbackTriage:t06": {
+      "pass": true,
+      "hard": false
+    },
+    "feedbackTriage:t07": {
+      "pass": true,
+      "hard": false
+    },
+    "feedbackTriage:t08": {
+      "pass": false,
+      "hard": false
+    },
+    "feedbackTriage:t09": {
+      "pass": true,
+      "hard": false
+    },
+    "feedbackTriage:t10": {
+      "pass": true,
+      "hard": false
+    },
+    "feedbackTriage:t11": {
+      "pass": true,
+      "hard": true
+    },
+    "feedbackTriage:t12": {
+      "pass": true,
+      "hard": false
+    },
+    "feedbackTriage:t13": {
+      "pass": true,
+      "hard": false
+    },
+    "feedbackTriage:t14": {
+      "pass": true,
+      "hard": false
+    },
+    "feedbackTriage:t15": {
+      "pass": true,
+      "hard": false
+    },
+    "feedbackTriage:t16": {
+      "pass": false,
+      "hard": false
+    },
+    "feedbackTriage:t17": {
+      "pass": true,
+      "hard": false
+    },
+    "feedbackTriage:t18": {
+      "pass": false,
+      "hard": false
+    },
+    "healthNormalize:h01": {
+      "pass": true,
+      "hard": false
+    },
+    "healthNormalize:h02": {
+      "pass": true,
+      "hard": false
+    },
+    "healthNormalize:h03": {
+      "pass": true,
+      "hard": false
+    },
+    "healthNormalize:h04": {
+      "pass": true,
+      "hard": true
+    },
+    "healthNormalize:h05": {
+      "pass": true,
+      "hard": false
+    },
+    "healthNormalize:h06": {
+      "pass": true,
+      "hard": false
+    },
+    "healthNormalize:h07": {
+      "pass": true,
+      "hard": true
+    },
+    "healthNormalize:h08": {
+      "pass": true,
+      "hard": false
+    },
+    "healthNormalize:h09": {
+      "pass": true,
+      "hard": false
+    },
+    "healthNormalize:h10": {
+      "pass": true,
+      "hard": true
+    },
+    "healthNormalize:h11": {
+      "pass": true,
+      "hard": true
+    },
+    "healthNormalize:h12": {
+      "pass": true,
+      "hard": true
+    },
+    "healthNormalize:h13": {
+      "pass": true,
+      "hard": false
+    },
+    "healthNormalize:h14": {
+      "pass": true,
+      "hard": true
+    },
+    "healthNormalize:h15": {
+      "pass": false,
+      "hard": false
+    },
+    "healthNormalize:h16": {
+      "pass": true,
+      "hard": false
+    },
+    "healthNormalize:h17": {
+      "pass": true,
+      "hard": false
+    },
+    "healthNormalize:h18": {
+      "pass": true,
+      "hard": false
+    },
+    "healthNormalize:h19": {
+      "pass": true,
+      "hard": true
+    },
+    "healthNormalize:h20": {
+      "pass": false,
+      "hard": false
+    },
+    "replySuggest:r01": {
+      "pass": true,
+      "hard": true
+    },
+    "replySuggest:r02": {
+      "pass": true,
+      "hard": true
+    },
+    "replySuggest:r03": {
+      "pass": true,
+      "hard": true
+    },
+    "replySuggest:r04": {
+      "pass": true,
+      "hard": true
+    },
+    "replySuggest:r05": {
+      "pass": true,
+      "hard": false
+    },
+    "replySuggest:r06": {
+      "pass": true,
+      "hard": true
+    },
+    "replySuggest:r07": {
+      "pass": true,
+      "hard": true
+    }
+  },
+  "summary": {
+    "total": 130,
+    "passed": 45,
+    "pass_rate": 0.3462
+  },
+  "run": {
+    "timestamp": "2026-11-11T11:42:53.208325+00:00",
+    "project": "bikeanjoall_2026"
+  }
+}
