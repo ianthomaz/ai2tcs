@@ -66,7 +66,30 @@ async def ask_and_wait(
     res.raise_for_status()
     elapsed = time.perf_counter() - t0
     data = res.json()
-    return data.get("answer"), elapsed
+    return data.get("answer"), elapsed, data
+
+
+BUCKETS = ("org_factual", "org_link", "user_system", "silence", "unsorted")
+
+
+def score_case(row: dict, answer: str | None, result: dict | None = None) -> tuple[bool, str]:
+    """Score by what «good» means for the case's bucket (docs/treinamento-llm/higiene-eval-ask.md).
+
+    - silence: the right answer is none (greeting, emoji, media, someone else's auto-reply).
+    - user_system: the question is about the person's own record; pass = intent says so and
+      no prose was invented.
+    - anything else (org_factual, org_link, no bucket): an answer within the keyword rules.
+    """
+    bucket = row.get("bucket")
+    has_answer = bool((answer or "").strip())
+    if bucket == "silence":
+        return (not has_answer), ("silent" if not has_answer else "answered a case that asks for silence")
+    if bucket == "user_system":
+        kind = ((result or {}).get("intent") or {}).get("knowledge_kind")
+        if kind != "user_system":
+            return False, f"intent {kind or 'missing'} (expected user_system)"
+        return (not has_answer), ("intent ok" if not has_answer else "intent ok but prose was written")
+    return score_answer(answer, row.get("expected_keywords") or [], row.get("forbidden_keywords") or [], row.get("max_chars"))
 
 
 def score_answer(
@@ -112,6 +135,11 @@ def summarize(rows: list[dict]) -> dict:
         "latency_p50": round(percentile(latencies, 50), 2),
         "latency_p95": round(percentile(latencies, 95), 2),
         "latency_max": round(max(latencies), 2) if latencies else 0.0,
+        "by_bucket": {
+            b: {"total": len(rs), "passed": sum(1 for r in rs if r["pass"])}
+            for b in BUCKETS
+            if (rs := [r for r in rows if r.get("bucket") == b])
+        },
     }
 
 
@@ -235,19 +263,16 @@ async def run_eval(args: argparse.Namespace) -> int:
             pid = row["project_id"]
             original = row["question"]
             q = f"{original} (ref {uuid.uuid4().hex[:8]})" if args.unique else original
-            keywords = row.get("expected_keywords") or []
-            forbidden = row.get("forbidden_keywords") or []
-            max_chars = row.get("max_chars")
             system_prompt = row.get("system_prompt")
             model = row.get("model") or "smart"
-            answer, elapsed = await ask_and_wait(
+            answer, elapsed, result = await ask_and_wait(
                 client,
                 project_id=pid,
                 question=q,
                 system_prompt=system_prompt,
                 model=model,
             )
-            ok, note = score_answer(answer, keywords, forbidden, max_chars)
+            ok, note = score_case(row, answer, result)
             status = "PASS" if ok else "FAIL"
             preview = (answer or "")[:120].replace("\n", " ")
             # Store the dataset question, not the --unique variant, so runs line up.
@@ -256,6 +281,7 @@ async def run_eval(args: argparse.Namespace) -> int:
                     "project_id": pid,
                     "question": original,
                     "model": model,
+                    "bucket": row.get("bucket"),
                     "pass": ok,
                     "note": note,
                     "latency_s": round(elapsed, 2),
@@ -285,6 +311,8 @@ async def run_eval(args: argparse.Namespace) -> int:
     out.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     print(f"\n{summary['passed']}/{summary['total']} passed")
+    for b, c in summary["by_bucket"].items():
+        print(f"  {b}: {c['passed']}/{c['total']}")
     print(f"latência p50 {summary['latency_p50']}s · p95 {summary['latency_p95']}s · máx {summary['latency_max']}s")
     if not args.unique:
         print("nota: sem --unique, o dedup do /ask pode ter devolvido jobs antigos e falseado a latência")

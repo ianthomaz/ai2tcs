@@ -15,6 +15,10 @@ Ops sem RAG (`feedbackTriage`, `healthNormalize`) **não** entram neste fio.
 
 ## Buckets (separar no harness)
 
+No código desde 12/nov/2026: campo `bucket` em `eval_questions.json` (`org_factual` = A ·
+`user_system` = B · `silence` = C · `org_link` = D · `unsorted`), pontuado por
+`scripts/eval_rag.py` (`score_case`) e somado por tipo no `eval_gate.py`.
+
 | Bucket | Critério de sucesso | Onde testar | Exemplo |
 |---|---|---|---|
 | **A · org factual** | keywords / fatos; prosa `org_general` | score RAG clássico | «o que é a Bike Anjo?» |

@@ -37,6 +37,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 LLM_ROOT = SCRIPT_DIR.parent
 DEFAULT_DATASET = LLM_ROOT / "tests" / "eval" / "eval_questions.json"
 
+# Same list as scripts/eval_rag.py BUCKETS (what «good» means for the case).
+BUCKETS = ("org_factual", "org_link", "user_system", "silence", "unsorted")
 REQUIRED_FIELDS = ("project_id", "question")
 # Mirrors what eval_rag.py reads per row; anything else is not scored.
 OPTIONAL_FIELDS = (
@@ -45,6 +47,7 @@ OPTIONAL_FIELDS = (
     "max_chars",
     "model",
     "system_prompt",
+    "bucket",
 )
 _LIST_FIELDS = ("expected_keywords", "forbidden_keywords")
 
@@ -104,6 +107,12 @@ def normalize_row(raw: object, *, index: int) -> tuple[dict | None, list[str]]:
             problems.append(f"row {index}: 'max_chars' must be a positive integer")
         else:
             row["max_chars"] = value
+
+    if raw.get("bucket") is not None:
+        if raw["bucket"] not in BUCKETS:
+            problems.append(f"row {index}: 'bucket' must be one of {', '.join(BUCKETS)}")
+        else:
+            row["bucket"] = raw["bucket"]
 
     for field in ("model", "system_prompt"):
         value = raw.get(field)

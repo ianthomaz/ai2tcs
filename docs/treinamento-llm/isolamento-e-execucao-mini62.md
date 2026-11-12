@@ -19,6 +19,9 @@ Este documento estabelece as **travas estruturais**, o **wrapper de execução**
 
 ## 2. Especificação do Wrapper `second-opinion.sh`
 
+> **Em vigor:** o worker é `llm_api/scripts/second_opinion_worker.py` ([26 § 7](../26-second-opinion.md#7-worker-no-mini62));
+> o teto e o interruptor ficam na API. O script abaixo é o rascunho original.
+
 O script `second-opinion.sh` deve viver em `llm_api/scripts/second-opinion.sh` e operar como o único ponto de contato com o `cursor-agent`:
 
 ```bash

@@ -6,7 +6,8 @@
       "voluntário",
       "ciclismo",
       "bike"
-    ]
+    ],
+    "bucket": "org_factual"
   },
   {
     "project_id": "aiclaudia",
@@ -86,7 +87,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -101,7 +103,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "org_link"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -116,7 +119,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -131,7 +135,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -146,17 +151,20 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "unsorted"
   },
   {
     "project_id": "bikeanjoall_2026",
     "question": "Mande o link novamente pfv. Cheguei em casa agora\n\nAcho q o link expirou",
-    "max_chars": 600
+    "max_chars": 600,
+    "bucket": "org_link"
   },
   {
     "project_id": "bikeanjoall_2026",
     "question": "Quero o link para fazer checkin no evento sp/eba",
-    "max_chars": 600
+    "max_chars": 600,
+    "bucket": "org_link"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -172,7 +180,8 @@
       "Posso ajudar em mais",
       "Como posso ajudar",
       "oi"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -187,7 +196,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -202,7 +212,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "unsorted"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -217,7 +228,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "unsorted"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -232,12 +244,14 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
     "question": "Quero o link para fazer checkin no evento curitiba-pr/eba",
-    "max_chars": 600
+    "max_chars": 600,
+    "bucket": "org_link"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -252,7 +266,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -267,7 +282,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "org_factual"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -282,7 +298,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "org_link"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -297,7 +314,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -312,17 +330,20 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "org_link"
   },
   {
     "project_id": "bikeanjoall_2026",
     "question": "Pois é...problemas familiares,aí o sonho vai sendo adiado,mas na próxima vai dá certo  🙏",
-    "max_chars": 600
+    "max_chars": 600,
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
     "question": "Não consigo fazer",
-    "max_chars": 600
+    "max_chars": 600,
+    "bucket": "org_link"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -337,7 +358,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "org_factual"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -352,7 +374,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -367,7 +390,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "org_factual"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -382,7 +406,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -397,7 +422,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "org_factual"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -412,7 +438,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -427,7 +454,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -444,7 +472,8 @@
       "Como posso ajudar",
       "como posso ajudar?",
       "away"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -459,7 +488,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -474,7 +504,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -489,7 +520,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -504,7 +536,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -519,7 +552,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -534,7 +568,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -549,7 +584,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "org_link"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -564,7 +600,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "org_factual"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -579,7 +616,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "org_factual"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -594,7 +632,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "unsorted"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -609,7 +648,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -624,7 +664,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -639,7 +680,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -654,7 +696,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -669,7 +712,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "org_factual"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -684,7 +728,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "org_factual"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -699,7 +744,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "org_factual"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -714,7 +760,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "org_factual"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -730,17 +777,20 @@
       "Posso ajudar em mais",
       "Como posso ajudar",
       "Silêncio. Não respondo…"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
     "question": "Alguém????",
-    "max_chars": 600
+    "max_chars": 600,
+    "bucket": "org_link"
   },
   {
     "project_id": "bikeanjoall_2026",
     "question": "Coloquei pra avançar sem querer",
-    "max_chars": 600
+    "max_chars": 600,
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -757,12 +807,14 @@
       "Como posso ajudar",
       "pronto",
       "você já tira a poeira e poderá usar o sistema"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
     "question": "Paz total\n\nParaíso\n\n[image]\n\n[image]",
-    "max_chars": 600
+    "max_chars": 600,
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -777,7 +829,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -792,7 +845,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -808,7 +862,8 @@
       "Posso ajudar em mais",
       "Como posso ajudar",
       "taquaral"
-    ]
+    ],
+    "bucket": "org_factual"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -823,7 +878,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "org_factual"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -838,12 +894,14 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "org_factual"
   },
   {
     "project_id": "bikeanjoall_2026",
     "question": "Boa tarde\n\nComo faço pra ter a primeira aula de Bike?",
-    "max_chars": 600
+    "max_chars": 600,
+    "bucket": "org_factual"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -858,22 +916,26 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
     "question": "Eu já fiz minha inscrição",
-    "max_chars": 600
+    "max_chars": 600,
+    "bucket": "user_system"
   },
   {
     "project_id": "bikeanjoall_2026",
     "question": "Bom dia tudo bem com vc?? Eu quero muito aprender anda bicicleta",
-    "max_chars": 600
+    "max_chars": 600,
+    "bucket": "org_factual"
   },
   {
     "project_id": "bikeanjoall_2026",
     "question": "Aprender a pedalar",
-    "max_chars": 600
+    "max_chars": 600,
+    "bucket": "org_factual"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -888,7 +950,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "org_factual"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -903,7 +966,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -918,7 +982,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -933,12 +998,14 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "unsorted"
   },
   {
     "project_id": "bikeanjoall_2026",
     "question": "Pk\n\nOk",
-    "max_chars": 600
+    "max_chars": 600,
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -953,7 +1020,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -962,7 +1030,8 @@
       "manter informado",
       "Te avisaremos de uma próxima oportunidade"
     ],
-    "max_chars": 600
+    "max_chars": 600,
+    "bucket": "org_factual"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -977,7 +1046,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -992,7 +1062,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -1007,7 +1078,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -1022,12 +1094,14 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
     "question": "Não estou conseguindo logar",
-    "max_chars": 600
+    "max_chars": 600,
+    "bucket": "org_link"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -1042,7 +1116,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -1057,7 +1132,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -1072,7 +1148,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -1088,7 +1165,8 @@
       "Posso ajudar em mais",
       "Como posso ajudar",
       "A Bike Anjo segue ativa desde 2014!"
-    ]
+    ],
+    "bucket": "org_factual"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -1103,12 +1181,14 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "org_factual"
   },
   {
     "project_id": "bikeanjoall_2026",
     "question": "E para minha esposa aprender a pedalar",
-    "max_chars": 600
+    "max_chars": 600,
+    "bucket": "org_factual"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -1123,7 +1203,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -1138,7 +1219,8 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
@@ -1153,15 +1235,18 @@
       "Estou a disposicao",
       "Posso ajudar em mais",
       "Como posso ajudar"
-    ]
+    ],
+    "bucket": "user_system"
   },
   {
     "project_id": "bikeanjoall_2026",
-    "question": "Fiz meu cadastro"
+    "question": "Fiz meu cadastro",
+    "bucket": "silence"
   },
   {
     "project_id": "bikeanjoall_2026",
     "question": "Quero me cadastrar na Bike Anjo, link de acesso inicial!\n\nOlá bom dia tudo bem ?\n\nMeu nome é Amanda sou de campo Grande MS, tenho um sonho muito grande na minha vida que é aprender andar de bicicleta, nunca tive quando era criança por conta disse nunca tive contato com ela\n\nQuando encontrei a página de você fiquei tão feliz é como achasse uma luz no fim do túnel..vocês conseguem me ajudar\n\n?",
-    "max_chars": 600
+    "max_chars": 600,
+    "bucket": "org_link"
   }
 ]

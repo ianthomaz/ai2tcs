@@ -1,5 +1,9 @@
 # Contrato JSON e Protocolo: Segunda Opinião por Agente (Fase Só Consulta)
 
+> **Contrato em vigor:** [26-second-opinion.md](../26-second-opinion.md). Este documento é o desenho do caso do
+> Bike Anjo; no serviço, `case_facts`, `context` e `allowed_actions` são do projeto, e `point_to_buttons`
+> chama-se `point_to_ui`.
+
 Contrato canônico entre o canal de atendimento (`zapzap`/`sistemaBA`), a fila de orquestração do `ai2tcs` e os agentes professores (`Cursor Agent` ou `Antigravity` no `mini62`).
 
 | | |

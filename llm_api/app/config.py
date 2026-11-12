@@ -180,6 +180,12 @@ class Settings(BaseSettings):
 
     # Agent remote observation (/api/ops/observe)
     ops_observe_token: str = ""
+    # Second opinion queue (docs/26). Off by default: this is the kill switch. The daily limit
+    # counts every project together (the teacher's credit is one). The worker token is only for
+    # the host worker that runs the agent; empty = worker routes answer 404.
+    second_opinion_enabled: bool = False
+    second_opinion_daily_limit: int = 20
+    second_opinion_worker_token: str = ""
     pm2_log_dir: str = "/home/opc/.pm2/logs"
 
     def scoped_key_required_project_set(self) -> set[str]:

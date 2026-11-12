@@ -186,3 +186,30 @@ def test_load_result_rejects_a_file_that_is_not_a_run(tmp_path):
     p.write_text('{"rows": []}', encoding="utf-8")
     with pytest.raises(ValueError, match="missing 'run'"):
         eval_rag.load_result(p)
+
+
+def test_score_by_bucket():
+    silence = {"bucket": "silence"}
+    assert eval_rag.score_case(silence, None)[0] is True
+    assert eval_rag.score_case(silence, "Olá! Como posso ajudar?")[0] is False
+    user = {"bucket": "user_system"}
+    assert eval_rag.score_case(user, None, {"intent": {"knowledge_kind": "user_system"}})[0] is True
+    assert eval_rag.score_case(user, "Você está inscrita.", {"intent": {"knowledge_kind": "user_system"}})[0] is False
+    assert eval_rag.score_case(user, None, {"intent": {"knowledge_kind": "org_general"}})[0] is False
+    fact = {"bucket": "org_factual", "expected_keywords": ["bike"]}
+    assert eval_rag.score_case(fact, "A Bike Anjo ensina.")[0] is True
+    assert eval_rag.score_case(fact, None)[0] is False
+    assert eval_rag.score_case({"expected_keywords": []}, "qualquer")[0] is True
+
+
+def test_summary_by_bucket_and_dataset_buckets_are_known():
+    rows = [
+        {"pass": True, "latency_s": 1.0, "bucket": "silence"},
+        {"pass": False, "latency_s": 1.0, "bucket": "silence"},
+        {"pass": True, "latency_s": 1.0, "bucket": None},
+    ]
+    assert eval_rag.summarize(rows)["by_bucket"] == {"silence": {"total": 2, "passed": 1}}
+    import json as _json
+
+    data = _json.loads(eval_rag.DEFAULT_DATASET.read_text(encoding="utf-8"))
+    assert {r.get("bucket") for r in data} <= set(eval_rag.BUCKETS) | {None}

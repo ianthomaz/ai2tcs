@@ -27,6 +27,7 @@ model Project {
   apiKeys         ProjectApiKey[]
   answerRatings   AnswerRating[]
   ratingProposals RatingProposal[]
+  secondOpinions  SecondOpinion[]
 }
 
 /// Human judgment of an answer, sent by the project (docs/22-answer-ratings.md).
@@ -63,6 +64,28 @@ model RatingProposal {
 
   @@unique([projectId, kind, value])
   @@map("rating_proposals")
+}
+
+/// A case sent by a project for a bigger agent to review the local answer (docs/26).
+model SecondOpinion {
+  id         BigInt    @id @default(autoincrement())
+  projectId  String    @map("project_id")
+  sourceRef  String    @map("source_ref")
+  channel    String
+  caseKind   String?   @map("case_kind")
+  status     String    @default("queued") // queued | working | done | failed
+  request    Json
+  response   Json?
+  agent      String?
+  error      String?
+  createdAt  DateTime  @default(now()) @map("created_at")
+  claimedAt  DateTime? @map("claimed_at")
+  finishedAt DateTime? @map("finished_at")
+  project    Project   @relation(fields: [projectId], references: [projectId], onDelete: Cascade)
+
+  @@unique([projectId, sourceRef])
+  @@index([status, createdAt])
+  @@map("second_opinions")
 }
 
 model ProjectApiKey {

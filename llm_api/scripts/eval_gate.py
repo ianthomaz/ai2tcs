@@ -45,14 +45,28 @@ def snapshot(rag_rows: list[dict], ops_rows: list[dict]) -> dict:
     """Case → pass, keyed so two runs line up: rag:<question> and <port>:<id>."""
     cases: dict[str, dict] = {}
     for row in rag_rows:
-        cases[f"rag:{row['question']}"] = {"pass": bool(row["pass"]), "hard": False}
+        # `unsorted` cases wait for a person to say what «good» is: reported, never gating.
+        if row.get("bucket") == "unsorted":
+            continue
+        cases[f"rag:{row['question']}"] = {"pass": bool(row["pass"]), "hard": False, "bucket": row.get("bucket")}
     for row in ops_rows:
         cases[f"{row['port']}:{row['id']}"] = {"pass": bool(row["pass"]), "hard": bool(row["hard"])}
     total = len(cases)
     passed = sum(1 for c in cases.values() if c["pass"])
+    by_bucket: dict[str, dict] = {}
+    for c in cases.values():
+        if c.get("bucket"):
+            b = by_bucket.setdefault(c["bucket"], {"total": 0, "passed": 0})
+            b["total"] += 1
+            b["passed"] += int(c["pass"])
     return {
         "cases": cases,
-        "summary": {"total": total, "passed": passed, "pass_rate": round(passed / total, 4) if total else 1.0},
+        "summary": {
+            "total": total,
+            "passed": passed,
+            "pass_rate": round(passed / total, 4) if total else 1.0,
+            "by_bucket": by_bucket,
+        },
     }
 
 
@@ -147,6 +161,8 @@ def main() -> int:
     baseline = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
     problems, notes = compare(baseline, current, args.tolerance)
     print(f"\n{current['summary']['passed']}/{current['summary']['total']} casos passam")
+    for bucket, c in current["summary"].get("by_bucket", {}).items():
+        print(f"  {bucket}: {c['passed']}/{c['total']}")
     for n in notes:
         print(f"  · {n}")
     for p in problems:

@@ -17,6 +17,7 @@ from app.api import ask, audio, boleto_extract, extract, edu, health, ingest, jo
 from app.bikeanjo.routes import router as bikeanjo_router
 from app.tasks.routes import router as tasks_router
 from app.ratings.routes import router as ratings_router
+from app.second_opinion.routes import router as second_opinion_router
 from app.dashboard.routes import router as dashboard_router, DashboardAuthMiddleware
 from app.jobs import worker as job_worker
 
@@ -151,6 +152,8 @@ app.include_router(bikeanjo_router)
 app.include_router(tasks_router)
 # Human ratings of answers, for every project (app/ratings/)
 app.include_router(ratings_router)
+# Second opinion queue: a bigger agent reviews the local answer (app/second_opinion/)
+app.include_router(second_opinion_router)
 # Agent remote observation (/api/ops/observe)
 app.include_router(ops_observe.router)
 

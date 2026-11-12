@@ -37,6 +37,9 @@ espelho Bike Anjo `docs/contracts/ai2tcs/`).
 
 ## Estado
 
-Proposta e casos (12/nov/2026). **Sem código** de fila `/second-opinion` ainda.
+Proposta e casos (12/nov/2026). A fila existe no código, desligada: [26-second-opinion.md](../26-second-opinion.md)
+é o contrato que vale (genérico por projeto e canal); os esquemas de
+`contrato-segunda-opiniao.md` são o desenho do caso do Bike Anjo. Avaliação do plano e o que
+mudou: [avaliacao-do-plano.md](./avaliacao-do-plano.md).
 A nota solta `RAG_melhorias_tmp.md` na raiz do ai2tcs foi absorvida em
 `higiene-eval-ask.md` e removida.

@@ -574,3 +574,9 @@ reindexar, mas muda as distâncias: ligar depois do `scripts/eval_gate.py` e rev
 `true`: quando a pergunta do `/ask` tem até 3 palavras de conteúdo («e em Curitiba?»), a busca
 usa também a pergunta anterior da pessoa (do histórico que o cliente manda). Só a busca muda;
 o modelo responde à pergunta como veio. Padrão desligado; ligar depois do `scripts/eval_gate.py`.
+
+### `second_opinion` — segunda opinião de um agente maior
+
+`config_json.second_opinion = {"enabled": true, "teacher_notes": "tom e limites do projeto"}`.
+Sem `enabled: true` o projeto não entra na fila (o serviço também precisa de
+`SECOND_OPINION_ENABLED`). Detalhe: [26-second-opinion.md](./26-second-opinion.md).
