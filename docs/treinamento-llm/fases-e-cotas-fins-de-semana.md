@@ -34,7 +34,7 @@ flowchart TD
 
 ---
 
-## 2. A Régua de Cotas Dinâmicas (Controlada por Configuração)
+## 2. Teto de Cotas Dinâmico (Controlada por Configuração)
 
 Em vez de um número estático no código, o limite diário vive em configuração rápida no `.env` ou no painel:
 
