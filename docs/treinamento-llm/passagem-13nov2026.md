@@ -94,9 +94,17 @@ Feito:
 - `/adm/shadow-llm`: uma resposta só (a da Antigravity quando ela opinou, senão a da LLM local) e o
   bloco «Segunda opinião (Antigravity)» com a nota dela; a nota humana vale para o texto lido.
 - Nota do professor na escala do painel (`stop` · `bad` · `good` · `great`).
-- Pedido sobre a própria pessoa não vira exemplo no `/ratings` (nota do painel e resposta de
-  quem atende).
+- O que o dono envia na conversa é aprendizado: editado ou escrito vira «ótima», sugestão enviada
+  sem mexer vira «boa». A caixa da conversa mostra a resposta da Antigravity quando ela opinou.
+- Leitura da pessoa usa a conta ligada ao contato; inscrição de dependente com o primeiro nome
+  só no rascunho (nunca no caso do professor).
 - Observer `zap-shadow`: `actions`, `personReadings`, `secondOpinions` e `live_sent`.
+
+Caso real (13/nov): «Levo bicicleta com rodinhas?», logo depois da confirmação de presença, virou
+pedido de inscrição; a consulta antiga respondeu «não encontrei registros» para uma conta com
+inscrição de dependente, e a resposta da base (bicicleta emprestada, criança aprende sem rodinhas)
+nem foi tentada. Entrou em `project_library/bikeanjoall_2026/casos/eval_questions.json` (`org_factual`).
+Nada saiu sozinho: com `llm_send` desligado o live nem chama a LLM.
 
 Leitura do Observer: das 30 hipóteses do `/ask` em 14 dias, só 2 tinham texto. A confiança
 (`answer_confidence`) só existe quando há texto; não é defeito.

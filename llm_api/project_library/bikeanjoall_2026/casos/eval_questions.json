@@ -1183,5 +1183,22 @@
     "question": "Quero me cadastrar na Bike Anjo, link de acesso inicial!\n\nOlá bom dia tudo bem ?\n\nMeu nome é Amanda sou de campo Grande MS, tenho um sonho muito grande na minha vida que é aprender andar de bicicleta, nunca tive quando era criança por conta disse nunca tive contato com ela\n\nQuando encontrei a página de você fiquei tão feliz é como achasse uma luz no fim do túnel..vocês conseguem me ajudar\n\n?",
     "max_chars": 600,
     "bucket": "org_link"
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Levo bicicleta com rodinhas?",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar",
+      "registros no sistema"
+    ],
+    "bucket": "org_factual"
   }
 ]
