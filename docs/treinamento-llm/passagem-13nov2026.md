@@ -62,17 +62,24 @@ Nada foi para o ar. Deploy só com a frase do dono. Commit e push no ramo são p
 5. Bateria do Bike Anjo: `participation-status-write-guard.test.ts` falha por `lib/event-virtual-rsvp.ts`
    (veio da main; não é deste trabalho).
 
-## 4a. Leitura do Observer (13/nov, produção, últimos 14 dias)
+## 4a. Leitura do Observer e do código (13/nov)
 
-- Shadow: 76 hipóteses; 46 por `event_interest_lookup` (consulta ao banco com frase fixa,
-  `zapzap/lib/event-interest-lookup.js`), 30 por `/ask`. Só 1 com `send_gate` e 0 com
-  `answer_confidence`: o portão de envio quase não tem sinal para decidir.
-- Notas humanas: 12 linhas, 10 sem nota (9 descartadas), 1 «bad», 1 «stop». Nenhuma resposta saiu.
-- Stage: shadow vazio.
-- O Observer não mostra o conteúdo da sugestão de ação (tipo, `outcome`, situação): a `zap-shadow`
-  só conta. Falta uma visão agregada, sem telefone nem texto.
-- A frase fixa de «encontrei» é uma só para qualquer situação («não confirmamos a inscrição
-  ainda»), mesmo para quem está confirmado ou na lista de espera.
+Observer de produção, 14 dias: 76 hipóteses no shadow, 46 marcadas `event_interest_lookup`, 30 `/ask`;
+1 com `send_gate`, 0 com `answer_confidence`; 12 notas humanas (10 sem nota). Stage: shadow vazio.
+
+A consulta `zapzap/lib/event-interest-lookup.js` **não entrega a situação real** da pessoa:
+
+1. Todo erro de consulta vira «não encontrei registros» (cada `catch` devolve vazio). Falha de banco
+   e pessoa sem inscrição saem com a mesma frase, e o log não guarda o erro.
+2. Telefone de 12 dígitos (WhatsApp sem o 9) não gera a variante com o 9: quem tem `users.phone`
+   com 11 dígitos não é achado.
+3. Sem `event_id` dito pela LLM, o evento sai só de convite de campanha dos últimos 14 dias. A
+   inscrição da pessoa em data aberta não é consultada.
+4. Achou: frase única «não confirmamos a inscrição ainda», para qualquer `participation_status`.
+   `waitlist_position` não é lido.
+5. Lista fechada do `/ask` (`seed_bikeanjoall.py`): `event_interest_lookup` e duas reservadas
+   (`registration_completeness_lookup`, `city_event_lookup`) que o Zap só registra e cala.
+   Confirmar presença e liberar vaga não existem na lista.
 
 ## 5. Como o dono quer as mensagens
 
