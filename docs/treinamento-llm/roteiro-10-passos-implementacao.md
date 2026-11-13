@@ -23,7 +23,7 @@ O objetivo da segunda opinião com o Cursor não é apenas lidar com confirmaç�
 Para garantir que o Cursor atue **estritamente como consultor pedagógico/avaliador** e jamais tente rodar comandos, mutações de banco ou disparar mensagens:
 
 1. **Chamada em Modo CLI Fechado (`headless / non-interactive`):**
-   - O worker no host (`second_opinion_worker.py`) acorda sob demanda via campainha, passando o histórico na entrada padrão (`stdin`) e exigindo de volta exclusivamente um schema JSON.
+   - O worker no host (`second_opinion_worker.py`) acorda sob demanda via campainha, grava o caso num arquivo dentro de uma pasta temporária vazia, chama o agente nela e exige de volta exclusivamente um schema JSON.
 2. **Sem Ferramentas / Sem Permissões de Escrita (Zero-Tool Sandbox):**
    - O agente professor não recebe MCPs de escrita, credenciais de banco de dados ou APIs de envio de WhatsApp. Ele não tem "braços" para executar nenhuma ação no sistema.
 3. **Proposta de Ação é puramente descritiva (`suggested_action`):**
@@ -68,7 +68,7 @@ flowchart LR
 ## 4. Os 10 Primeiros Passos de Código (Roteiro Ordenado)
 
 ### Fase 1: Fundação no `ai2tcs` (O Motor do Professor)
-- [ ] **Passo 1 (`ai2tcs`):** Manter o receptor leve de campainha no host (`http://127.0.0.1:9191/notify`) que acorda o `second_opinion_worker.py --once` sob demanda exata, mantendo zero consumo de CPU em repouso (compatível com volume de 45-60 msgs/semana).
+- [ ] **Passo 1 (`ai2tcs`):** Manter o receptor leve de campainha no host (`http://127.0.0.1:9191/notify`) (`second_opinion_worker.py --listen`), que esvazia a fila sob demanda exata, mantendo zero consumo de CPU em repouso (compatível com volume de 45-60 msgs/semana).
 - [ ] **Passo 2 (`ai2tcs`):** Ativar a rota genérica `POST /second-opinion` no Docker enfileirando o caso com redação de dados sensíveis e disparando a notificação HTTP para `host.docker.internal:9191`.
 - [ ] **Passo 3 (`ai2tcs`):** Conectar a avaliação do professor para visualização, mantendo a regra de que aprovação para treino (`/ratings`) depende do aval humano ou de concordância estabelecida.
 - [ ] **Passo 4 (`ai2tcs`):** Validar a suíte de testes unitários (`test_second_opinion.py`) garantindo trava de cota diária (20/dia) e os dois interruptores.

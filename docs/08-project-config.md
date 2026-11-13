@@ -51,7 +51,7 @@ Todo projeto que se conecta ao `ai2tcs` adota uma pasta padrão chamada **`LLM/`
   "project_id": "bikeanjoall_2026",
   "name": "Bike Anjo",
   "sources": [
-    "/Users/ianthomaz/Documents/projects/BikeAnjo_Sistema2026/LLM/rag"
+    "/caminho/para/BikeAnjo_Sistema2026/LLM/rag"
   ],
   "config_json": {
     "chunking": {

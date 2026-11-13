@@ -39,6 +39,7 @@ até o próximo `--once`. O ping nunca atrasa nem derruba o `POST`.
 | Interruptor do serviço | `SECOND_OPINION_ENABLED` | desligado |
 | Interruptor do projeto | `config_json.second_opinion.enabled` | desligado |
 | Teto por dia, todos os projetos juntos | `SECOND_OPINION_DAILY_LIMIT` | 20 |
+| Pausa no host, sem mexer na API | arquivo `local-only/DISABLE_SECOND_OPINION` no mini62: o worker para antes de pegar o próximo caso | ausente |
 
 Caso fora das travas não é erro: `{"status": "skipped", "reason": "disabled" | "project_disabled" | "daily_limit"}`.
 

@@ -141,15 +141,23 @@ def _post(url: str, token: str, body: dict | None) -> tuple[int, dict | None]:
             return r.status, (json.loads(raw) if raw else None)
     except urllib.error.HTTPError as e:
         return e.code, None
+    except (urllib.error.URLError, OSError, ValueError):
+        return 0, None  # API down or answer not JSON
+
+
+# Kill switch on the host: this file next to credentials/ stops the worker before it claims a case.
+STOP_FILE = "DISABLE_SECOND_OPINION"
 
 
 def work_once(api: str, token: str, cmd: str, agent: str, timeout_s: float, creds_dir: Path) -> str:
-    """'empty' | 'done' | 'failed' | 'unauthorized'."""
+    """'paused' | 'empty' | 'done' | 'failed' | 'unauthorized' | 'unreachable'."""
+    if (creds_dir.parent / STOP_FILE).exists():
+        return "paused"
     status, case = _post(f"{api}/second-opinion/worker/claim", token, None)
     if status == 204:
         return "empty"
     if status != 200 or not case:
-        return "unauthorized" if status in (401, 403, 404) else "failed"
+        return "unauthorized" if status in (401, 403, 404) else "unreachable"
     facts, note = case_check(case.get("project_id") or "", case.get("source_ref") or "", creds_dir)
     output, error = run_agent(cmd, with_verified_facts(case["prompt"], facts, note), timeout_s)
     body = {"agent": agent, "output": output} if output is not None else {"agent": agent, "error": error}
@@ -163,7 +171,7 @@ def drain(api: str, token: str, cmd: str, agent: str, timeout_s: float, creds_di
     while True:
         outcome = work_once(api, token, cmd, agent, timeout_s, creds_dir)
         print(outcome, flush=True)
-        if outcome in ("empty", "unauthorized"):
+        if outcome in ("paused", "empty", "unauthorized", "unreachable"):
             return
 
 
@@ -204,7 +212,7 @@ def main() -> int:
     if not cmd:
         print("SECOND_OPINION_AGENT_CMD não definido", file=sys.stderr)
         return 2
-    timeout_s = float(os.environ.get("SECOND_OPINION_TIMEOUT_S", "90"))
+    timeout_s = float(os.environ.get("SECOND_OPINION_TIMEOUT_S", "45"))
     agent = os.environ.get("SECOND_OPINION_AGENT_NAME") or os.path.basename(shlex.split(cmd)[0])
     if args.dry_run:
         out, err = run_agent(cmd, SAMPLE_PROMPT, timeout_s)

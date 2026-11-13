@@ -170,3 +170,14 @@ async def test_enqueue_rings_the_bell(client, _env):
     ) as bell:
         await client.post("/second-opinion", headers=KEY, json=CASE)
     bell.assert_called_once()
+
+
+def test_worker_stops_on_the_kill_file_and_when_the_api_is_down(tmp_path):
+    w = _worker()
+    creds = tmp_path / "credentials"
+    creds.mkdir()
+    (tmp_path / w.STOP_FILE).write_text("")
+    assert w.work_once("http://127.0.0.1:9", "t", "true", "a", 5, creds) == "paused"
+    (tmp_path / w.STOP_FILE).unlink()
+    assert w.work_once("http://127.0.0.1:9", "t", "true", "a", 5, creds) == "unreachable"
+    w.drain("http://127.0.0.1:9", "t", "true", "a", 5, creds)  # returns instead of spinning
