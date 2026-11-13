@@ -15,6 +15,20 @@ documento diz o que fica em cada lugar e quando um aprendizado passa de um proje
 Regra de leitura: a camada de baixo pode **recusar** uma regra da casa (no manifesto, com
 motivo), nunca a do serviço.
 
+## Projetos de demanda e laboratórios (dono, 13/nov/2026)
+
+| Projeto | Papel | Conversa? |
+|---|---|---|
+| `bikeanjoall_2026` | **demanda real**: é onde a solução tem de funcionar primeiro | não conversa (regras da casa 1 a 4) |
+| `aiclaudia` | laboratório de conversa: mostra se a LLM local conversa bem | sim, recusa 1 a 4 |
+| `chinese_learning` | laboratório de tutor (`/edu`) | sim, recusa 1 a 4 |
+| `estudosmobi`, `webplace` | protótipo e ferramenta interna | não se aplica |
+
+Um treina o outro: o que o laboratório aprende de **forma** (clareza, tom, recusa) sobe
+para a casa pelo § 5; o que é conversa livre fica nele. Custo: conversa com a LLM local
+pode ser longa, com limite por sessão; crédito pago (agente maior, API de mercado) só pelas
+travas da segunda opinião ([26](./26-second-opinion.md)).
+
 ## 2. A pasta do projeto
 
 ```text
