@@ -84,3 +84,17 @@ Pausa sem mexer em nada: `touch local-only/DISABLE_SECOND_OPINION`.
 3. «`--workspace` numa pasta vazia limita o que você lê a essa pasta?»
 4. «Você roda pelo launchd, sem a janela aberta, com a sessão do usuário?»
 5. «Qual modelo responde um JSON curto com menos crédito, e como fixar no comando?»
+
+## 6. Em aberto: acesso a pastas no macOS
+
+O ai2tcs mora em `~/Documents`, pasta que o macOS protege: programa em segundo plano que lê
+ali dispara o aviso de acesso e, sem ninguém para clicar, trava. O Cursor não pergunta porque
+o aplicativo recebeu o acesso uma vez e o que ele abre herda. Saídas, a decidir pelo dono
+antes de ligar o launchd:
+
+- cópia do ai2tcs só para o worker fora de `~/Documents`;
+- acesso a Documentos dado uma vez a um executável só do worker (mais estreito que o
+  acesso total ao disco).
+
+Nenhuma janela de terminal abre: o worker roda pelo launchd e chama a Antigravity por
+processo, sem tela. Se o `agy` abrir o aplicativo, aparece no `--dry-run` feito à mão.
