@@ -65,7 +65,7 @@ flowchart TD
 
 ## 5. O Ciclo de Feedback e Dados de Treino Curados
 
-1. **Julgamento:** O professor classifica a hipótese local como `good`, `bad` ou `neutral` e sugere a resposta ideal (`suggested_reply`).
+1. **Julgamento:** O professor dá à hipótese local a nota da escala do painel (`stop`, `bad`, `good` ou `great`) e sugere a resposta ideal (`suggested_reply`).
 2. **Avaliação Humana:** As respostas são revisadas no painel do operador ou consolidadas via `POST /ratings` com `rating: "great"`.
 3. **Few-Shot Dinâmico:** As respostas aprovadas entram no prompt do `/ask` como exemplos (`policies.rated_examples`), fazendo com que o `gemma3:12b` local aprenda o padrão de atendimento e não erre mais em casos análogos.
 4. **Métrica de Sucesso:** A taxa de intervenção do professor para o mesmo `case_kind` cai semana a semana até tender a zero.

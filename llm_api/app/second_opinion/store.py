@@ -107,8 +107,8 @@ async def stats(project_id: str, days: int) -> list[dict[str, Any]]:
             """SELECT COALESCE(case_kind, '-') AS case_kind, date_trunc('week', created_at) AS week,
                       COUNT(*) FILTER (WHERE status = 'done')::int AS done,
                       COUNT(*) FILTER (WHERE status = 'failed')::int AS failed,
-                      COUNT(*) FILTER (WHERE response->>'local_answer_rating' = 'good')::int AS local_good,
-                      COUNT(*) FILTER (WHERE response->>'local_answer_rating' = 'bad')::int AS local_bad,
+                      COUNT(*) FILTER (WHERE response->>'local_answer_rating' IN ('good', 'great'))::int AS local_good,
+                      COUNT(*) FILTER (WHERE response->>'local_answer_rating' IN ('bad', 'stop'))::int AS local_bad,
                       COUNT(*) FILTER (WHERE response->>'local_answer_path' = 'wrong')::int AS path_wrong
                FROM "second_opinions"
                WHERE project_id = $1 AND created_at >= CURRENT_TIMESTAMP - ($2 * INTERVAL '1 day')

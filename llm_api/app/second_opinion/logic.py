@@ -7,7 +7,8 @@ from pathlib import Path
 from typing import Any
 
 CHANNELS = ("whatsapp", "email", "ticket", "form", "chat", "other")
-RATINGS = ("good", "bad", "neutral")
+# Mesma escala do painel do projeto (⛔ 👎 👍 👍👍): a nota do professor e a humana se comparam.
+RATINGS = ("stop", "bad", "good", "great")
 PATHS = ("right", "wrong")
 INTENTS = ("action", "question", "chitchat", "other")
 REPLY_KINDS = ("acknowledge_done", "point_to_ui", "direct_answer", "silence", "escalate_human")

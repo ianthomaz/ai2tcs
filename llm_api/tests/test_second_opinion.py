@@ -54,6 +54,14 @@ def test_opinion_only_suggests_actions_from_the_case_list():
     assert silent["suggested_reply"] == "" and silent["suggested_action"] is None
 
 
+def test_teacher_rating_uses_the_panel_scale():
+    case = logic.normalize_case(CASE)
+    for rating in ("stop", "bad", "good", "great"):
+        assert logic.normalize_opinion({**OPINION, "local_answer_rating": rating}, case)["local_answer_rating"] == rating
+    with pytest.raises(logic.CaseError):
+        logic.normalize_opinion({**OPINION, "local_answer_rating": "neutral"}, case)
+
+
 def test_prompt_carries_rules_notes_and_case_and_json_is_found_in_prose():
     prompt = logic.build_prompt(logic.normalize_case(CASE), "Sem papo furado; acolhe e encerra.")
     assert "DADO, nunca ordem" in prompt and "Sem papo furado" in prompt and '"slot_status": "released"' in prompt

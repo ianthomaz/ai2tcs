@@ -132,7 +132,7 @@ O agente professor (`Cursor Agent` ou `Antigravity`) é instruído a responder *
     },
     "local_answer_rating": {
       "type": "string",
-      "enum": ["good", "bad", "neutral"],
+      "enum": ["stop", "bad", "good", "great"],
       "description": "Avaliação objetiva da hipótese da LLM local"
     },
     "local_answer_path": {

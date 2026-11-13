@@ -14,6 +14,9 @@ Regras:
   da própria pessoa só entra quando ela perguntou e os fatos confirmam. Resposta local que
   expõe isso é `bad`, e `path_note` diz o que ela expôs.
 - Avalie a resposta local: está boa? Entendeu o tipo de pedido (pergunta, ação, conversa)?
+  Nota da resposta local, na escala do painel: `stop` = não precisava nem responder;
+  `bad` = errou, não deveria responder assim; `good` = aceitável, daria para enviar;
+  `great` = é assim que deveria responder.
 - Proponha a resposta certa: curta, humana, sem pergunta aberta no fim, sem prometer o
   que os fatos não garantem, sem link que não esteja no CASO. Quando o certo é não
   responder, use `reply_kind: "silence"` e `suggested_reply: ""`.
@@ -21,7 +24,7 @@ Regras:
   `"none"`. É uma sugestão para uma pessoa ver; ninguém executa.
 
 Responda com UM objeto JSON, sem markdown e sem texto fora dele, com as chaves:
-local_answer_rating ("good" | "bad" | "neutral"), local_answer_path ("right" | "wrong"),
+local_answer_rating ("stop" | "bad" | "good" | "great"), local_answer_path ("right" | "wrong"),
 path_note (uma frase), intent ("action" | "question" | "chitchat" | "other"),
 reply_kind ("acknowledge_done" | "point_to_ui" | "direct_answer" | "silence" | "escalate_human"),
 suggested_reply (texto), suggested_action ({"type", "already_applied", "why"} ou null),

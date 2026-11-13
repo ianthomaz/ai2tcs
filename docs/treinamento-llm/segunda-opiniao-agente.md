@@ -157,7 +157,7 @@ rigor de auth e sem coluna a mais.
 {
   "source_ref": "zap:log:123",
   "agent": "cursor | antigravity",
-  "local_answer_rating": "good | bad",
+  "local_answer_rating": "stop | bad | good | great",
   "local_answer_path": "right | wrong",
   "path_note": "era ação de liberar vaga, não consulta de inscrição",
   "intent": "action | question | other",

@@ -75,7 +75,7 @@ Caso fora das travas não é erro: `{"status": "skipped", "reason": "disabled" |
 
 | Campo | Valores |
 |---|---|
-| `local_answer_rating` | `good` · `bad` · `neutral` |
+| `local_answer_rating` | `stop` · `bad` · `good` · `great` (a escala do painel: ⛔ 👎 👍 👍👍) |
 | `local_answer_path` | `right` · `wrong` (entendeu o tipo de pedido?) |
 | `path_note` | uma frase |
 | `intent` | `action` · `question` · `chitchat` · `other` |
@@ -99,7 +99,7 @@ sempre, e só então a resposta pode virar exemplo aprovado.
 
 ## 6. `GET /second-opinion/stats?days=30`
 
-Por `case_kind` e semana: `done`, `failed`, `local_good`, `local_bad`, `path_wrong`. A medida
+Por `case_kind` e semana: `done`, `failed`, `local_good` (`good` + `great`), `local_bad` (`bad` + `stop`), `path_wrong`. A medida
 do treino é `local_bad` e `path_wrong` caírem no mesmo `case_kind`.
 
 ## 7. Consulta só leitura ao sistema do projeto
