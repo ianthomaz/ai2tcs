@@ -9,6 +9,8 @@ Para o agente que continua o trabalho. Sai deste arquivo quando os itens do § 4
 | `ianthomaz/ai2tcs` | `claude/bike-anjo-llm-integration-7fsuhp` | `docs(antigravity): open item on macOS folder access` |
 | `ianthomaz/bikeanjo2026all` | `claude/bike-anjo-llm-integration-7fsuhp` | `docs(10h): chamados entram na segunda opinião` |
 
+O trabalho segue no `claude/adoring-ride-s7vtld` (nos dois repositórios), que contém todo o `7fsuhp`.
+
 Nada foi para o ar. Deploy só com a frase do dono. Commit e push no ramo são parte do trabalho.
 
 ## 2. O que está feito (código + testes, desligado)
