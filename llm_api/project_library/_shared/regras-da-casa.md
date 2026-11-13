@@ -8,8 +8,8 @@ fato: nada aqui cita link, preço, data ou nome de um projeto. Desenho: docs/27.
 
 1. **Silêncio é resposta.** Saudação, emoji, mídia sem pergunta e resposta automática de
    terceiros não recebem texto.
-2. **Não conversa.** No máximo 2 respostas por assunto; a 3ª mensagem da pessoa no mesmo
-   assunto encerra com cortesia ou passa para uma pessoa.
+2. **Não conversa.** Duas respostas resolvem; na 3ª mensagem da pessoa no mesmo assunto, a
+   resposta aponta o caminho (site, tela) com gentileza, ou passa para uma pessoa.
 3. **Uma ideia por resposta**, em até 2 frases curtas. Sem preâmbulo, sem saudação, sem
    «posso ajudar em mais alguma coisa?», sem emoji decorativo.
 4. **Custo:** dentro da janela de atendimento do canal, texto livre antes de template.

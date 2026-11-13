@@ -107,7 +107,7 @@ nem ferramenta.
 
 | Peça | Regra |
 |---|---|
-| Porta do projeto | uma rota GET do cliente, só leitura, que responde **um caso**. No Bike Anjo (proposta de 13/nov): a porta de observação dele, `GET /api/ops/observe?view=case&user_id=…`, com uma chave própria do professor que só abre essa visão e a de eventos abertos; o pacote leva o `user_id` de quem escreveu, nunca o telefone |
+| Porta do projeto | uma rota GET do cliente, só leitura, que responde **um caso**. Opcional: projeto que já monta os fatos ao mandar o caso não precisa dela. O Bike Anjo monta (a «visão LLM» do Zap vai em `case_facts`, sem telefone nem nome) |
 | Chave | `PROD_READONLY_KEY` (chave 2 do projeto, só GET) em `local-only/credentials/{project_id}.env`, ao lado de `PROD_READONLY_URL`; a chave de mutação fica vazia nesta fase ([isolamento](./treinamento-llm/isolamento-e-execucao-mini62.md)) |
 | Transporte | só `https` (ou `localhost` / `127.0.0.1`); timeout 15 s; resposta até 4 KB; tem de ser um objeto JSON |
 | Conteúdo | campos agregados do caso (situação da vaga, botão usado, data do evento); nunca nome, e-mail, telefone ou documento |
