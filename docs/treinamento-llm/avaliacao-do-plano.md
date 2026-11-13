@@ -41,7 +41,7 @@ portão mostra a conta por tipo:
 | `unsorted` | fora do portão até alguém classificar | 5 |
 
 A classificação é uma primeira passada; quem conhece os casos revê em
-`llm_api/tests/eval/eval_questions.json`. A referência do portão (`--save-baseline`)
+`llm_api/project_library/bikeanjoall_2026/casos/eval_questions.json`. A referência do portão (`--save-baseline`)
 grava-se de novo depois do deploy.
 
 ## 4. O que o lado que pede já tem (Bike Anjo) e o plano não usa

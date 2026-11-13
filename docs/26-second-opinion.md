@@ -140,4 +140,4 @@ sistema (usuário, pasta, keychain): [agentes-seguros-mini62.md](./treinamento-l
 
 ---
 
-**Anterior:** [25-autonomia-mercado-e-estudos.md](./25-autonomia-mercado-e-estudos.md)
+**Anterior:** [25-autonomia-mercado-e-estudos.md](./25-autonomia-mercado-e-estudos.md) · **Próximo:** [27-projetos-e-aprendizado.md](./27-projetos-e-aprendizado.md)

@@ -25,6 +25,7 @@ Todo projeto que se conecta ao `ai2tcs` adota uma pasta padrão chamada **`LLM/`
 ```
 
 - **Onde fica o RAG:** Apenas a subpasta `rag/` entra no array `"sources"` do `ai2tcs`. Documentos de regras de atendimento e exemplos ficam em `diretrizes/` para não poluir nem confundir a busca semântica vetorial.
+- **Do lado do ai2tcs:** cada projeto instalado tem também `llm_api/project_library/{project_id}/` (manifesto, `diretrizes/`, casos de ouro em `casos/`), e as regras comuns ficam em `_shared/` ([27](./27-projetos-e-aprendizado.md)).
 - **Onde ficam os Logs e o Shadow:** Logs operacionais de shadow residem estritamente no banco de dados e nos servidores de produção. O repositório Git do projeto armazena apenas conhecimento, nunca logs operacionais.
 
 ---
@@ -499,7 +500,7 @@ Template **chat creative** (seed mínimo):
 }
 ```
 
-Eval de regressão (incl. anti-bleed off-topic): `python3 scripts/eval_rag.py --project aiclaudia` — ver `forbidden_keywords` em `tests/eval/eval_questions.json`.
+Eval de regressão (incl. anti-bleed off-topic): `python3 scripts/eval_rag.py --project aiclaudia` — ver `forbidden_keywords` em `llm_api/project_library/aiclaudia/casos/eval_questions.json`.
 
 ### `forbidden_terms` — anti-bleed por projeto (ago/2026)
 

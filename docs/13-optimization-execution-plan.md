@@ -141,7 +141,7 @@ Critério de pronto:
 
 ## Checklist operacional
 
-- [x] Criar baseline com 20–30 perguntas reais (curadoria manual do time) — feito: `tests/eval/eval_questions.json` (90 casos)
+- [x] Criar baseline com 20–30 perguntas reais (curadoria manual do time) — feito: `llm_api/project_library/{project_id}/casos/eval_questions.json` (90 casos)
 - [ ] Definir limite de latência p95 por rota crítica
 - [ x ] Ativar logs com `request_id` e `duration_ms`
 - [ x ] Adicionar flags no `.env.example`

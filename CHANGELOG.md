@@ -36,6 +36,14 @@ deploy ela ganha a data e começa outra vazia.
 
 ### Muda
 
+- **Uma pasta por projeto** ([docs/27](docs/27-projetos-e-aprendizado.md)): `llm_api/project_library/{project_id}/`
+  com manifesto, `diretrizes/` e `casos/eval_questions.json`; regras comuns em `_shared/regras-da-casa.md`.
+  Os casos de avaliação saíram de `tests/eval/eval_questions.json` para a pasta de cada projeto
+  (`eval_rag.py`, `eval_gate.py` e `import_eval_set.py` leem e gravam lá; `--dataset` aponta um arquivo só).
+  `create_project.py` cria a pasta no formato novo (`rag/`, `diretrizes/`, `casos/`). A postura do Bike Anjo
+  está em `project_library/bikeanjoall_2026/diretrizes/` (o seed lê; mesmo texto).
+- **Worker da segunda opinião:** arquivo `local-only/DISABLE_SECOND_OPINION` pausa no host; API fora do ar
+  para a drenagem; timeout padrão 45 s.
 - **`/health` sem chave** responde só `status` e `uptime_seconds`; com chave, também `checks`.
   **`/metrics`** exige o token do operador.
 - **Áudio de formato desconhecido é recusado** (400); MP3 reconhecido em todas as variantes de quadro.

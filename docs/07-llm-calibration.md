@@ -263,7 +263,7 @@ Flags enabled on mini62 after sprint:
 
 ### Eval pós-melhorias (2026-06-27)
 
-Suite: `python3 scripts/eval_rag.py` com `tests/eval/eval_questions.json`.
+Suite: `python3 scripts/eval_rag.py`, com os casos de cada projeto em `llm_api/project_library/{project_id}/casos/eval_questions.json` ([27](./27-projetos-e-aprendizado.md)).
 
 | Project | Question | Critério |
 |---------|----------|----------|

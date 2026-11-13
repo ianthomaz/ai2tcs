@@ -4,8 +4,8 @@ Merge rated examples into the eval dataset used by eval_rag.py.
 
 The eval set grows from real, already-rated traffic (shadow LLM exports), not from
 invented questions. This is the intake: point it at an export, it normalises the
-rows and merges them into tests/eval/eval_questions.json, keyed by
-(project_id, question) so re-importing the same export is a no-op.
+rows and merges them into each project's project_library/{project_id}/casos/eval_questions.json,
+keyed by (project_id, question) so re-importing the same export is a no-op.
 
 Usage:
   python scripts/import_eval_set.py --input export.jsonl
@@ -35,7 +35,16 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 LLM_ROOT = SCRIPT_DIR.parent
-DEFAULT_DATASET = LLM_ROOT / "tests" / "eval" / "eval_questions.json"
+LIBRARY_ROOT = LLM_ROOT / "project_library"
+
+
+def cases_path(project_id: str) -> Path:
+    """Same place scripts/eval_rag.py reads (docs/27)."""
+    return LIBRARY_ROOT / project_id / "casos" / "eval_questions.json"
+
+
+def _label(path: Path) -> str:
+    return str(path.relative_to(LLM_ROOT) if path.is_relative_to(LLM_ROOT) else path)
 
 # Same list as scripts/eval_rag.py BUCKETS (what «good» means for the case).
 BUCKETS = ("org_factual", "org_link", "user_system", "silence", "unsorted")
@@ -161,7 +170,7 @@ def merge_rows(existing: list[dict], incoming: list[dict]) -> tuple[list[dict], 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Merge rated examples into the eval dataset")
     parser.add_argument("--input", type=Path, required=True, help="JSON array or JSONL export")
-    parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
+    parser.add_argument("--dataset", type=Path, help="One file for every row instead of each project's casos/")
     parser.add_argument("--project", help="Import only rows of this project_id")
     parser.add_argument("--dry-run", action="store_true", help="Report what would change, write nothing")
     args = parser.parse_args()
@@ -202,27 +211,28 @@ def main() -> int:
         print("Nothing to import.", file=sys.stderr)
         return 1
 
-    existing = json.loads(args.dataset.read_text(encoding="utf-8")) if args.dataset.is_file() else []
-    merged, added, skipped = merge_rows(existing, incoming)
+    targets: dict[Path, list[dict]] = {}
+    for row in incoming:
+        path = args.dataset or cases_path(row["project_id"])
+        targets.setdefault(path, []).append(row)
 
-    by_project: dict[str, int] = {}
-    for row in merged:
-        by_project[row["project_id"]] = by_project.get(row["project_id"], 0) + 1
-
-    print(f"\n{added} added, {skipped} already present, {len(problems)} skipped as invalid")
-    print(f"Dataset would hold {len(merged)} rows" if args.dry_run else f"Dataset holds {len(merged)} rows")
-    for project, count in sorted(by_project.items()):
-        # docs/13 asks for 20-30 real questions per project as a usable baseline.
-        note = "" if count >= 20 else "  (below the 20 the baseline needs)"
-        print(f"  {project}: {count}{note}")
-
-    if args.dry_run:
-        print("\nDry run: nothing written.")
-        return 0
-
-    args.dataset.parent.mkdir(parents=True, exist_ok=True)
-    args.dataset.write_text(json.dumps(merged, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"\nWrote {args.dataset}")
+    print()
+    for path, rows in sorted(targets.items()):
+        existing = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
+        merged, added, skipped = merge_rows(existing, rows)
+        print(f"{_label(path)}: {added} added, {skipped} already present, {len(merged)} rows")
+        by_project: dict[str, int] = {}
+        for row in merged:
+            by_project[row["project_id"]] = by_project.get(row["project_id"], 0) + 1
+        for project, count in sorted(by_project.items()):
+            # docs/13 asks for 20-30 real questions per project as a usable baseline.
+            note = "" if count >= 20 else "  (below the 20 the baseline needs)"
+            print(f"  {project}: {count}{note}")
+        if not args.dry_run:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(merged, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"{len(problems)} skipped as invalid")
+    print("Dry run: nothing written." if args.dry_run else "Written.")
     return 0
 
 
