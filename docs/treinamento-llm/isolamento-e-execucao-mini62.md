@@ -55,7 +55,7 @@ flowchart TD
     DockerAPI -->|POST http://host.docker.internal:9191/notify| Bell["Receptor de Campainha no Mac (Porta 9191)"]
     Bell -->|Acorda| HostWorker["scripts/second_opinion_worker.py --listen"]
     HostWorker -->|Chave 2: GET do caso, sem dado pessoal| Creds["local-only/credentials/{project}.env"]
-    HostWorker -->|caso.md em pasta vazia, sem rede| Teacher["Professor (Antigravity / Cursor)"]
+    HostWorker -->|caso pela entrada padrão, pasta vazia, sem chave| Teacher["Professor (Antigravity)"]
     Teacher -->|JSON estruturado| HostWorker
     HostWorker -->|Devolve resposta validada| DockerAPI
     HostWorker -->|Espera parado, 0% CPU| Bell

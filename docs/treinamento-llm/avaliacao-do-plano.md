@@ -66,8 +66,8 @@ Consequências para o lado Bike Anjo, quando for a vez dele:
 
 ## 5. Ordem daqui em diante
 
-1. Deploy do ai2tcs; no mini62, `second_opinion_worker.py --dry-run` para achar o comando do
-   Cursor que responde sem tela e sem ferramenta (fase 0 do plano).
+1. Deploy do ai2tcs; no mini62, `second_opinion_worker.py --dry-run` e `--try` com a Antigravity
+   ([antigravity-no-mini62](./antigravity-no-mini62.md)), fase 0 do plano.
 2. Casos de prova (2 ou 3 do tipo AAJA9) enfileirados à mão com a chave do projeto.
 3. Lado Bike Anjo: pacote a partir do `reply-reader` e caixa da opinião no `/adm/shadow-llm`.
 4. Com um fim de semana medido (`GET /second-opinion/stats`): filtro do que não vale
@@ -75,7 +75,7 @@ Consequências para o lado Bike Anjo, quando for a vez dele:
 
 ## 6. Em aberto
 
-- Comando exato do Cursor sem tela e sem ferramentas: perguntas e prova em [cursor-cli-perguntas.md](./cursor-cli-perguntas.md).
+- Comando exato da Antigravity sem tela e sem ferramentas: perguntas e prova em [antigravity-no-mini62.md](./antigravity-no-mini62.md).
 - Antigravity na fila automática: quando tiver modo sem tela; até lá, auditoria de lote.
 - Exemplo aprovado quando professor e pessoa concordam, sem a pessoa digitar a resposta:
   decisão do dono depois do primeiro fim de semana medido.

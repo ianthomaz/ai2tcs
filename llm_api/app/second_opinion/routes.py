@@ -126,7 +126,7 @@ async def worker_claim(request: Request) -> Any:
         "project_id": row["project_id"],
         "source_ref": row["source_ref"],
         "subject_ref": (row["request"] or {}).get("subject_ref"),
-        "prompt": logic.build_prompt(row["request"], notes),
+        "prompt": logic.build_prompt(row["request"], notes, row["project_id"]),
     }
 
 

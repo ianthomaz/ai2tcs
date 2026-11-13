@@ -45,6 +45,9 @@ deploy ela ganha a data e começa outra vazia.
 - **Segunda opinião:** o caso aceita `subject_ref` (id da pessoa no projeto, nunca telefone), que vai
   só para a consulta do worker; resposta da consulta até 16 KB; o professor julga com o que consultou e
   não repete à pessoa.
+- **Professor = Antigravity** ([treinamento-llm/antigravity-no-mini62](docs/treinamento-llm/antigravity-no-mini62.md)):
+  o prompt traz as regras da casa e as diretrizes do projeto (`project_library/`); worker com `--try caso.json`
+  (um caso de arquivo, sem API), variáveis em `local-only/second_opinion_worker.env`, launchd de exemplo.
 - **Worker da segunda opinião:** arquivo `local-only/DISABLE_SECOND_OPINION` pausa no host; API fora do ar
   para a drenagem; timeout padrão 45 s.
 - **`/health` sem chave** responde só `status` e `uptime_seconds`; com chave, também `checks`.

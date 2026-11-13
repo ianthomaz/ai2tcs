@@ -14,16 +14,23 @@ verified facts. The agent only reads one file in an empty folder.
   SECOND_OPINION_AGENT_CMD     the agent command. Placeholders: {prompt_file} (the case, written
                                in an empty folder), {workdir} (that folder). Without placeholders
                                the prompt goes on stdin.
-                               Cursor: agent -p --mode ask --output-format text --trust
-                                 --workspace {workdir} "Leia {prompt_file} e responda só com o JSON pedido nele."
+                               Antigravity (stdin, empty workspace; never the ai2tcs folder, which
+                               holds local-only/credentials):
+                                 agy --mode headless --workspace {workdir} --system-prompt
+                                 "Responda só com o objeto JSON pedido no texto recebido."
   SECOND_OPINION_AGENT_NAME    label stored with the answer (default: first word of the command)
-  SECOND_OPINION_TIMEOUT_S     default 90
+  SECOND_OPINION_TIMEOUT_S     default 45
   SECOND_OPINION_CREDENTIALS_DIR  default ../local-only/credentials (one <project_id>.env per project)
   SECOND_OPINION_LISTEN_PORT   default 9191 (the bell)
+
+  Any of these may live in ../local-only/second_opinion_worker.env (KEY=value, outside Git);
+  what is already in the environment wins. launchd: launchd/com.itcs.second-opinion-worker.plist.example
 
   python scripts/second_opinion_worker.py --dry-run   # the agent answers without a screen?
   python scripts/second_opinion_worker.py --once      # one case and exit
   python scripts/second_opinion_worker.py --listen    # wait for the API's bell on 127.0.0.1:9191
+  python scripts/second_opinion_worker.py --try caso.json --project bikeanjoall_2026
+                                                      # one case from a file, no API: prompt, check, agent, answer checked
 """
 from __future__ import annotations
 
@@ -205,12 +212,61 @@ def listen(port: int, on_ring) -> None:
     HTTPServer(("127.0.0.1", port), Bell).serve_forever()
 
 
+def _logic():
+    """The API's pure rules (stdlib only), loaded from the repo: --try checks like the API does."""
+    import importlib.util
+
+    path = Path(__file__).resolve().parents[1] / "app" / "second_opinion" / "logic.py"
+    spec = importlib.util.spec_from_file_location("second_opinion_logic", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def try_case(path: Path, project_id: str, cmd: str, timeout_s: float, creds_dir: Path) -> tuple[dict | None, str | None]:
+    """One case from a JSON file, end to end on the host and without the API: the same prompt
+    the API builds, the read-only check, the agent, and its answer checked against the case."""
+    logic = _logic()
+    try:
+        case = logic.normalize_case(json.loads(path.read_text(encoding="utf-8")))
+    except (OSError, json.JSONDecodeError, logic.CaseError) as e:
+        return None, f"case_invalid: {e}"
+    prompt = logic.build_prompt(case, None, project_id)
+    facts, note = case_check(project_id, case["source_ref"], creds_dir, case.get("subject_ref"))
+    output, error = run_agent(cmd, with_verified_facts(prompt, facts, note), timeout_s)
+    if output is None:
+        return None, error
+    parsed = logic.extract_json(output)
+    if parsed is None:
+        return None, "agent_output_not_json"
+    try:
+        return logic.normalize_opinion(parsed, case), None
+    except logic.CaseError as e:
+        return None, f"answer_invalid: {e}"
+
+
+WORKER_ENV_FILE = Path(__file__).resolve().parents[2] / "local-only" / "second_opinion_worker.env"
+
+
+def load_env_file(path: Path) -> None:
+    """KEY=value lines into the environment, without overriding what is already set."""
+    if not path.is_file():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        key, sep, value = line.strip().partition("=")
+        if sep and key and not key.startswith("#"):
+            os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
 def main() -> int:
+    load_env_file(WORKER_ENV_FILE)
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     mode = ap.add_mutually_exclusive_group()
     mode.add_argument("--once", action="store_true")
     mode.add_argument("--dry-run", action="store_true")
     mode.add_argument("--listen", action="store_true")
+    mode.add_argument("--try", dest="try_file", type=Path, metavar="CASO.json")
+    ap.add_argument("--project", help="project_id for --try (its house rules, diretrizes and check)")
     args = ap.parse_args()
     cmd = os.environ.get("SECOND_OPINION_AGENT_CMD", "").strip()
     if not cmd:
@@ -218,6 +274,14 @@ def main() -> int:
         return 2
     timeout_s = float(os.environ.get("SECOND_OPINION_TIMEOUT_S", "45"))
     agent = os.environ.get("SECOND_OPINION_AGENT_NAME") or os.path.basename(shlex.split(cmd)[0])
+    creds_dir = Path(os.environ.get("SECOND_OPINION_CREDENTIALS_DIR") or Path(__file__).resolve().parents[2] / "local-only" / "credentials")
+    if args.try_file:
+        if not args.project:
+            print("--try precisa de --project", file=sys.stderr)
+            return 2
+        opinion, err = try_case(args.try_file, args.project, cmd, timeout_s, creds_dir)
+        print(json.dumps(opinion, ensure_ascii=False, indent=1) if opinion is not None else f"erro: {err}")
+        return 0 if opinion is not None else 1
     if args.dry_run:
         out, err = run_agent(cmd, SAMPLE_PROMPT, timeout_s)
         print(out if out is not None else f"erro: {err}")
@@ -227,7 +291,6 @@ def main() -> int:
         print("SECOND_OPINION_WORKER_TOKEN não definido", file=sys.stderr)
         return 2
     api = os.environ.get("SECOND_OPINION_API_URL", "http://127.0.0.1:28471").rstrip("/")
-    creds_dir = Path(os.environ.get("SECOND_OPINION_CREDENTIALS_DIR") or Path(__file__).resolve().parents[2] / "local-only" / "credentials")
     if args.listen:
         port = int(os.environ.get("SECOND_OPINION_LISTEN_PORT", "9191"))
         print(f"campainha em 127.0.0.1:{port}/notify", flush=True)

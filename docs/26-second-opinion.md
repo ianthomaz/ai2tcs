@@ -21,7 +21,7 @@ projeto; quem define é o projeto, no próprio pedido.
 O volume real é de **45 a 60 mensagens por semana** (cerca de 8 por dia). Ter um processo no Mac
 consultando o Docker continuamente em loop gastaria CPU e bateria à toa.
 
-A API roda no Docker; o agente (Cursor) roda no macOS e precisa da sessão logada.
+A API roda no Docker; o professor (Antigravity) roda no macOS e precisa da sessão logada.
 A arquitetura é **100% reativa (event-driven por toque de campainha)**:
 1. A API recebe o caso no `POST /second-opinion`, valida e grava na tabela `second_opinions`.
 2. A API dispara um ping leve para o host: `POST http://host.docker.internal:9191/notify`.
@@ -48,6 +48,7 @@ Caso fora das travas não é erro: `{"status": "skipped", "reason": "disabled" |
 ```json
 {
   "source_ref": "zap:log:4821",
+  "subject_ref": "ABCD2",
   "channel": "whatsapp",
   "case_kind": "campaign_reply",
   "incoming_text": "Vou precisar liberar a vaga. Larissa não vai conseguir comparecer",
@@ -124,21 +125,20 @@ trabalha só com o pacote.
 ## 8. Worker no mini62
 
 ```bash
-export SECOND_OPINION_WORKER_TOKEN=…        # o mesmo do .env da API
-export SECOND_OPINION_AGENT_CMD='agent -p --mode ask --output-format text --trust --workspace {workdir} "Leia {prompt_file} e responda só com o JSON pedido nele."'
-export CURSOR_CONFIG_DIR=~/.cursor-professor  # perfil restrito, separado do Cursor de uso diário
-python scripts/second_opinion_worker.py --dry-run   # prova: o agente responde sem tela?
-python scripts/second_opinion_worker.py --listen    # campainha em 127.0.0.1:9191 (launchd KeepAlive)
-python scripts/second_opinion_worker.py --once      # um caso, à mão
+# variáveis em local-only/second_opinion_worker.env (fora do Git)
+python3 scripts/second_opinion_worker.py --dry-run   # prova: o professor responde sem tela?
+python3 scripts/second_opinion_worker.py --try caso.json --project bikeanjoall_2026   # um caso de arquivo, sem API
+python3 scripts/second_opinion_worker.py --listen    # campainha em 127.0.0.1:9191 (launchd KeepAlive)
+python3 scripts/second_opinion_worker.py --once      # um caso da fila, à mão
 ```
 
 `{prompt_file}` e `{workdir}` o worker troca pelo arquivo do caso e pela pasta temporária; sem
 eles, o prompt vai pela entrada padrão. O agente recebe só `PATH`, `HOME`, `USER`, `LANG`,
-`TMPDIR`, `CURSOR_API_KEY` e `CURSOR_CONFIG_DIR`. Na API, `SECOND_OPINION_NOTIFY_URL=http://host.docker.internal:9191/notify`.
+`TMPDIR`, `CURSOR_API_KEY` e `CURSOR_CONFIG_DIR`; nunca chave de projeto. O prompt já traz as regras da casa e as
+diretrizes do projeto (`project_library/`, [27](./27-projetos-e-aprendizado.md)): o professor não abre pasta. Na API, `SECOND_OPINION_NOTIFY_URL=http://host.docker.internal:9191/notify`.
 
-O comando acima segue a documentação do Cursor CLI; o que ela não garante está em
-[cursor-cli-perguntas.md](./treinamento-llm/cursor-cli-perguntas.md) e confere-se no mini62 com
-`--dry-run`. O Antigravity entra pelo mesmo contrato quando tiver modo sem tela. Recorte de
+Comando da Antigravity, arquivos de credencial e ordem de subida:
+[antigravity-no-mini62.md](./treinamento-llm/antigravity-no-mini62.md). Recorte de
 sistema (usuário, pasta, keychain): [agentes-seguros-mini62.md](./treinamento-llm/agentes-seguros-mini62.md).
 
 ---

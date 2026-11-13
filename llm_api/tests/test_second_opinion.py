@@ -223,3 +223,37 @@ def test_worker_sends_subject_ref_to_the_read_only_check(tmp_path):
     srv.shutdown()
     assert facts == {"person": {"known": False}} and note is None
     assert "view=case&source_ref=zap%3Alog%3A7&subject_ref=ABCD2" in seen["path"]
+
+
+def test_try_runs_one_case_from_a_file_without_the_api(tmp_path):
+    w = _worker()
+    case = tmp_path / "caso.json"
+    case.write_text('{"source_ref": "t1", "channel": "whatsapp", "incoming_text": "oi", "allowed_actions": []}')
+    answer = (
+        '{"local_answer_rating": "good", "local_answer_path": "right", "intent": "chitchat",'
+        ' "reply_kind": "silence", "suggested_reply": "", "knowledge_gap": null}'
+    )
+    agent = tmp_path / "agent.sh"
+    agent.write_text(f"#!/bin/sh\ncat > {tmp_path}/prompt.txt\necho '{answer}'\n")
+    agent.chmod(0o755)
+    opinion, err = w.try_case(case, "bikeanjoall_2026", str(agent), 10, tmp_path)
+    assert err is None and opinion["reply_kind"] == "silence"
+    prompt = (tmp_path / "prompt.txt").read_text()
+    assert "Regras da casa" in prompt and "postura-ask.md" in prompt
+    bad = tmp_path / "bad.sh"
+    bad.write_text("#!/bin/sh\necho 'sem json'\n")
+    bad.chmod(0o755)
+    assert w.try_case(case, "bikeanjoall_2026", str(bad), 10, tmp_path) == (None, "agent_output_not_json")
+
+
+def test_worker_env_file_fills_only_what_is_missing(tmp_path, monkeypatch):
+    w = _worker()
+    f = tmp_path / "w.env"
+    f.write_text("# token\nSO_TEST_A=from_file\nSO_TEST_B='quoted'\n")
+    monkeypatch.setenv("SO_TEST_A", "from_env")
+    monkeypatch.delenv("SO_TEST_B", raising=False)
+    w.load_env_file(f)
+    import os
+
+    assert os.environ["SO_TEST_A"] == "from_env" and os.environ["SO_TEST_B"] == "quoted"
+    monkeypatch.delenv("SO_TEST_B")

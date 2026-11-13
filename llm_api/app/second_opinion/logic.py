@@ -19,6 +19,9 @@ _SLUG = re.compile(r"^[a-z][a-z0-9_]{1,63}$")
 _TEXT_MAX = 4000
 _FACTS_MAX_BYTES = 4000
 _PROMPT = Path(__file__).with_name("teacher_prompt.md")
+# The projects' folders (docs/27): house rules in _shared/, each project's diretrizes/.
+LIBRARY_ROOT = Path(__file__).resolve().parents[2] / "project_library"
+_GUIDANCE_MAX = 8000
 
 _EMAIL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
 _CPF = re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b")
@@ -104,9 +107,35 @@ def normalize_case(raw: Any) -> dict[str, Any]:
     }
 
 
-def build_prompt(case: dict[str, Any], teacher_notes: str | None = None) -> str:
-    """What the agent reads: the fixed rules, the project's notes (tone, limits) and the case."""
+def library_guidance(project_id: str | None, root: Path | None = None) -> str:
+    """House rules, the rules this project declines (its manifest) and its diretrizes/, as one
+    text for the teacher. The agent reads them here; it gets no folder on disk."""
+    base = root or LIBRARY_ROOT
+    parts: list[str] = []
+    house = base / "_shared" / "regras-da-casa.md"
+    if house.is_file():
+        parts.append(house.read_text(encoding="utf-8").strip())
+    folder = base / project_id if project_id and _SLUG.match(project_id) else None
+    if folder and folder.is_dir():
+        manifest = folder / "README.md"
+        if manifest.is_file():
+            text = manifest.read_text(encoding="utf-8")
+            mark = "## Regras da casa que este projeto não segue"
+            if mark in text:
+                parts.append(mark + text.split(mark, 1)[1].split("\n## ", 1)[0].rstrip())
+        for f in sorted((folder / "diretrizes").glob("*.md")):
+            parts.append(f"Diretriz do projeto ({f.name}):\n" + f.read_text(encoding="utf-8").strip())
+    out = "\n\n".join(p for p in parts if p)
+    return out[:_GUIDANCE_MAX]
+
+
+def build_prompt(case: dict[str, Any], teacher_notes: str | None = None, project_id: str | None = None) -> str:
+    """What the agent reads: the fixed rules, the house rules and the project's diretrizes
+    (project_library), the project's notes (tone, limits) and the case."""
     parts = [_PROMPT.read_text(encoding="utf-8").strip()]
+    guidance = library_guidance(project_id)
+    if guidance:
+        parts.append("REGRAS DA CASA E DIRETRIZES DO PROJETO (valem para julgar e para a resposta sugerida):\n" + guidance)
     if teacher_notes and teacher_notes.strip():
         parts.append("Notas do projeto (tom e limites):\n" + teacher_notes.strip()[:2000])
     # subject_ref is for the worker's read-only check, never for the teacher.
