@@ -36,6 +36,9 @@ deploy ela ganha a data e começa outra vazia.
 
 ### Muda
 
+- **Segunda opinião:** `local_answer_rating` usa a escala do painel do projeto: `stop` · `bad` ·
+  `good` · `great` (sai `neutral`). `/second-opinion/stats` soma `good` + `great` em `local_good` e
+  `bad` + `stop` em `local_bad`.
 - **Uma pasta por projeto** ([docs/27](docs/27-projetos-e-aprendizado.md)): `llm_api/project_library/{project_id}/`
   com manifesto, `diretrizes/` e `casos/eval_questions.json`; regras comuns em `_shared/regras-da-casa.md`.
   Os casos de avaliação saíram de `tests/eval/eval_questions.json` para a pasta de cada projeto

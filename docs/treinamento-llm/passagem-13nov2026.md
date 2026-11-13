@@ -81,18 +81,32 @@ A consulta `zapzap/lib/event-interest-lookup.js` **não entrega a situação rea
    (`registration_completeness_lookup`, `city_event_lookup`) que o Zap só registra e cala.
    Confirmar presença e liberar vaga não existem na lista.
 
-## 4b. Ensaio: leitura da pessoa (13/nov, no ramo, sem deploy)
+## 4b. Ensaio (13/nov, no ramo, sem deploy)
 
-Regra do dono: tudo isto é ensaio, 100% shadow. Nada muda a resposta do WhatsApp nem dos chamados,
-e nada escreve em dado de usuário.
+Regra do dono: tudo é ensaio, 100% shadow. Nada muda a resposta do WhatsApp nem dos chamados,
+e nada escreve em dado de usuário. Mapa de ponta a ponta: Bike Anjo 07b § shadow avançado.
 
-- Bike Anjo: `zapzap/lib/shadow-person-reading.js` parte da pessoa (conta pelo telefone, inscrições
-  em datas abertas, situação, posição na espera) e grava `person_reading` no shadow; a tela mostra
-  ação · o que o sistema encontrou · rascunho da resposta. Observer `zap-shadow` ganhou `actions` e
-  `personReadings`. Documento: 07b § Leitura da pessoa no ensaio.
-- A consulta live `event-interest-lookup.js` segue intocada (defeitos listados no § 4a).
-- Falta: textos do rascunho com o dono; chamados com a mesma leitura; Zap e chamados mandarem o
-  caso à fila `/second-opinion`.
+Feito:
+- Leitura da pessoa no shadow (`zapzap/lib/shadow-person-reading.js`): parte da pessoa, só lê;
+  rascunho de frase só para o pedido de inscrição.
+- O Zap manda o caso à fila (`zapzap/lib/second-opinion-case.js`): sem telefone, `user_id` em
+  `subject_ref`, lista de ações que o professor pode sugerir. Liga e desliga só no ai2tcs.
+- `/adm/shadow-llm`: uma resposta só (a da Antigravity quando ela opinou, senão a da LLM local) e o
+  bloco «Segunda opinião (Antigravity)» com a nota dela; a nota humana vale para o texto lido.
+- Nota do professor na escala do painel (`stop` · `bad` · `good` · `great`).
+- Pedido sobre a própria pessoa não vira exemplo no `/ratings` (nota do painel e resposta de
+  quem atende).
+- Observer `zap-shadow`: `actions`, `personReadings`, `secondOpinions` e `live_sent`.
+
+Leitura do Observer: das 30 hipóteses do `/ask` em 14 dias, só 2 tinham texto. A confiança
+(`answer_confidence`) só existe quando há texto; não é defeito.
+
+Falta:
+- Chamados: o pacote (`channel: ticket`) e a opinião no modal de `/admin/suporte` (C13 no 16).
+- Pergunta manual («O que você responderia?»): esperar a opinião e mostrar tudo junto.
+- Consulta live `event-interest-lookup.js`: defeitos do § 4a; corrigir muda o que a pessoa recebe,
+  então espera os textos do dono.
+- mini62 com o dono: `--dry-run` da Antigravity, pasta Documentos, três casos pelo `--try`.
 
 ## 5. Como o dono quer as mensagens
 
