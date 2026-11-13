@@ -62,6 +62,18 @@ Nada foi para o ar. Deploy só com a frase do dono. Commit e push no ramo são p
 5. Bateria do Bike Anjo: `participation-status-write-guard.test.ts` falha por `lib/event-virtual-rsvp.ts`
    (veio da main; não é deste trabalho).
 
+## 4a. Leitura do Observer (13/nov, produção, últimos 14 dias)
+
+- Shadow: 76 hipóteses; 46 por `event_interest_lookup` (consulta ao banco com frase fixa,
+  `zapzap/lib/event-interest-lookup.js`), 30 por `/ask`. Só 1 com `send_gate` e 0 com
+  `answer_confidence`: o portão de envio quase não tem sinal para decidir.
+- Notas humanas: 12 linhas, 10 sem nota (9 descartadas), 1 «bad», 1 «stop». Nenhuma resposta saiu.
+- Stage: shadow vazio.
+- O Observer não mostra o conteúdo da sugestão de ação (tipo, `outcome`, situação): a `zap-shadow`
+  só conta. Falta uma visão agregada, sem telefone nem texto.
+- A frase fixa de «encontrei» é uma só para qualquer situação («não confirmamos a inscrição
+  ainda»), mesmo para quem está confirmado ou na lista de espera.
+
 ## 5. Como o dono quer as mensagens
 
 pt-BR, numeradas de 1 a N em cada mensagem, um assunto = um número com a pergunta dentro (saídas
