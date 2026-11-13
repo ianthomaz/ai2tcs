@@ -23,7 +23,7 @@ O objetivo da segunda opinião com o Cursor não é apenas lidar com confirmaç�
 Para garantir que o Cursor atue **estritamente como consultor pedagógico/avaliador** e jamais tente rodar comandos, mutações de banco ou disparar mensagens:
 
 1. **Chamada em Modo CLI Fechado (`headless / non-interactive`):**
-   - O `ai2tcs` invoca o `cursor-agent` via script shell isolado (`second-opinion.sh`), passando o histórico como texto e exigindo de volta exclusivamente um schema JSON.
+   - O worker no host (`second_opinion_worker.py`) acorda sob demanda via campainha, passando o histórico na entrada padrão (`stdin`) e exigindo de volta exclusivamente um schema JSON.
 2. **Sem Ferramentas / Sem Permissões de Escrita (Zero-Tool Sandbox):**
    - O agente professor não recebe MCPs de escrita, credenciais de banco de dados ou APIs de envio de WhatsApp. Ele não tem "braços" para executar nenhuma ação no sistema.
 3. **Proposta de Ação é puramente descritiva (`suggested_action`):**
@@ -45,9 +45,9 @@ flowchart LR
 
     subgraph RepoAI2TCS["Repositório ai2tcs (llm_api no mini62)"]
         A1["Endpoint da Fila\n(/second-opinion ou /ask)"] --> A2["Teto Diário (30/dia) + Kill Switch"]
-        A2 --> A3["Chama second-opinion.sh\n(cursor-agent one-shot)"]
+        A2 --> A3["Acorda worker no host via campainha\n(cursor-agent one-shot)"]
         A3 --> A4["Devolve JSON estruturado:\n- suggested_reply\n- suggested_action"]
-        A4 --> A5["Alimenta /ratings\n(Treina LLM local)"]
+        A4 --> A5["Alimenta fila de second_opinions\n(Aguarda validação humana)"]
     end
 
     W5 --> A1
@@ -59,8 +59,8 @@ flowchart LR
 | **1. Detecção da Campanha & Debounce de ~2 min** | **Bike Anjo** | `zapzap/lib/router-user-context.js`, `zapzap/flows.js` |
 | **2. Montagem dos Fatos do Caso (`case_facts`)** | **Bike Anjo** | `zapzap/lib/llm-remote.js` (adiciona contexto do usuário e status da conta) |
 | **3. Janela de Proposta de Ação (`suggested_action`)** | **Ambos** | BA consome e exibe no painel shadow; `ai2tcs` padroniza o JSON de saída |
-| **4. Fila, Teto Diário (30/dia) e Kill Switch** | **ai2tcs** | `llm_api/app/api/` e `llm_api/scripts/second-opinion.sh` |
-| **5. Execução do Professor (`cursor-agent`)** | **ai2tcs** | `llm_api/scripts/second-opinion.sh` no `mini62` (somente texto) |
+| **4. Fila, Teto Diário (20/dia) e Kill Switch** | **ai2tcs** | `llm_api/app/second_opinion/` (banco de dados) |
+| **5. Execução do Professor (`cursor-agent`)** | **ai2tcs** | `llm_api/scripts/second_opinion_worker.py` no `mini62` |
 | **6. Aprendizado Contínuo (`/ratings` $\rightarrow$ RAG)** | **ai2tcs** | `llm_api/app/ratings/` e `data/bikeanjoall_2026/` |
 
 ---
@@ -68,11 +68,11 @@ flowchart LR
 ## 4. Os 10 Primeiros Passos de Código (Roteiro Ordenado)
 
 ### Fase 1: Fundação no `ai2tcs` (O Motor do Professor)
-- [ ] **Passo 1 (`ai2tcs`):** Criar o script wrapper `llm_api/scripts/second-opinion.sh` com teto diário de **30 chamadas**, timeout de 45s, verificação de kill-switch e invocação do `cursor-agent` em modo puramente textual/read-only.
-- [ ] **Passo 2 (`ai2tcs`):** Criar a rota `POST /second-opinion` em `llm_api/app/api/second_opinion.py` recebendo o schema `SecondOpinionPayload` e invocando o wrapper de forma controlada.
-- [ ] **Passo 3 (`ai2tcs`):** Conectar o retorno da segunda opinião diretamente à tabela de `answer_ratings` (`POST /ratings`), salvando automaticamente a nota e o `suggested_reply` como exemplo para o projeto `bikeanjoall_2026`.
-- [ ] **Passo 4 (`ai2tcs`):** Adicionar testes unitários em `llm_api/tests/test_second_opinion.py` mockando o script e garantindo que o teto diário e o kill switch bloqueiam conforme esperado.
-- [ ] **Passo 5 (`ai2tcs`):** Espelhar o schema `second-opinion.schema.json` na pasta de contratos (`llm_api/contracts/bikeanjo/`).
+- [ ] **Passo 1 (`ai2tcs`):** Manter o receptor leve de campainha no host (`http://127.0.0.1:9191/notify`) que acorda o `second_opinion_worker.py --once` sob demanda exata, mantendo zero consumo de CPU em repouso (compatível com volume de 45-60 msgs/semana).
+- [ ] **Passo 2 (`ai2tcs`):** Ativar a rota genérica `POST /second-opinion` no Docker enfileirando o caso com redação de dados sensíveis e disparando a notificação HTTP para `host.docker.internal:9191`.
+- [ ] **Passo 3 (`ai2tcs`):** Conectar a avaliação do professor para visualização, mantendo a regra de que aprovação para treino (`/ratings`) depende do aval humano ou de concordância estabelecida.
+- [ ] **Passo 4 (`ai2tcs`):** Validar a suíte de testes unitários (`test_second_opinion.py`) garantindo trava de cota diária (20/dia) e os dois interruptores.
+- [ ] **Passo 5 (`ai2tcs`):** Espelhar o schema canônico `second-opinion.schema.json` na pasta de contratos (`llm_api/contracts/bikeanjo/`).
 
 ### Fase 2: Adaptação no Bike Anjo (O Cliente que Alimenta o Shadow)
 - [ ] **Passo 6 (Bike Anjo):** No `zapzap/lib/router-user-context.js`, adicionar a coleta dos fatos da interação no contexto rico (`slot_status`, `button_already_used`, `identity_ok_for_slot`).

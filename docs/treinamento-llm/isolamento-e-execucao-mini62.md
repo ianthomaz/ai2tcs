@@ -8,105 +8,64 @@ Este documento estabelece as **travas estruturais**, o **wrapper de execução**
 
 | Camada | Regra de Isolamento | Mecanismo de Garantia no mini62 |
 |---|---|---|
-| **1. Permissão de Sistema (OS)** | Usuário sem chave de deploy, sem acesso a `.env` com tokens de produção e sem acesso à Meta Cloud API | Execução sob usuário isolado ou script wrapper com `umask` e paths explícitos de somente leitura |
-| **2. Somente Leitura (Zero Mutação)** | O agente professor nunca executa SQL livre, nunca comita código e nunca dispara HTTP mutável | O pacote de entrada já contém os fatos pré-computados (`case_facts`); o wrapper proíbe shell interativo |
-| **3. Cota Diária e Budget** | Teto rígido de consultas para não estourar créditos do plano | Contador diário atômico em arquivo (`data/second_opinion_daily.count`); teto padrão: **20 consultas/dia** |
-| **4. Timeout e Process Kill** | Impedir que chamadas penduradas prendam a CPU/RAM do Mac mini | Timeout estrito de **45 segundos** com `timeout` / `kill -9` do subprocesso |
+| **1. Permissão de Sistema (OS)** | Usuário sem chave de deploy, sem acesso a `.env` com tokens de produção e sem acesso à Meta Cloud API | Execução sob usuário isolado e credenciais restritas em `local-only/credentials/` |
+| **2. Somente Leitura (Zero Mutação)** | O agente professor nunca executa SQL livre, nunca comita código e nunca dispara HTTP mutável | O pacote de entrada já contém os fatos pré-computados (`case_facts`); se precisar auditar produção, usa estritamente a chave somente-leitura |
+| **3. Cota Diária e Budget** | Teto rígido de consultas para não estourar créditos do plano | Contador diário no banco de dados (`SECOND_OPINION_DAILY_LIMIT`); padrão: **20 consultas/dia** |
+| **4. Timeout e Process Kill** | Impedir que chamadas penduradas prendam a CPU/RAM do Mac mini | Timeout estrito de **45 segundos** gerenciado pelo `second_opinion_worker.py` no host |
 | **5. Kill Switch Imediato** | Desligar a fila instantaneamente sem necessidade de redeploy | Flag booleana no banco/config ou existência do arquivo `local-only/DISABLE_SECOND_OPINION` |
-| **6. Não-Reutilização de Pontes Largas** | O `zapCursorAgent` (porta `:28472`) é estritamente proibido neste fluxo | Comunicação one-shot via stdin/stdout, sem sessões contínuas e sem canais de chat abertos |
+| **6. Não-Reutilização de Pontes Largas** | O `zapCursorAgent` (porta `:28472`) é estritamente proibido neste fluxo | Comunicação reativa via campainha local (`:9191`) e one-shot via stdin/stdout |
 
 ---
 
-## 2. Especificação do Wrapper `second-opinion.sh`
+## 2. Modelo de Credenciais em 3 Degraus (Por Projeto)
 
-> **Em vigor:** o worker é `llm_api/scripts/second_opinion_worker.py` ([26 § 7](../26-second-opinion.md#7-worker-no-mini62));
-> o teto e o interruptor ficam na API. O script abaixo é o rascunho original.
+Para permitir supervisão inteligente sem risco de segurança, **nunca usamos uma única chave de duas mãos**. Cada projeto cliente que se conecta ao `ai2tcs` adota o modelo de 3 chaves independentes, armazenadas em `local-only/credentials/{project_id}.env`:
 
-O script `second-opinion.sh` deve viver em `llm_api/scripts/second-opinion.sh` e operar como o único ponto de contato com o `cursor-agent`:
-
-```bash
-#!/usr/bin/env bash
-# second-opinion.sh — Chamada segura e one-shot ao cursor-agent no mini62
-set -euo pipefail
-
-PAYLOAD_FILE="${1:-}"
-DAILY_LIMIT="${SECOND_OPINION_DAILY_LIMIT:-20}"
-COUNT_FILE="$(cd "$(dirname "$0")/../data" && pwd)/second_opinion_daily.count"
-TODAY="$(date +%Y-%m-%d)"
-KILL_SWITCH="$(cd "$(dirname "$0")/../../local-only" && pwd)/DISABLE_SECOND_OPINION"
-
-# 1. Kill Switch
-if [[ -f "$KILL_SWITCH" ]]; then
-  echo '{"error": "second_opinion_disabled_by_kill_switch"}' >&2
-  exit 4
-fi
-
-# 2. Validação de entrada
-if [[ -z "$PAYLOAD_FILE" || ! -f "$PAYLOAD_FILE" ]]; then
-  echo '{"error": "payload_file_missing"}' >&2
-  exit 2
-fi
-
-# 3. Verificação e incremento de cota diária
-mkdir -p "$(dirname "$COUNT_FILE")"
-LAST_DATE=""
-CURRENT_COUNT=0
-if [[ -f "$COUNT_FILE" ]]; then
-  read -r LAST_DATE CURRENT_COUNT < "$COUNT_FILE" || true
-fi
-
-if [[ "$LAST_DATE" != "$TODAY" ]]; then
-  CURRENT_COUNT=0
-fi
-
-if (( CURRENT_COUNT >= DAILY_LIMIT )); then
-  echo '{"error": "daily_limit_reached", "limit": '$DAILY_LIMIT'}' >&2
-  exit 3
-fi
-
-# 4. Execução protegida (One-Shot com timeout de 45s)
-PROMPT_TEMPLATE="Você é um avaliador pedagógico e professor para modelos de linguagem.
-Analise o pacote JSON fornecido e retorne ESTRITAMENTE o JSON conforme o schema SecondOpinionResponse.
-NÃO use markdown, NÃO adicione explicações fora do JSON.
-Pacote de entrada:
-$(cat "$PAYLOAD_FILE")"
-
-# Executa cursor-agent em modo prompt único e captura saída
-RESPONSE=$(timeout 45s cursor-agent --print --prompt "$PROMPT_TEMPLATE" 2>/dev/null || true)
-
-if [[ -z "$RESPONSE" ]]; then
-  echo '{"error": "agent_timeout_or_empty_response"}' >&2
-  exit 5
-fi
-
-# Incrementa contador diário
-echo "$TODAY $((CURRENT_COUNT + 1))" > "$COUNT_FILE"
-
-# Devolve resposta ao chamador
-echo "$RESPONSE"
+```text
+local-only/credentials/
+├── bikeanjoall_2026.env
+├── chinese_learning.env
+└── 0mm_tasks.env
 ```
 
+| Chave | Nome | Quem usa | Alçada / Permissão |
+|---|---|---|---|
+| **Chave 1** | `LLM_API_KEY` | O bot/cliente do projeto | Bate no `POST /ask`, `POST /router`, `POST /second-opinion`. Só consome inteligência. |
+| **Chave 2** | `PROD_READONLY_KEY` | O Supervisor (Antigravity/Cursor) no `ai2tcs` | Bate na rota de auditoria do projeto (ex: `GET /api/internal/supervisor/case-check`). **Estritamente leitura (`GET`)**. |
+| **Chave 3** | `PROD_MUTATION_KEY` | Agente Autônomo (MCP Futuro) | Executa ações cirúrgicas em produção (ex: liberar vaga). **Desativada/Vazia na fase de aprendizado**. |
+
 ---
 
-## 3. O Ciclo de Feedback Pedagógico (`/ratings` $\rightarrow$ LLM Local)
+## 3. Dataset Histórico no Repositório (Zero Dependência de Produção)
 
-A segunda opinião não é um substituto da LLM: é um **gerador de dados de treino de altíssima qualidade**.
+Para evitar consultar produção a todo momento durante o aprendizado:
+1. **Não gravamos logs brutos operacionais no Git:** Logs brutos de shadow ficam no banco de dados em produção.
+2. **Curadoria de "Casos de Ouro" (`Golden Dataset`):** Casos reais emblemáticos do shadow são anonimizados e salvos em `data/aprendizados/{project_id}/casos-shadow.json`.
+3. **Treinamento e Eval Offline:** Os casos curados permitem testar e avaliar a LLM local no `mini62` centenas de vezes sem custo e sem incomodar a produção.
+
+---
+
+## 4. Arquitetura do Worker Reativo no Host (`second_opinion_worker.py`)
+
+A API roda no Docker e enfileira o caso. Em seguida, dá um toque de campainha via HTTP no host:
 
 ```mermaid
 flowchart TD
-    Inbound["Mensagem de Confirmação/Liberação"] --> Debounce["Janela de Debounce (~2 min)"]
-    Debounce --> Facts["Backend monta case_facts\n(slot_status, button_used)"]
-    Facts --> LocalLLM["LLM Local (ai2tcs :28471)\nGera hipótese no shadow"]
-    Facts --> Queue["Fila /second-opinion\n(Teto 20/dia)"]
-    Queue --> Wrapper["second-opinion.sh\n(cursor-agent no mini62)"]
-    LocalLLM --> Review["Painel Shadow / Avaliador"]
-    Wrapper --> Review
-    Review -->|"Se aprovado"| Ratings["POST /ratings (rating: great)"]
-    Ratings --> Examples["data/bikeanjoall_2026/approved_examples\n(Few-Shot Dinâmico)"]
-    Examples -->|"Próximas inferências"| LocalLLM
+    DockerAPI["Docker ai2tcs (POST /second-opinion)"] -->|Grava caso| DB[(Tabela second_opinions)]
+    DockerAPI -->|POST http://host.docker.internal:9191/notify| Bell["Receptor de Campainha no Mac (Porta 9191)"]
+    Bell -->|Acorda| HostWorker["scripts/second_opinion_worker.py --once"]
+    HostWorker -->|Lê credencial Chave 2 se precisar| Creds["local-only/credentials/{project}.env"]
+    HostWorker -->|Executa com prompt via stdin| Teacher["Professor (Antigravity / Cursor)"]
+    Teacher -->|JSON estruturado| HostWorker
+    HostWorker -->|Devolve resposta validada| DockerAPI
+    HostWorker -->|Hiberna com 0% CPU| Bell
 ```
 
+---
+
+## 5. O Ciclo de Feedback e Dados de Treino Curados
+
 1. **Julgamento:** O professor classifica a hipótese local como `good` ou `bad` e sugere a resposta ideal (`suggested_reply`).
-2. **Ingestão no Banco:** Quando uma resposta do professor é consolidada ou revisada pelo operador, ela é enviada para `POST /ratings` com `rating: "great"`.
-3. **Few-Shot Dinâmico:** As respostas marcadas como `great` alimentam o retrieval de exemplos aprovados (`retrieval_query_with_history` e `rated_examples`), fazendo com que o `gemma3:12b` local aprenda o padrão e não erre mais em casos análogos.
-4. **Métrica de Sucesso:** A taxa de intervenção do professor para o mesmo `intent` cai semana a semana até tender a zero.
+2. **Avaliação Humana:** As respostas são revisadas no painel do operador ou consolidadas via `POST /ratings` com `rating: "great"`.
+3. **Few-Shot Dinâmico:** As respostas aprovadas alimentam o retrieval de exemplos aprovados (`retrieval_query_with_history` e `rated_examples`), fazendo com que o `gemma3:12b` local aprenda o padrão de atendimento e não erre mais em casos análogos.
+4. **Métrica de Sucesso:** A taxa de intervenção do professor para o mesmo `case_kind` cai semana a semana até tender a zero.

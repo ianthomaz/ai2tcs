@@ -16,8 +16,8 @@ em flag.
 
 | # | Ponto do plano | Problema | Como ficou |
 |---|---|---|---|
-| 1 | Rota da API chama `second-opinion.sh` | A API roda no Docker; o agente está no macOS e precisa da sessão logada | A API só enfileira; um **worker no host** busca o caso e devolve a saída ([26](../26-second-opinion.md)) |
-| 2 | Wrapper em shell | Contador em arquivo sem trava; texto da pessoa em argumento (visível em `ps`); `timeout` não existe no macOS; resposta não validada | Worker em Python: prompt na entrada padrão, pasta vazia, ambiente mínimo, tempo máximo; teto contado no banco dentro da transação; a API valida a resposta |
+| 1 | Rota da API chama `second-opinion.sh` | A API roda no Docker; o agente está no macOS e precisa da sessão logada | A API enfileira o caso no banco e avisa o host via **webhook local de campainha** (`http://host.docker.internal:9191/notify`). O host acorda sob demanda, executa 1 caso com o Cursor e volta a dormir ([26](../26-second-opinion.md)). |
+| 2 | Worker em loop infinito no host | Volume real é baixo (45 a 60 msgs/semana; ~8/dia). Polling contínuo gasta CPU e bateria sem necessidade | Modelo reativo por toque de campainha: o processo no Mac fica em repouso absoluto (0% CPU) e só acorda exatamente quando chega mensagem |
 | 3 | Contrato preso ao caso da vaga (`slot_status`, `release_slot`, `campaign_kind` em lista fixa) | Outro projeto ou canal não cabe | `case_facts` e `context` são do projeto; `allowed_actions` é a lista fechada **do pedido**; `channel` e `case_kind` identificam canal e tipo; `reply_kind` genérico (`point_to_ui` no lugar de `point_to_buttons`) |
 | 4 | Resposta do professor vira exemplo `great` sozinha (passo 3 do roteiro) | A LLM aprenderia com resposta que ninguém conferiu | A opinião fica em `second_opinions`; só a nota de uma pessoa vai a `/ratings` |
 | 5 | «O Cursor consulta o banco / vê o estado real» (fases § 3) | Contradiz o resto da pasta | Vale a regra da pasta: o professor não usa ferramenta; fato fora do pacote vai em `missing` |

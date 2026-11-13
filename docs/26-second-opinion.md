@@ -16,13 +16,18 @@ projeto; quem define é o projeto, no próprio pedido.
 | Tabela | `second_opinions` (migration `20261112120000_second_opinions`) |
 | Testes | `tests/test_second_opinion.py` |
 
-## 1. Por que fila + worker
+## 1. Por que fila + campainha no host
 
-A API roda no Docker; o agente (Cursor) roda no macOS e precisa da sessão logada. A API
-só **guarda o caso**; o worker do host **busca** um caso por vez, roda o agente com o prompt
-na entrada padrão (pasta vazia, ambiente mínimo, tempo máximo) e devolve a saída. Quem valida
-a resposta é a API. O worker fala só com as duas rotas dele, com um token que não serve
-para mais nada.
+O volume real é de **45 a 60 mensagens por semana** (cerca de 8 por dia). Ter um processo no Mac
+consultando o Docker continuamente em loop gastaria CPU e bateria à toa.
+
+A API roda no Docker; o agente (Cursor) roda no macOS e precisa da sessão logada.
+A arquitetura é **100% reativa (event-driven por toque de campainha)**:
+1. A API recebe o caso no `POST /second-opinion`, valida e grava na tabela `second_opinions`.
+2. A API dispara um ping leve para o host: `POST http://host.docker.internal:9191/notify`.
+3. Um receptor ultraleve no macOS acorda o worker (`scripts/second_opinion_worker.py --once`),
+   que processa exatamente 1 caso isolado com o prompt na entrada padrão (pasta vazia, timeout de 45s),
+   devolve a resposta e volta a hibernar com **0% de CPU**.
 
 ## 2. Três travas
 

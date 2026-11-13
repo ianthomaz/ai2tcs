@@ -13,7 +13,7 @@ espelho Bike Anjo `docs/contracts/ai2tcs/`).
 | [fases-e-cotas-fins-de-semana.md](./fases-e-cotas-fins-de-semana.md) | Funil por fins de semana (30 → 20 → 10/dia), papéis (Cursor na prod vs Antigravity no código) e filtro de perguntas bestas |
 | [roteiro-10-passos-implementacao.md](./roteiro-10-passos-implementacao.md) | Fronteiras exatas (Bike Anjo vs ai2tcs), tom sem papo furado, proposta de ação e roteiro conciso dos 10 primeiros passos |
 | [contrato-segunda-opiniao.md](./contrato-segunda-opiniao.md) | Schemas JSON formais (Payload e Response) e exemplos canônicos (caso AAJA9 com botão usado vs sem botão) |
-| [isolamento-e-execucao-mini62.md](./isolamento-e-execucao-mini62.md) | Travas estruturais no mini62, script wrapper `second-opinion.sh`, cotas/kill-switch e ciclo de feedback para `/ratings` |
+| [isolamento-e-execucao-mini62.md](./isolamento-e-execucao-mini62.md) | Travas estruturais no mini62, worker do host (`second_opinion_worker.py`), cotas no banco e modelo reativo via campainha |
 | [higiene-eval-ask.md](./higiene-eval-ask.md) | Buckets A/B/C/D do `/ask`, o que o 5/85 mistura, ordem de flags, o que não fazer |
 | [agentes-seguros-mini62.md](./agentes-seguros-mini62.md) | Como rodar Cursor e Antigravity com recorte duro; o que **não** reutilizar (`zapCursorAgent`); Gemini como fallback depois |
 | [avaliacao-do-plano.md](./avaliacao-do-plano.md) | Leitura do plano contra o código: o que mudar (fila no banco + worker no host, professor não aprova exemplo sozinho) e ordem no ai2tcs |

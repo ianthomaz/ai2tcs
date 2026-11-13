@@ -1,6 +1,31 @@
-# 08 — Configuração por projeto (`config_json`)
+# 08 — Configuração por projeto (`config_json`) e Padrão da Pasta `LLM/`
 
-Exemplos de `config_json` por tipo de uso.
+Exemplos de `config_json` por tipo de uso e a convenção padrão de diretórios para projetos integrados.
+
+---
+
+## 0. Convenção Padrão da Pasta `LLM/` nos Projetos Clientes
+
+Todo projeto que se conecta ao `ai2tcs` adota uma pasta padrão chamada **`LLM/`** na sua raiz:
+
+```text
+{RepositorioDoProjeto}/
+└── LLM/
+    ├── README.md           <-- Manifesto da inteligência do projeto (missão, escopo e limites)
+    │
+    ├── rag/                <-- CORPUS VETORIAL: única pasta lida no POST /ingest
+    │   ├── institucional.md
+    │   ├── regras-negocio.md
+    │   └── faqs.md
+    │
+    └── diretrizes/         <-- REGRAS DE ATENDIMENTO: lidas por supervisores/system prompt
+        ├── tom-de-voz.md
+        ├── limites-e-proibicoes.md
+        └── exemplos-aprovados.json
+```
+
+- **Onde fica o RAG:** Apenas a subpasta `rag/` entra no array `"sources"` do `ai2tcs`. Documentos de regras de atendimento e exemplos ficam em `diretrizes/` para não poluir nem confundir a busca semântica vetorial.
+- **Onde ficam os Logs e o Shadow:** Logs operacionais de shadow residem estritamente no banco de dados e nos servidores de produção. O repositório Git do projeto armazena apenas conhecimento, nunca logs operacionais.
 
 ---
 
@@ -26,8 +51,7 @@ Exemplos de `config_json` por tipo de uso.
   "project_id": "bikeanjoall_2026",
   "name": "Bike Anjo",
   "sources": [
-    "/caminho/para/bikeanjo/bibliotecaConteudoLLM",
-    "/caminho/para/bikeanjo/mapaFluxosLLM"
+    "/Users/ianthomaz/Documents/projects/BikeAnjo_Sistema2026/LLM/rag"
   ],
   "config_json": {
     "chunking": {

@@ -15,7 +15,7 @@ Fase atual: **só consulta**. Sem Meta, sem liberar vaga, sem bridge de chat.
 
 ## Cursor (caminho da fila automática)
 
-1. One-shot por caso: wrapper `second-opinion.sh <pacote.json>` → JSON ou exit ≠ 0.
+1. One-shot por caso: `second_opinion_worker.py` roda isolado com prompt via stdin → JSON validado pela API.
 2. Sem sessão de chat, sem `:28472`, sem WhatsApp.
 3. Clone **só leitura** + usuário OS sem deploy/Meta/escrita no repo de trabalho.
 4. Modo ask / sem auto-run (ou allowlist mínima de leitura); timeout; kill.

@@ -10,7 +10,7 @@ Contrato canônico entre o canal de atendimento (`zapzap`/`sistemaBA`), a fila d
 |---|---|
 | Escopo | Fase 0 e 1: **Estritamente Leitura / Consulta** (sem execução de mutação no banco e sem envio ativo de WhatsApp) |
 | Arquivo de schema | `second-opinion.schema.json` |
-| Wrapper de chamada | `second-opinion.sh` (executado no `mini62`) |
+| Worker do host | `llm_api/scripts/second_opinion_worker.py` (executado no `mini62` via campainha) |
 | Consumo | Treinamento da LLM local via `/ratings` e exemplos aprovados |
 
 ---

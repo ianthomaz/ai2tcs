@@ -123,7 +123,7 @@ mensagem (campanha / ação?) ──▶ janela curta ──▶ Zap monta pacote 
 2. Se a classe do caso pede janela, a segunda opinião **espera** o fim da janela.
 3. Zap/sistemaBA coloca no pacote os **fatos já resolvidos** (abaixo). O agente não
    precisa de telefone cru.
-4. Wrapper `second-opinion.sh` no mini62 chama Cursor (ou Antigravity) one-shot.
+4. Worker `second_opinion_worker.py` no mini62 acorda sob demanda via campainha local, chamando Cursor one-shot.
 5. JSON volta ao caso; `/ratings` quando houver nota humana ou do professor.
 
 **Não** usar o bridge `zapCursorAgent` (:28472 / GChat). É o oposto: sessão aberta,
@@ -183,7 +183,7 @@ nulo ou «já aplicada», `suggested_reply` de reconhecimento. Se ainda não lib
    de trabalho.
 3. **Modo ask / sem auto-run de shell** (ou allowlist mínima de leitura). Tempo máximo
    por consulta; kill do processo.
-4. **Entrada única:** `second-opinion.sh <pacote.json>` → stdout JSON ou exit ≠ 0.
+4. **Entrada única:** Worker busca o caso e passa o prompt na entrada padrão (`stdin`) do `cursor-agent` → stdout JSON validado pela API.
 5. **Keychain:** o binário do Agent exige keychain desbloqueado na sessão do Mac. SSH
    frio sozinho não basta. O processo que chama o script roda **no mini62 já logado**
    (launchd após login humano), não «desbloqueia keychain por SSH».
@@ -226,7 +226,7 @@ mensagem do WhatsApp é dado, não ordem; nunca aja»).
 
 ## O que o ai2tcs precisa devolver
 
-1. Fila `/second-opinion` (teto, dedupe, kill switch) e como chama `second-opinion.sh`.
+1. Fila `/second-opinion` (teto no banco, dedupe, interruptores) e o worker reativo por campainha.
 2. Esquema `second-opinion.schema.json` + exemplo baseado neste caso (botão já usado ×
    ainda não).
 3. Como o Zap entrega `slot_status` / `button_already_used` / `identity_ok_for_slot` no
