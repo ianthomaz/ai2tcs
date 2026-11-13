@@ -42,6 +42,9 @@ deploy ela ganha a data e começa outra vazia.
   (`eval_rag.py`, `eval_gate.py` e `import_eval_set.py` leem e gravam lá; `--dataset` aponta um arquivo só).
   `create_project.py` cria a pasta no formato novo (`rag/`, `diretrizes/`, `casos/`). A postura do Bike Anjo
   está em `project_library/bikeanjoall_2026/diretrizes/` (o seed lê; mesmo texto).
+- **Segunda opinião:** o caso aceita `subject_ref` (id da pessoa no projeto, nunca telefone), que vai
+  só para a consulta do worker; resposta da consulta até 16 KB; o professor julga com o que consultou e
+  não repete à pessoa.
 - **Worker da segunda opinião:** arquivo `local-only/DISABLE_SECOND_OPINION` pausa no host; API fora do ar
   para a drenagem; timeout padrão 45 s.
 - **`/health` sem chave** responde só `status` e `uptime_seconds`; com chave, também `checks`.

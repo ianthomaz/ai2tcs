@@ -13,6 +13,8 @@ INTENTS = ("action", "question", "chitchat", "other")
 REPLY_KINDS = ("acknowledge_done", "point_to_ui", "direct_answer", "silence", "escalate_human")
 
 _SOURCE_REF = re.compile(r"^[A-Za-z0-9:._-]{1,120}$")
+# Who wrote, as the project knows them (Bike Anjo: user_id). Never a phone or e-mail.
+_SUBJECT_REF = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 _SLUG = re.compile(r"^[a-z][a-z0-9_]{1,63}$")
 _TEXT_MAX = 4000
 _FACTS_MAX_BYTES = 4000
@@ -76,8 +78,12 @@ def normalize_case(raw: Any) -> dict[str, Any]:
     history = raw.get("history") or []
     if not isinstance(history, list):
         raise CaseError("history: lista")
+    subject = raw.get("subject_ref")
+    if subject is not None and (not isinstance(subject, str) or not _SUBJECT_REF.match(subject) or subject.isdigit()):
+        raise CaseError("subject_ref: o id da pessoa no projeto, até 64 caracteres de [A-Za-z0-9_-]; nunca telefone")
     return {
         "source_ref": ref,
+        "subject_ref": subject,
         "channel": channel,
         "case_kind": kind,
         "incoming_text": incoming,
@@ -103,7 +109,9 @@ def build_prompt(case: dict[str, Any], teacher_notes: str | None = None) -> str:
     parts = [_PROMPT.read_text(encoding="utf-8").strip()]
     if teacher_notes and teacher_notes.strip():
         parts.append("Notas do projeto (tom e limites):\n" + teacher_notes.strip()[:2000])
-    parts.append("CASO:\n" + json.dumps(case, ensure_ascii=False, indent=1))
+    # subject_ref is for the worker's read-only check, never for the teacher.
+    shown = {k: v for k, v in case.items() if k != "subject_ref"}
+    parts.append("CASO:\n" + json.dumps(shown, ensure_ascii=False, indent=1))
     return "\n\n".join(parts)
 
 

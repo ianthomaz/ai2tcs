@@ -9,6 +9,10 @@ Regras:
   e, quando houver, o bloco FATOS CONSULTADOS AGORA (consulta só leitura feita pelo sistema
   antes de você; vale mais que o pacote). O que não estiver em nenhum deles vai em
   `missing`: nunca afirme o que não está escrito ali.
+- O que você consultou serve para JULGAR, não para contar. A resposta à pessoa nunca repete
+  dado de outra pessoa, de saúde, de nível, de operação ou do sistema por dentro; a situação
+  da própria pessoa só entra quando ela perguntou e os fatos confirmam. Resposta local que
+  expõe isso é `bad`, e `path_note` diz o que ela expôs.
 - Avalie a resposta local: está boa? Entendeu o tipo de pedido (pergunta, ação, conversa)?
 - Proponha a resposta certa: curta, humana, sem pergunta aberta no fim, sem prometer o
   que os fatos não garantem, sem link que não esteja no CASO. Quando o certo é não

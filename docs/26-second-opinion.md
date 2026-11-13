@@ -60,6 +60,8 @@ Caso fora das travas não é erro: `{"status": "skipped", "reason": "disabled" |
 ```
 
 - `source_ref` identifica o caso no cliente; mandar de novo devolve o que já existe (`exists`).
+- `subject_ref` (opcional): o id da pessoa no projeto (no Bike Anjo, o `user_id`), nunca telefone
+  nem e-mail. Vai só para a consulta do worker (§ 7); o professor não o vê.
 - `case_kind`: nome do tipo de caso no projeto (slug). É por ele que a conta do § 6 agrupa.
 - `case_facts`, `context`: objetos do projeto (até 4 KB cada). O professor só sabe o que está aí.
 - `allowed_actions`: lista fechada do projeto. O professor só pode sugerir uma delas (ou nenhuma).
@@ -107,12 +109,13 @@ nem ferramenta.
 
 | Peça | Regra |
 |---|---|
-| Porta do projeto | uma rota GET do cliente, só leitura, que responde **um caso**. Opcional: projeto que já monta os fatos ao mandar o caso não precisa dela. O Bike Anjo monta (a «visão LLM» do Zap vai em `case_facts`, sem telefone nem nome) |
+| Porta do projeto | uma rota GET do cliente, só leitura, que responde **um caso**. O worker manda `source_ref` e `subject_ref`. No Bike Anjo é a visão LLM, `GET /api/llm/view?view=case` (pessoa, inscrições antigas e abertas, eventos abertos da cidade), com chave própria de leitura; a escrita, quando vier, é outra chave na mesma porta |
 | Chave | `PROD_READONLY_KEY` (chave 2 do projeto, só GET) em `local-only/credentials/{project_id}.env`, ao lado de `PROD_READONLY_URL`; a chave de mutação fica vazia nesta fase ([isolamento](./treinamento-llm/isolamento-e-execucao-mini62.md)) |
-| Transporte | só `https` (ou `localhost` / `127.0.0.1`); timeout 15 s; resposta até 4 KB; tem de ser um objeto JSON |
+| Transporte | só `https` (ou `localhost` / `127.0.0.1`); timeout 15 s; resposta até 16 KB; tem de ser um objeto JSON |
 | Conteúdo | campos agregados do caso (situação da vaga, botão usado, data do evento); nunca nome, e-mail, telefone ou documento |
 | Higiene | o worker troca e-mail, CPF e número com cara de telefone por `[contato]` / `[documento]` antes de juntar ao prompt |
 | No prompt | bloco «FATOS CONSULTADOS AGORA»; vale mais que o pacote quando discordam. Consulta que falha vira nota no prompt e o fato vai para `missing` |
+| Treino | o professor consulta para **julgar**; a resposta à pessoa não repete o que ele viu (outra pessoa, saúde, operação). Resposta local que expõe isso é `bad` (`teacher_prompt.md`) |
 | Registro | a opinião guarda `case_check: "ok"` quando a consulta respondeu |
 
 Projeto sem arquivo de credenciais ou sem `PROD_READONLY_URL` não consulta: o professor

@@ -47,7 +47,7 @@ PROMPT_NAME = "caso.md"
 _EMAIL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
 _CPF = re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b")
 _PHONE = re.compile(r"(?<!\d)(?:\+?\d[\s().-]?){10,13}(?!\d)")
-_CHECK_MAX_BYTES = 4000
+_CHECK_MAX_BYTES = 16000
 
 
 def redact(text: str) -> str:
@@ -92,11 +92,12 @@ def read_credentials(project_id: str, folder: Path) -> dict[str, str]:
     return out
 
 
-def case_check(project_id: str, source_ref: str, folder: Path) -> tuple[dict | None, str | None]:
+def case_check(project_id: str, source_ref: str, folder: Path, subject_ref: str | None = None) -> tuple[dict | None, str | None]:
     """Read-only check of the case in the project's own system (GET, key 2).
 
     Needs PROD_READONLY_URL and PROD_READONLY_KEY in the project's credentials file. The
-    answer goes to the prompt as verified facts, without contact data, at most 4 KB.
+    answer goes to the prompt as verified facts, without contact data, at most 16 KB.
+    Sends `source_ref` and, when the case has it, `subject_ref` (the person's id in the project).
     (None, None) when the project has no check.
     """
     creds = read_credentials(project_id, folder)
@@ -105,7 +106,10 @@ def case_check(project_id: str, source_ref: str, folder: Path) -> tuple[dict | N
         return None, None
     if not url.startswith("https://") and not url.startswith("http://127.0.0.1") and not url.startswith("http://localhost"):
         return None, "case_check_refused: url must be https"
-    q = urllib.parse.urlencode({"source_ref": source_ref})
+    params = {"source_ref": source_ref}
+    if subject_ref:
+        params["subject_ref"] = subject_ref
+    q = urllib.parse.urlencode(params)
     req = urllib.request.Request(f"{url}{'&' if '?' in url else '?'}{q}", method="GET", headers={"Authorization": f"Bearer {key}"})
     try:
         with urllib.request.urlopen(req, timeout=15) as r:
@@ -158,7 +162,7 @@ def work_once(api: str, token: str, cmd: str, agent: str, timeout_s: float, cred
         return "empty"
     if status != 200 or not case:
         return "unauthorized" if status in (401, 403, 404) else "unreachable"
-    facts, note = case_check(case.get("project_id") or "", case.get("source_ref") or "", creds_dir)
+    facts, note = case_check(case.get("project_id") or "", case.get("source_ref") or "", creds_dir, case.get("subject_ref"))
     output, error = run_agent(cmd, with_verified_facts(case["prompt"], facts, note), timeout_s)
     body = {"agent": agent, "output": output} if output is not None else {"agent": agent, "error": error}
     if facts is not None:

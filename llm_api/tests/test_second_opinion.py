@@ -181,3 +181,45 @@ def test_worker_stops_on_the_kill_file_and_when_the_api_is_down(tmp_path):
     (tmp_path / w.STOP_FILE).unlink()
     assert w.work_once("http://127.0.0.1:9", "t", "true", "a", 5, creds) == "unreachable"
     w.drain("http://127.0.0.1:9", "t", "true", "a", 5, creds)  # returns instead of spinning
+
+
+def test_subject_ref_reaches_the_worker_but_never_the_teacher():
+    case = logic.normalize_case({
+        "source_ref": "zap:log:7", "channel": "whatsapp", "incoming_text": "tenho vaga?",
+        "subject_ref": "ABCD2",
+    })
+    assert case["subject_ref"] == "ABCD2"
+    assert "ABCD2" not in logic.build_prompt(case)
+    for bad in ("11999998888", "a@b.com", "x" * 65):
+        with pytest.raises(logic.CaseError):
+            logic.normalize_case({"source_ref": "r", "channel": "whatsapp", "incoming_text": "oi", "subject_ref": bad})
+
+
+def test_worker_sends_subject_ref_to_the_read_only_check(tmp_path):
+    import http.server
+    import threading
+
+    w = _worker()
+    seen = {}
+
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            seen["path"] = self.path
+            body = b'{"person": {"known": false}}'
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *a):
+            pass
+
+    srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    (tmp_path / "proj_z.env").write_text(
+        f"PROD_READONLY_URL=http://127.0.0.1:{srv.server_port}/api/llm/view?view=case\nPROD_READONLY_KEY=k\n"
+    )
+    facts, note = w.case_check("proj_z", "zap:log:7", tmp_path, "ABCD2")
+    srv.shutdown()
+    assert facts == {"person": {"known": False}} and note is None
+    assert "view=case&source_ref=zap%3Alog%3A7&subject_ref=ABCD2" in seen["path"]
