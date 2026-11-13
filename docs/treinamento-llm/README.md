@@ -16,6 +16,7 @@ espelho Bike Anjo `docs/contracts/ai2tcs/`).
 | [isolamento-e-execucao-mini62.md](./isolamento-e-execucao-mini62.md) | Travas estruturais no mini62, worker do host (`second_opinion_worker.py`), cotas no banco e modelo reativo via campainha |
 | [higiene-eval-ask.md](./higiene-eval-ask.md) | Buckets A/B/C/D do `/ask`, o que o 5/85 mistura, ordem de flags, o que não fazer |
 | [agentes-seguros-mini62.md](./agentes-seguros-mini62.md) | Como rodar Cursor e Antigravity com recorte duro; o que **não** reutilizar (`zapCursorAgent`); Gemini como fallback depois |
+| [cursor-cli-perguntas.md](./cursor-cli-perguntas.md) | Cursor CLI sem tela no mini62: o que a documentação garante, perfil restrito (`CURSOR_CONFIG_DIR`), perguntas para o próprio Cursor e prova |
 | [avaliacao-do-plano.md](./avaliacao-do-plano.md) | Leitura do plano contra o código: o que mudar (fila no banco + worker no host, professor não aprova exemplo sozinho) e ordem no ai2tcs |
 
 ## Já existe noutros docs do ai2tcs (não duplicar)

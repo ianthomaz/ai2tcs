@@ -20,7 +20,7 @@ em flag.
 | 2 | Worker em loop infinito no host | Volume real é baixo (45 a 60 msgs/semana; ~8/dia). Polling contínuo gasta CPU e bateria sem necessidade | Modelo reativo por toque de campainha: o processo no Mac fica em repouso absoluto (0% CPU) e só acorda exatamente quando chega mensagem |
 | 3 | Contrato preso ao caso da vaga (`slot_status`, `release_slot`, `campaign_kind` em lista fixa) | Outro projeto ou canal não cabe | `case_facts` e `context` são do projeto; `allowed_actions` é a lista fechada **do pedido**; `channel` e `case_kind` identificam canal e tipo; `reply_kind` genérico (`point_to_ui` no lugar de `point_to_buttons`) |
 | 4 | Resposta do professor vira exemplo `great` sozinha (passo 3 do roteiro) | A LLM aprenderia com resposta que ninguém conferiu | A opinião fica em `second_opinions`; só a nota de uma pessoa vai a `/ratings` |
-| 5 | «O Cursor consulta o banco / vê o estado real» (fases § 3) | Contradiz o resto da pasta | Vale a regra da pasta: o professor não usa ferramenta; fato fora do pacote vai em `missing` |
+| 5 | «O Cursor consulta o banco / vê o estado real» (fases § 3) | Contradiz o resto da pasta | O professor não usa ferramenta. O **worker** consulta o caso numa porta só leitura do projeto (chave 2, sem dado pessoal) e junta ao prompt ([26 § 7](../26-second-opinion.md#7-consulta-só-leitura-ao-sistema-do-projeto)); o resto vai em `missing` |
 | 6 | Teto 20 em uns documentos, 30 em outros | — | Um valor: `SECOND_OPINION_DAILY_LIMIT` (20), todos os projetos juntos; o fim de semana sobe por configuração |
 | 7 | Texto da pessoa vai cru ao modelo de mercado | E-mail e telefone escritos na mensagem saem da máquina | O serviço troca e-mail, CPF e número com cara de telefone por `[contato]` / `[documento]` antes de guardar |
 | 8 | Tom («acolhe e encerra, sem papo furado») espalhado em prompts | — | Regras gerais no prompt fixo do professor; o tom do projeto em `config_json.second_opinion.teacher_notes` |
@@ -75,7 +75,7 @@ Consequências para o lado Bike Anjo, quando for a vez dele:
 
 ## 6. Em aberto
 
-- Comando exato do Cursor sem tela e sem ferramentas: só se confere no mini62.
+- Comando exato do Cursor sem tela e sem ferramentas: perguntas e prova em [cursor-cli-perguntas.md](./cursor-cli-perguntas.md).
 - Antigravity na fila automática: quando tiver modo sem tela; até lá, auditoria de lote.
 - Exemplo aprovado quando professor e pessoa concordam, sem a pessoa digitar a resposta:
   decisão do dono depois do primeiro fim de semana medido.

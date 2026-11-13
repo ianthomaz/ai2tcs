@@ -93,7 +93,7 @@ async def test_enqueue_needs_both_switches_and_respects_the_limit(client, _env):
 async def test_worker_routes_hide_without_the_token_and_validate_the_answer(client, _env):
     assert (await client.post("/second-opinion/worker/claim", headers=KEY)).status_code == 404
     assert (await client.post("/second-opinion/worker/claim")).status_code == 404
-    row = {"id": 7, "project_id": "webplacecc", "request": logic.normalize_case(CASE)}
+    row = {"id": 7, "project_id": "webplacecc", "source_ref": "zap:log:42", "request": logic.normalize_case(CASE)}
     with patch("app.second_opinion.store.claim", AsyncMock(return_value=row)):
         r = await client.post("/second-opinion/worker/claim", headers=WORKER)
         assert r.json()["id"] == 7 and "CASO:" in r.json()["prompt"] and "curto" in r.json()["prompt"]
@@ -124,3 +124,49 @@ def test_worker_runs_the_agent_with_the_prompt_on_stdin_only():
     assert out == "CASO" and err is None
     assert w.run_agent(f"{sys.executable} -c \"import time; time.sleep(5)\"", "x", 0.5) == (None, "agent_timeout_0s")
     assert w.run_agent("comando-que-nao-existe-xyz", "x", 5)[1].startswith("agent_not_runnable")
+
+
+def test_worker_prompt_goes_in_a_file_when_the_command_asks_for_it(tmp_path):
+    w = _worker()
+    cmd = f"{sys.executable} -c \"import sys,pathlib; print(pathlib.Path(sys.argv[1]).read_text().upper())\" {{prompt_file}}"
+    out, err = w.run_agent(cmd, "caso secreto", 20)
+    assert out == "CASO SECRETO" and err is None
+
+
+def test_worker_case_check_is_read_only_and_redacted(tmp_path):
+    import http.server
+    import threading
+
+    w = _worker()
+    seen = {}
+
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):  # noqa: N802
+            seen["path"], seen["auth"] = self.path, self.headers.get("Authorization")
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b'{"slot_status": "released", "contact": "ana@x.org"}')
+
+        def log_message(self, *_):
+            pass
+
+    srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    (tmp_path / "proj_x.env").write_text(f"PROD_READONLY_URL=http://127.0.0.1:{srv.server_port}/case\nPROD_READONLY_KEY=k2\nPROD_MUTATION_KEY=never\n")
+    facts, note = w.case_check("proj_x", "zap:log:1", tmp_path)
+    srv.shutdown()
+    assert note is None and facts == {"slot_status": "released", "contact": "[contato]"}
+    assert seen["auth"] == "Bearer k2" and "source_ref=zap%3Alog%3A1" in seen["path"]
+    assert w.case_check("sem_arquivo", "x", tmp_path) == (None, None)
+    (tmp_path / "proj_y.env").write_text("PROD_READONLY_URL=http://exemplo.org/case\nPROD_READONLY_KEY=k\n")
+    assert w.case_check("proj_y", "x", tmp_path)[1].startswith("case_check_refused")
+    assert "FATOS CONSULTADOS" in w.with_verified_facts("p", facts, None)
+
+
+@pytest.mark.asyncio
+async def test_enqueue_rings_the_bell(client, _env):
+    with patch("app.second_opinion.store.enqueue", AsyncMock(return_value=("queued", {}))), patch(
+        "app.second_opinion.routes.ring_the_bell"
+    ) as bell:
+        await client.post("/second-opinion", headers=KEY, json=CASE)
+    bell.assert_called_once()

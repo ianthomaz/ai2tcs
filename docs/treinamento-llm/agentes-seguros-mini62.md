@@ -15,7 +15,9 @@ Fase atual: **só consulta**. Sem Meta, sem liberar vaga, sem bridge de chat.
 
 ## Cursor (caminho da fila automática)
 
-1. One-shot por caso: `second_opinion_worker.py` roda isolado com prompt via stdin → JSON validado pela API.
+1. One-shot por caso: `second_opinion_worker.py` grava o prompt em `caso.md` numa pasta temporária
+   vazia e chama o agente nela → JSON validado pela API. Comando, perfil restrito e o que perguntar
+   ao próprio Cursor: [cursor-cli-perguntas.md](./cursor-cli-perguntas.md).
 2. Sem sessão de chat, sem `:28472`, sem WhatsApp.
 3. Clone **só leitura** + usuário OS sem deploy/Meta/escrita no repo de trabalho.
 4. Modo ask / sem auto-run (ou allowlist mínima de leitura); timeout; kill.
@@ -47,8 +49,9 @@ Bridge GChat → Cursor com sessão contínua. Porta larga. Segunda opinião do 
 
 `GET /api/ops/observe` ([24](../24-ops-observe.md)) não devolve «esta pessoa liberou a
 vaga». Na fase 1 o Zap/sistemaBA coloca no pacote `slot_status`,
-`button_already_used`, `identity_ok_for_slot`. Porta estreita de estado do caso só se
-o pacote não bastar — nunca SQL livre.
+`button_already_used`, `identity_ok_for_slot`. O estado de agora vem da porta estreita do
+projeto, que o **worker** chama com a chave só leitura ([26 § 7](../26-second-opinion.md#7-consulta-só-leitura-ao-sistema-do-projeto));
+o agente não consulta nada e nunca roda SQL livre.
 
 ## Horizonte
 

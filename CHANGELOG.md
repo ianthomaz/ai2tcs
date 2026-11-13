@@ -11,7 +11,8 @@ deploy ela ganha a data e começa outra vazia.
 
 1. Antes do `git pull` no mini62: `git status`; arquivo mexido no servidor → `git stash`.
 2. Migration nova `20261112120000_second_opinions` (entra ao subir o container). `SECOND_OPINION_WORKER_TOKEN`
-   no `.env` só quando for ligar o worker. A referência do portão (`--save-baseline`) muda de sentido com
+   no `.env` só quando for ligar o worker; `SECOND_OPINION_NOTIFY_URL=http://host.docker.internal:9191/notify`
+   quando o worker estiver em `--listen`. A referência do portão (`--save-baseline`) muda de sentido com
    os tipos de caso: gravar de novo.
    Demais: Variáveis novas opcionais (vazias = desligado): `DOC_EXTRACT_FALLBACK_PROVIDER`,
    `DOC_EXTRACT_FALLBACK_MODEL` e a chave do provedor escolhido.
@@ -22,7 +23,9 @@ deploy ela ganha a data e começa outra vazia.
 - **`/second-opinion`** ([docs/26](docs/26-second-opinion.md)): fila genérica (qualquer projeto e
   canal) em que um agente maior avalia a resposta da LLM local. Só leitura. Desligada até
   `SECOND_OPINION_ENABLED=true` **e** `config_json.second_opinion.enabled` no projeto; teto
-  `SECOND_OPINION_DAILY_LIMIT` (20). Worker do host: `scripts/second_opinion_worker.py`.
+  `SECOND_OPINION_DAILY_LIMIT` (20). Worker do host: `scripts/second_opinion_worker.py`
+  (`--listen` atende a campainha que a API toca ao enfileirar; prompt em arquivo na pasta
+  temporária; consulta só leitura do caso no sistema do projeto, com a chave 2 e sem dado pessoal).
 - **Avaliação por tipo de caso:** cada caso de `eval_questions.json` pode ter `bucket`
   (`org_factual` · `org_link` · `user_system` · `silence` · `unsorted`); silêncio certo conta
   como acerto, e o portão mostra a conta por tipo. Os 85 casos do Bike Anjo estão classificados.
