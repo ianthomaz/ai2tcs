@@ -81,6 +81,19 @@ A consulta `zapzap/lib/event-interest-lookup.js` **não entrega a situação rea
    (`registration_completeness_lookup`, `city_event_lookup`) que o Zap só registra e cala.
    Confirmar presença e liberar vaga não existem na lista.
 
+## 4b. Ensaio: leitura da pessoa (13/nov, no ramo, sem deploy)
+
+Regra do dono: tudo isto é ensaio, 100% shadow. Nada muda a resposta do WhatsApp nem dos chamados,
+e nada escreve em dado de usuário.
+
+- Bike Anjo: `zapzap/lib/shadow-person-reading.js` parte da pessoa (conta pelo telefone, inscrições
+  em datas abertas, situação, posição na espera) e grava `person_reading` no shadow; a tela mostra
+  ação · o que o sistema encontrou · rascunho da resposta. Observer `zap-shadow` ganhou `actions` e
+  `personReadings`. Documento: 07b § Leitura da pessoa no ensaio.
+- A consulta live `event-interest-lookup.js` segue intocada (defeitos listados no § 4a).
+- Falta: textos do rascunho com o dono; chamados com a mesma leitura; Zap e chamados mandarem o
+  caso à fila `/second-opinion`.
+
 ## 5. Como o dono quer as mensagens
 
 pt-BR, numeradas de 1 a N em cada mensagem, um assunto = um número com a pergunta dentro (saídas
