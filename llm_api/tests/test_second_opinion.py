@@ -274,14 +274,37 @@ def test_worker_gives_the_agent_the_subject_only_through_its_environment():
     assert w.run_agent(cmd, "caso", 20) == ("-", None)
 
 
-def test_runner_keeps_one_teacher_conversation_per_person(tmp_path, monkeypatch):
+def _load_antigravity_runner(tmp_path, monkeypatch):
     import importlib.util
+
     spec = importlib.util.spec_from_file_location(
         "antigravity_agent_runner", Path(__file__).resolve().parents[1] / "scripts" / "antigravity_agent_runner.py"
     )
     r = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(r)
     monkeypatch.setattr(r, "STATE_FILE", tmp_path / "state.json")
+    return r
+
+
+def test_teacher_label_encode_and_allocate(tmp_path, monkeypatch):
+    r = _load_antigravity_runner(tmp_path, monkeypatch)
+    assert r.encode_label_code(0) == "0000"
+    assert r.encode_label_code(10) == "000a"
+    assert r.encode_label_code(35) == "000z"
+    assert r.encode_label_code(36) == "0010"
+    assert r.teacher_label(0) == "pso_llm_0000"
+    assert r.parse_teacher_label("pso_llm_000a") == 10
+    assert r.parse_teacher_label("nope") is None
+
+    state = r.load_state()
+    assert r.allocate_teacher_label(state) == "pso_llm_0000"
+    assert r.allocate_teacher_label(state) == "pso_llm_0001"
+    state["ready"] = [{"label": "pso_llm_000z", "conversation_id": "x"}]
+    assert r.allocate_teacher_label(state) == "pso_llm_0010"
+
+
+def test_runner_keeps_one_teacher_conversation_per_person(tmp_path, monkeypatch):
+    r = _load_antigravity_runner(tmp_path, monkeypatch)
 
     monkeypatch.setenv("SECOND_OPINION_SUBJECT_REF", "AB12C")
     assert r.subject_key() == "AB12C"
@@ -291,18 +314,27 @@ def test_runner_keeps_one_teacher_conversation_per_person(tmp_path, monkeypatch)
     assert r.subject_key() == r.NO_ACCOUNT_KEY
 
     state = r.load_state()
-    r.remember(state, "AB12C", "conv-a", new=True)
-    r.remember(state, "ZZ99Z", "conv-b", new=True)
+    r.remember(state, "AB12C", "conv-a", new=True, label="pso_llm_0000")
+    r.remember(state, "ZZ99Z", "conv-b", new=True, label="pso_llm_0001")
     state = r.load_state()
     assert r.reusable_conversation(state, "AB12C", 40) == "conv-a"
     assert r.reusable_conversation(state, "ZZ99Z", 40) == "conv-b"
     assert r.reusable_conversation(state, "AB12C", 1) is None
     r.remember(state, "AB12C", "conv-a", new=False)
     assert r.load_state()["conversations"]["AB12C"]["turns"] == 2
+    assert r.load_state()["conversations"]["AB12C"]["label"] == "pso_llm_0000"
 
     # Pool ready + bind instantâneo + expiração aos 30 dias (DeleteCascadeTrajectory)
     state = r.load_state()
-    state["ready"] = [{"conversation_id": "pool-1", "status": "ready", "created_at": 1000.0, "expires_at": 9999999999.0}]
+    state["ready"] = [
+        {
+            "conversation_id": "pool-1",
+            "label": "pso_llm_0002",
+            "status": "ready",
+            "created_at": 1000.0,
+            "expires_at": 9999999999.0,
+        }
+    ]
     r.save_state(state)
     monkeypatch.setattr(r, "rpc_post", lambda addr, tok, method, payload, timeout=15.0: {"metadata": {}})
     monkeypatch.setattr(r, "trigger_background_pool_refill", lambda n: None)
@@ -312,6 +344,7 @@ def test_runner_keeps_one_teacher_conversation_per_person(tmp_path, monkeypatch)
     state = r.load_state()
     assert len(state["ready"]) == 0
     assert state["conversations"]["NEWUSER1"]["conversation_id"] == "pool-1"
+    assert state["conversations"]["NEWUSER1"]["label"] == "pso_llm_0002"
 
     # Simula expiração (> 30 dias) e delete real nas 3 camadas
     state["conversations"]["NEWUSER1"]["expires_at"] = 10.0

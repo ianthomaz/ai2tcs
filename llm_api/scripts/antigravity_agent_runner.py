@@ -21,8 +21,11 @@ Implementa o plano completo (docs/treinamento-llm/plano-conversas-professor-por-
 Subcomandos de operação e auditoria:
   python3 antigravity_agent_runner.py --status         # lista pool ready e vínculos ativos/expirados
   python3 antigravity_agent_runner.py --ensure-pool 10 # pré-cria até 10 conversas no pool ready
+  python3 antigravity_agent_runner.py --reset-pool 10  # apaga o pool ready no hub e recria com títulos pso_llm_xxxx
   python3 antigravity_agent_runner.py --expire         # expira e apaga no hub conversas > 30 dias
   python3 antigravity_agent_runner.py <prompt_file>    # julga 1 caso (chamado pelo worker)
+
+Títulos no Antigravity: pso_llm_0000, pso_llm_0001, … (código sequencial 0-9a-z).
 """
 
 from __future__ import annotations
@@ -49,6 +52,11 @@ NO_ACCOUNT_KEY = "_sem_conta"
 DEFAULT_POOL_SIZE = 10
 DEFAULT_TTL_DAYS = 30
 SECONDS_PER_DAY = 86400
+# Hub title for teacher threads: pso_llm_0000 … pso_llm_000z … pso_llm_0010 (base36, 0-9a-z).
+LABEL_PREFIX = "pso_llm_"
+LABEL_ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyz"
+LABEL_WIDTH = 4
+_LABEL_RE = re.compile(rf"^{re.escape(LABEL_PREFIX)}([{LABEL_ALPHABET}]+)$")
 
 INIT_TEACHER_PROMPT = (
     "Você é o professor silencioso da fila de segunda opinião (ai2tcs). "
@@ -260,13 +268,79 @@ def ttl_seconds() -> float:
     return max(1.0, days) * SECONDS_PER_DAY
 
 
+def encode_label_code(n: int, width: int = LABEL_WIDTH) -> str:
+    """Inteiro → código base36 com largura fixa (0 → 0000, 10 → 000a, 36 → 0010)."""
+    if n < 0:
+        raise ValueError("label seq must be >= 0")
+    chars: list[str] = []
+    x = n
+    for _ in range(width):
+        chars.append(LABEL_ALPHABET[x % 36])
+        x //= 36
+    if x:
+        raise ValueError(f"label seq {n} overflows width {width}")
+    return "".join(reversed(chars))
+
+
+def decode_label_code(code: str) -> int | None:
+    """Código base36 → inteiro; None se inválido."""
+    if not code or any(c not in LABEL_ALPHABET for c in code):
+        return None
+    n = 0
+    for ch in code:
+        n = n * 36 + LABEL_ALPHABET.index(ch)
+    return n
+
+
+def teacher_label(n: int) -> str:
+    return f"{LABEL_PREFIX}{encode_label_code(n)}"
+
+
+def parse_teacher_label(label: str | None) -> int | None:
+    if not isinstance(label, str):
+        return None
+    m = _LABEL_RE.fullmatch(label.strip())
+    return decode_label_code(m.group(1)) if m else None
+
+
+def _max_label_seq_in_state(state: dict) -> int:
+    """Maior índice já usado em ready / conversations / deleted_log (−1 se nenhum)."""
+    best = -1
+    for item in state.get("ready") or []:
+        if isinstance(item, dict):
+            n = parse_teacher_label(item.get("label"))
+            if n is not None:
+                best = max(best, n)
+    for entry in (state.get("conversations") or {}).values():
+        if isinstance(entry, dict):
+            n = parse_teacher_label(entry.get("label"))
+            if n is not None:
+                best = max(best, n)
+    for row in state.get("deleted_log") or []:
+        if isinstance(row, dict):
+            n = parse_teacher_label(row.get("label"))
+            if n is not None:
+                best = max(best, n)
+    return best
+
+
+def allocate_teacher_label(state: dict) -> str:
+    """Próximo pso_llm_xxxx livre; avança `label_seq` no state (caller grava)."""
+    seq = int(state.get("label_seq") or 0)
+    seq = max(seq, _max_label_seq_in_state(state) + 1)
+    label = teacher_label(seq)
+    state["label_seq"] = seq + 1
+    return label
+
+
 def load_state() -> dict:
     """Carrega `~/.gemini/antigravity/second_opinion_teacher_state.json`:
     {
-      "ready": [ {"conversation_id", "created_at", "expires_at", "status": "ready"} ],
+      "label_seq": int,  # próximo código pso_llm_xxxx
+      "ready": [ {"conversation_id", "label", "created_at", "expires_at", "status": "ready"} ],
       "conversations": {
         "<key>": {
-          "project_id", "subject_key", "subject_kind", "conversation_id",
+          "project_id", "subject_key", "subject_kind", "conversation_id", "label",
           "status": "bound" | "expired", "turns", "bound_at", "last_used_at",
           "expires_at", "created_at"
         }
@@ -283,11 +357,16 @@ def load_state() -> dict:
     ready = raw.get("ready") if isinstance(raw.get("ready"), list) else []
     convs = raw.get("conversations") if isinstance(raw.get("conversations"), dict) else {}
     deleted_log = raw.get("deleted_log") if isinstance(raw.get("deleted_log"), list) else []
-    return {
+    label_seq = int(raw["label_seq"]) if isinstance(raw.get("label_seq"), int) else 0
+    state = {
+        "label_seq": label_seq,
         "ready": [r for r in ready if isinstance(r, dict) and r.get("conversation_id")],
         "conversations": convs,
         "deleted_log": deleted_log[-100:],
     }
+    # Keep counter ahead of any label already stored (manual edits / old pools).
+    state["label_seq"] = max(state["label_seq"], _max_label_seq_in_state(state) + 1)
+    return state
 
 
 def save_state(state: dict) -> None:
@@ -323,7 +402,7 @@ def reusable_conversation(state: dict, key: str, max_turns: int, now: float | No
     return cid if cid and int(entry.get("turns", 0)) < max_turns else None
 
 
-def remember(state: dict, key: str, cid: str, new: bool) -> None:
+def remember(state: dict, key: str, cid: str, new: bool, label: str | None = None) -> None:
     """Atualiza vínculo pessoa <-> conversa com timestamps de auditoria e TTL de 30 dias."""
     now = time.time()
     ttl = ttl_seconds()
@@ -346,6 +425,8 @@ def remember(state: dict, key: str, cid: str, new: bool) -> None:
             "created_at": created_at,
             "bound_at": now,
         }
+    if label:
+        entry["label"] = label
     entry["status"] = "bound"
     entry["turns"] = int(entry.get("turns", 0)) + 1
     entry["last_used_at"] = now
@@ -354,10 +435,10 @@ def remember(state: dict, key: str, cid: str, new: bool) -> None:
     save_state(state)
 
 
-def spawn_raw_conversation(addr: str, token: str) -> str:
-    """Cria 1 conversa limpa no Antigravity com o prompt fixo do professor e aguarda ficar pronta."""
+def spawn_raw_conversation(addr: str, token: str, label: str) -> str:
+    """Cria 1 conversa limpa no Antigravity com título pso_llm_xxxx e aguarda ficar pronta."""
     model = os.environ.get("ANTIGRAVITY_MODEL", "flash_lite")
-    title = os.environ.get("ANTIGRAVITY_TITLE", "Professor Segunda Opinião (ai2tcs)")
+    # Hub title is always the sequential id (ignore ANTIGRAVITY_TITLE so pool threads stay unique).
     env = os.environ.copy()
     env["ANTIGRAVITY_LS_ADDRESS"] = addr
     env["ANTIGRAVITY_CSRF_TOKEN"] = token
@@ -366,7 +447,7 @@ def spawn_raw_conversation(addr: str, token: str) -> str:
         str(AGENTAPI_BIN),
         "new-conversation",
         f"--model={model}",
-        f"--title={title}",
+        f"--title={label}",
         INIT_TEACHER_PROMPT,
     ]
     proc = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=30)
@@ -428,7 +509,14 @@ def expire_and_cleanup(addr: str, token: str, now: float | None = None) -> dict:
         if is_expired(item, now=now):
             if delete_conversation_everywhere(addr, token, cid):
                 deleted_ids.append(cid)
-                state["deleted_log"].append({"conversation_id": cid, "kind": "ready_pool", "deleted_at": now})
+                state["deleted_log"].append(
+                    {
+                        "conversation_id": cid,
+                        "label": item.get("label"),
+                        "kind": "ready_pool",
+                        "deleted_at": now,
+                    }
+                )
             else:
                 item["status"] = "expired"
                 failed_ids.append(cid)
@@ -451,6 +539,7 @@ def expire_and_cleanup(addr: str, token: str, now: float | None = None) -> dict:
                         "subject_key": entry.get("subject_key", key),
                         "project_id": entry.get("project_id", ""),
                         "conversation_id": cid,
+                        "label": entry.get("label"),
                         "turns": entry.get("turns", 0),
                         "deleted_at": now,
                     }
@@ -483,40 +572,66 @@ def ensure_pool(addr: str, token: str, target_size: int = DEFAULT_POOL_SIZE) -> 
     state["ready"] = valid_ready
     save_state(state)
 
-    created: list[str] = []
+    created: list[dict] = []
     while len(state["ready"]) < target_size:
-        cid = spawn_raw_conversation(addr, token)
+        label = allocate_teacher_label(state)
+        cid = spawn_raw_conversation(addr, token, label)
         now = time.time()
-        state["ready"].append(
-            {
-                "conversation_id": cid,
-                "status": "ready",
-                "created_at": now,
-                "expires_at": now + ttl,
-            }
-        )
+        item = {
+            "conversation_id": cid,
+            "label": label,
+            "status": "ready",
+            "created_at": now,
+            "expires_at": now + ttl,
+        }
+        state["ready"].append(item)
         save_state(state)
-        created.append(cid)
+        created.append({"conversation_id": cid, "label": label})
         if len(state["ready"]) < target_size:
             time.sleep(0.5)
 
     return {"ready_count": len(state["ready"]), "created": created, "ready": state["ready"]}
 
 
-def pop_from_ready_pool(state: dict, addr: str, token: str) -> str | None:
-    """Consome 1 conversa já pronta do pool `ready` (caminho rápido, zero `new-conversation`)."""
+def reset_ready_pool(addr: str, token: str, target_size: int = DEFAULT_POOL_SIZE) -> dict:
+    """Apaga todas as conversas `ready` no hub e recria o pool com títulos pso_llm_xxxx novos."""
+    state = load_state()
+    deleted: list[dict] = []
+    failed: list[str] = []
+    now = time.time()
+    for item in list(state["ready"]):
+        cid = item.get("conversation_id", "")
+        label = item.get("label")
+        if not cid:
+            continue
+        if delete_conversation_everywhere(addr, token, cid):
+            deleted.append({"conversation_id": cid, "label": label})
+            state["deleted_log"].append(
+                {"conversation_id": cid, "label": label, "kind": "ready_pool_reset", "deleted_at": now}
+            )
+        else:
+            failed.append(cid)
+    state["ready"] = []
+    save_state(state)
+    pool = ensure_pool(addr, token, max(0, target_size))
+    return {"deleted_ready": deleted, "failed_delete": failed, "pool": pool}
+
+
+def pop_from_ready_pool(state: dict, addr: str, token: str) -> tuple[str | None, str | None]:
+    """Consome 1 conversa do pool `ready`. Retorna (conversation_id, label)."""
     now = time.time()
     while state["ready"]:
         item = state["ready"].pop(0)
         cid = item.get("conversation_id", "")
+        label = item.get("label") if isinstance(item.get("label"), str) else None
         if not cid or is_expired(item, now=now):
             continue
         meta = rpc_post(addr, token, "GetConversationMetadata", {"conversationId": cid}, timeout=5.0)
         if meta and "metadata" in meta:
             save_state(state)
-            return cid
+            return cid, label
     save_state(state)
-    return None
+    return None, None
 
 
 def trigger_background_pool_refill(min_ready: int) -> None:
@@ -555,7 +670,13 @@ def get_or_create_teacher_conversation(addr: str, token: str) -> str:
         old_cid = existing["conversation_id"]
         if delete_conversation_everywhere(addr, token, old_cid):
             state["deleted_log"].append(
-                {"key": key, "conversation_id": old_cid, "reason": "expired_on_bind", "deleted_at": time.time()}
+                {
+                    "key": key,
+                    "conversation_id": old_cid,
+                    "label": existing.get("label"),
+                    "reason": "expired_on_bind",
+                    "deleted_at": time.time(),
+                }
             )
             del state["conversations"][key]
             save_state(state)
@@ -564,20 +685,23 @@ def get_or_create_teacher_conversation(addr: str, token: str) -> str:
     if cid:
         meta = rpc_post(addr, token, "GetConversationMetadata", {"conversationId": cid}, timeout=5.0)
         if meta and "metadata" in meta:
-            remember(state, key, cid, new=False)
+            bound = state["conversations"].get(key) or {}
+            bound_label = bound.get("label") if isinstance(bound, dict) else None
+            remember(state, key, cid, new=False, label=bound_label if isinstance(bound_label, str) else None)
             return cid
 
     # Tenta pegar conversa instantânea do pool ready
-    cid = pop_from_ready_pool(state, addr, token)
+    cid, label = pop_from_ready_pool(state, addr, token)
     if cid:
-        remember(state, key, cid, new=True)
+        remember(state, key, cid, new=True, label=label)
         if len(state["ready"]) < pool_target:
             trigger_background_pool_refill(pool_target)
         return cid
 
     # Fallback se o pool estiver zerado: cria na hora e agenda reposição do pool
-    cid = spawn_raw_conversation(addr, token)
-    remember(state, key, cid, new=True)
+    label = allocate_teacher_label(state)
+    cid = spawn_raw_conversation(addr, token, label)
+    remember(state, key, cid, new=True, label=label)
     if pool_target > 0:
         trigger_background_pool_refill(pool_target)
     return cid
@@ -588,6 +712,8 @@ def print_status() -> int:
     now = time.time()
     out = {
         "state_file": str(STATE_FILE),
+        "label_seq": state.get("label_seq", 0),
+        "next_label": teacher_label(int(state.get("label_seq") or 0)),
         "ready_pool_count": len(state["ready"]),
         "bound_conversations_count": len(state["conversations"]),
         "ready": state["ready"],
@@ -611,6 +737,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(add_help=False)
     ap.add_argument("--status", action="store_true")
     ap.add_argument("--ensure-pool", type=int, metavar="N")
+    ap.add_argument("--reset-pool", type=int, metavar="N")
     ap.add_argument("--expire", action="store_true")
     ap.add_argument("-h", "--help", action="store_true")
     ap.add_argument("prompt_file", nargs="?")
@@ -623,7 +750,7 @@ def main() -> None:
     if args.status:
         sys.exit(print_status())
 
-    if args.ensure_pool is not None or args.expire:
+    if args.ensure_pool is not None or args.expire or args.reset_pool is not None:
         addr, token = discover_language_server()
         if not addr or not token:
             sys.stderr.write("Erro: Language Server do Antigravity não encontrado.\n")
@@ -631,7 +758,9 @@ def main() -> None:
         result: dict = {}
         if args.expire:
             result["expire"] = expire_and_cleanup(addr, token)
-        if args.ensure_pool is not None:
+        if args.reset_pool is not None:
+            result["reset"] = reset_ready_pool(addr, token, max(0, args.reset_pool))
+        elif args.ensure_pool is not None:
             result["pool"] = ensure_pool(addr, token, max(0, args.ensure_pool))
         print(json.dumps(result, indent=2, ensure_ascii=False))
         sys.exit(0)
