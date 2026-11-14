@@ -116,3 +116,31 @@ async def stats(project_id: str, days: int) -> list[dict[str, Any]]:
             project_id, days,
         )
         return [{**dict(r), "week": r["week"].date().isoformat()} for r in rows]
+
+
+async def queue_depth() -> dict[str, Any]:
+    """Waiting / in-flight counts for /health and /metrics. Stale `working` rows are reclaimable
+    by `claim()` after STALE_WORKING_MINUTES."""
+    async with (await db_module.get_pool()).acquire() as conn:
+        row = await conn.fetchrow(
+            """SELECT
+                 COUNT(*) FILTER (WHERE status = 'queued')::int AS queued,
+                 COUNT(*) FILTER (WHERE status = 'working')::int AS working,
+                 COUNT(*) FILTER (
+                   WHERE status = 'working'
+                     AND claimed_at < CURRENT_TIMESTAMP - ($1 * INTERVAL '1 minute')
+                 )::int AS working_stale,
+                 EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - MIN(created_at) FILTER (WHERE status = 'queued')))
+                   AS oldest_queued_age_seconds
+               FROM "second_opinions"
+               WHERE status IN ('queued', 'working')""",
+            STALE_WORKING_MINUTES,
+        )
+    oldest = row["oldest_queued_age_seconds"]
+    return {
+        "queued": int(row["queued"] or 0),
+        "working": int(row["working"] or 0),
+        "working_stale": int(row["working_stale"] or 0),
+        "oldest_queued_age_seconds": int(oldest) if oldest is not None else None,
+        "stale_working_minutes": STALE_WORKING_MINUTES,
+    }

@@ -180,6 +180,36 @@ async def test_enqueue_rings_the_bell(client, _env):
     bell.assert_called_once()
 
 
+@pytest.mark.asyncio
+async def test_ring_the_bell_warns_when_worker_is_down(caplog):
+    import asyncio
+    import logging
+
+    import httpx
+
+    from app.second_opinion import routes as so_routes
+
+    class _BoomClient:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_a):
+            return False
+
+        async def post(self, _url):
+            raise httpx.ConnectError("connection refused")
+
+    with patch("app.config.settings.second_opinion_notify_url", "http://127.0.0.1:9191/notify"), patch(
+        "app.second_opinion.routes.httpx.AsyncClient", return_value=_BoomClient()
+    ), caplog.at_level(logging.WARNING, logger="app.second_opinion.routes"):
+        before = set(asyncio.all_tasks())
+        so_routes.ring_the_bell()
+        new = [t for t in asyncio.all_tasks() if t not in before]
+        if new:
+            await asyncio.gather(*new, return_exceptions=True)
+    assert any("worker bell did not answer" in r.message for r in caplog.records)
+
+
 def test_worker_stops_on_the_kill_file_and_when_the_api_is_down(tmp_path):
     w = _worker()
     creds = tmp_path / "credentials"

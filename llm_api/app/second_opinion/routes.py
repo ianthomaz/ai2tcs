@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import hmac
+import logging
 from typing import Any
 
 import httpx
@@ -25,6 +26,7 @@ from app.second_opinion import logic, store
 from app.tasks.engine import PortError, read_json_object
 
 router = APIRouter(prefix="/second-opinion", tags=["second-opinion"])
+logger = logging.getLogger(__name__)
 
 
 async def _project(request: Request, explicit: Any) -> tuple[str, dict]:
@@ -98,8 +100,12 @@ def ring_the_bell() -> None:
         try:
             async with httpx.AsyncClient(timeout=2.0) as client:
                 await client.post(url)
-        except httpx.HTTPError:
-            pass
+        except httpx.HTTPError as e:
+            logger.warning(
+                "second_opinion: worker bell did not answer (%s): %s — case stays queued until the host worker drains",
+                url,
+                e,
+            )
 
     asyncio.get_running_loop().create_task(_ring())
 

@@ -61,7 +61,24 @@ async def health(
     except Exception:
         checks["disk"] = {"status": "unknown"}
 
-    all_ok = all(c.get("status") == "ok" for c in checks.values())
+    # Second-opinion queue depth (informational; never flips overall health by itself)
+    try:
+        from app.second_opinion import store as so_store
+
+        depth = await so_store.queue_depth()
+        checks["second_opinion"] = {
+            "status": "ok",
+            "enabled": bool(settings.second_opinion_enabled),
+            "notify_url_configured": bool((settings.second_opinion_notify_url or "").strip()),
+            **depth,
+        }
+    except Exception:
+        logger.exception("health: second_opinion queue check failed")
+        checks["second_opinion"] = {"status": "error"}
+
+    # Core liveness only: Ollama, Postgres, disk. Queue depth is informational.
+    core = {k: checks[k] for k in ("ollama", "postgres", "disk") if k in checks}
+    all_ok = all(c.get("status") == "ok" for c in core.values())
     uptime_seconds = round(time.time() - _start_time)
 
     body: dict = {
@@ -101,6 +118,18 @@ async def metrics(_: None = Depends(require_operator)):
             from app.stt.metrics import stt_metric_lines
 
             lines.extend(stt_metric_lines())
+        except Exception:
+            pass
+        try:
+            from app.second_opinion import store as so_store
+
+            depth = await so_store.queue_depth()
+            lines.append(f'second_opinion_queued {depth["queued"]}')
+            lines.append(f'second_opinion_working {depth["working"]}')
+            lines.append(f'second_opinion_working_stale {depth["working_stale"]}')
+            age = depth["oldest_queued_age_seconds"]
+            if age is not None:
+                lines.append(f"second_opinion_oldest_queued_age_seconds {age}")
         except Exception:
             pass
         return PlainTextResponse("\n".join(lines) + "\n")
