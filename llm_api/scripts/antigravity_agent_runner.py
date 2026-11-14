@@ -122,19 +122,27 @@ def discover_language_server() -> tuple[str | None, str | None]:
                 timeout=5,
             )
             ports = re.findall(r"127\.0\.0\.1:(\d+)\s+\(LISTEN\)", lsof_out)
+            # Probe listeners: the agentapi port answers GetConversationMetadata with JSON even
+            # on unknown ids (often HTTP 404 + not_found). Other ports reset/401/400 without that.
             for p in ports:
                 candidate = f"127.0.0.1:{p}"
                 req = urllib.request.Request(
-                    f"http://{candidate}/exa.language_server_pb.LanguageServerService/GetUserSettings",
-                    data=b"{}",
+                    f"http://{candidate}/exa.language_server_pb.LanguageServerService/GetConversationMetadata",
+                    data=b'{"conversationId":"__probe__"}',
                     headers={"x-codeium-csrf-token": token, "Content-Type": "application/json"},
                     method="POST",
                 )
                 try:
                     with urllib.request.urlopen(req, timeout=2) as resp:
-                        if resp.status == 200:
+                        raw = resp.read().decode("utf-8", errors="replace")
+                        if raw.strip().startswith("{"):
                             addr = candidate
                             break
+                except urllib.error.HTTPError as e:
+                    raw = e.read().decode("utf-8", errors="replace")
+                    if raw.strip().startswith("{") and e.code in (400, 404):
+                        addr = candidate
+                        break
                 except Exception:
                     continue
         except Exception:
