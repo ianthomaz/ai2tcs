@@ -4,7 +4,7 @@ Bootstrap a new ai2tcs project: DB row, optional library template, API key.
 
 Usage:
   python scripts/create_project.py my_project_2026 --name "My Project"
-  python scripts/create_project.py my_project_2026 --library-root /path/to/content
+  python scripts/create_project.py my_project_2026 --library-root /path/to/repo/LLM
 """
 from __future__ import annotations
 
@@ -30,44 +30,25 @@ def hash_key(key: str) -> str:
 
 
 def materialize_library(project_id: str, library_root: Path | None) -> list[str]:
-    if library_root is not None:
-        fluxos = library_root / "fluxosLLM"
-        bib = library_root / "bibliotecaConteudoLLM"
-        fluxos.mkdir(parents=True, exist_ok=True)
-        bib.mkdir(parents=True, exist_ok=True)
-        instr = fluxos / "instrucoes-llm.md"
-        if not instr.exists():
-            instr.write_text(
-                f"# {project_id}\n\nAnswer in Portuguese. Be direct and helpful.\n",
-                encoding="utf-8",
-            )
-        return [str(fluxos), str(bib)]
-
+    """The project's folder in project_library/ (manifest, diretrizes, casos) always exists.
+    RAG sources: the project's own `LLM/` folder when given (its `rag/`), else `rag/` here."""
     dest = LLM_ROOT / "project_library" / project_id
-    if dest.exists():
-        fluxos = dest / "fluxosLLM"
-        bib = dest / "bibliotecaConteudoLLM"
-    else:
-        if TEMPLATE_ROOT.exists():
-            shutil.copytree(TEMPLATE_ROOT, dest)
-        else:
-            dest.mkdir(parents=True)
-            (dest / "fluxosLLM").mkdir()
-            (dest / "bibliotecaConteudoLLM").mkdir()
-            (dest / "fluxosLLM" / "instrucoes-llm.md").write_text(
-                f"# {project_id}\n\nAnswer in Portuguese. Be direct and helpful.\n",
-                encoding="utf-8",
-            )
-        fluxos = dest / "fluxosLLM"
-        bib = dest / "bibliotecaConteudoLLM"
-    return [str(fluxos), str(bib)]
+    if not dest.exists():
+        shutil.copytree(TEMPLATE_ROOT, dest)
+        readme = dest / "README.md"
+        readme.write_text(readme.read_text(encoding="utf-8").replace("{project_id}", project_id), encoding="utf-8")
+    if library_root is not None:
+        (library_root / "rag").mkdir(parents=True, exist_ok=True)
+        (library_root / "diretrizes").mkdir(parents=True, exist_ok=True)
+        return [str(library_root / "rag")]
+    return [str(dest / "rag")]
 
 
 async def main() -> None:
     parser = argparse.ArgumentParser(description="Create ai2tcs project + API key")
     parser.add_argument("project_id")
     parser.add_argument("--name", help="Display name (defaults to project_id)")
-    parser.add_argument("--library-root", type=Path, help="Existing folder to use as library root")
+    parser.add_argument("--library-root", type=Path, help="The project's own LLM/ folder (rag/ is ingested)")
     parser.add_argument("--profile", default="factual", choices=("factual", "sales", "creative"))
     parser.add_argument("--no-key", action="store_true", help="Skip API key creation")
     parser.add_argument(
@@ -79,7 +60,8 @@ async def main() -> None:
     sources = materialize_library(args.project_id, args.library_root)
     config_json = {
         "prompt_profile": args.profile,
-        "behavior_instruction_path": "instrucoes-llm.md",
+        # Resolved from the first source (rag/): the file sits in the sibling diretrizes/.
+        "behavior_instruction_path": "../diretrizes/instrucoes-llm.md",
         "chunking": {"chunk_size": 512, "chunk_overlap": 64, "separator": "\n\n"},
         "embedding_model": "mxbai-embed-large",
         "policies": {

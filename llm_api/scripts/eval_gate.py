@@ -8,7 +8,7 @@ project's baseline, exit 1 on any regression.
   python scripts/eval_gate.py --project bikeanjoall_2026
 
 Runs, against the live API (LLM_API_URL / LLM_API_TOKEN):
-  - gold questions of the project (scripts/eval_rag.py, tests/eval/eval_questions.json);
+  - gold questions of the project (scripts/eval_rag.py, project_library/{project}/casos/);
   - for bikeanjoall_2026, the text ports (scripts/eval_bikeanjo_ops.py, contracts/bikeanjo/*.eval.jsonl).
 
 Regression = a case that passed in the baseline and fails now, a hard case (grave, written
@@ -114,7 +114,7 @@ def run_rag(args: argparse.Namespace) -> list[dict]:
         url=args.url,
         token=args.token,
         project=args.project,
-        dataset=eval_rag.DEFAULT_DATASET,
+        dataset=None,
         unique=True,
         report_only=True,
         compare=None,

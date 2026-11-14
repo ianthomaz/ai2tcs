@@ -157,7 +157,7 @@ rigor de auth e sem coluna a mais.
 {
   "source_ref": "zap:log:123",
   "agent": "cursor | antigravity",
-  "local_answer_rating": "good | bad",
+  "local_answer_rating": "stop | bad | good | great",
   "local_answer_path": "right | wrong",
   "path_note": "era ação de liberar vaga, não consulta de inscrição",
   "intent": "action | question | other",
@@ -183,7 +183,7 @@ nulo ou «já aplicada», `suggested_reply` de reconhecimento. Se ainda não lib
    de trabalho.
 3. **Modo ask / sem auto-run de shell** (ou allowlist mínima de leitura). Tempo máximo
    por consulta; kill do processo.
-4. **Entrada única:** Worker busca o caso e passa o prompt na entrada padrão (`stdin`) do `cursor-agent` → stdout JSON validado pela API.
+4. **Entrada única:** Worker busca o caso e chama a Antigravity numa pasta temporária vazia, com o prompt pela entrada padrão → stdout JSON validado pela API ([antigravity-no-mini62](./antigravity-no-mini62.md)).
 5. **Keychain:** o binário do Agent exige keychain desbloqueado na sessão do Mac. SSH
    frio sozinho não basta. O processo que chama o script roda **no mini62 já logado**
    (launchd após login humano), não «desbloqueia keychain por SSH».

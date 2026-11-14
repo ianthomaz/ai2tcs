@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Worker da segunda opinião (docs/26 § 8): escuta a campainha da API em 127.0.0.1:9191 e
+  chama a Antigravity um caso por vez. Roda na sessão do usuário logado (LaunchAgent), onde
+  a Antigravity está autenticada. Variáveis e token: local-only/second_opinion_worker.env.
+  Copiar para ~/Library/LaunchAgents/ trocando o caminho do repositório; launchctl load.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.itcs.second-opinion-worker</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/python3</string>
+    <string>/caminho/para/ai2tcs/llm_api/scripts/second_opinion_worker.py</string>
+    <string>--listen</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/tmp/second-opinion-worker.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/second-opinion-worker.err.log</string>
+</dict>
+</plist>

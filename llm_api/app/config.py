@@ -186,6 +186,8 @@ class Settings(BaseSettings):
     second_opinion_enabled: bool = False
     second_opinion_daily_limit: int = 20
     second_opinion_worker_token: str = ""
+    # The bell: the API pings this after queueing (host worker --listen). Empty = no ping.
+    second_opinion_notify_url: str = ""
     pm2_log_dir: str = "/home/opc/.pm2/logs"
 
     def scoped_key_required_project_set(self) -> set[str]:

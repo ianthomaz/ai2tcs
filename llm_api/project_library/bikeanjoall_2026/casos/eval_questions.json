@@ -10,71 +10,6 @@
     "bucket": "org_factual"
   },
   {
-    "project_id": "aiclaudia",
-    "question": "Onde foi parar minha chave?",
-    "system_prompt": "Responda DIRECTO em 2 frases curtas. Modo nuvem preguiçosa: sarcasmo poético, sem pressa.",
-    "expected_keywords": [],
-    "max_chars": 420,
-    "forbidden_keywords": [
-      "voz aiclaudia",
-      "com base no contexto",
-      "segundo o conteúdo",
-      "esquerda, humanitarismo",
-      "léxico",
-      "documentação"
-    ]
-  },
-  {
-    "project_id": "aiclaudia",
-    "question": "Qual é a capital da França?",
-    "system_prompt": "Responda DIRECTO em 2 frases curtas. Modo horóscopo surreal.",
-    "expected_keywords": [],
-    "max_chars": 420,
-    "forbidden_keywords": [
-      "mobi",
-      "mobicontabil",
-      "voz aiclaudia",
-      "com base no contexto",
-      "personas criativas"
-    ]
-  },
-  {
-    "project_id": "aiclaudia",
-    "question": "oi",
-    "system_prompt": "Responda DIRECTO em 1–2 frases curtas. Modo gata rainha: deboque real.",
-    "model": "fast",
-    "expected_keywords": [],
-    "max_chars": 250,
-    "forbidden_keywords": [
-      "voz aiclaudia",
-      "com base no contexto",
-      "personas criativas",
-      "documentação",
-      "session_id"
-    ]
-  },
-  {
-    "project_id": "aiclaudia",
-    "question": "Me dá um conselho de vida",
-    "system_prompt": "Responda DIRECTO em 2 frases curtas. Modo motivacional absurdo: coach de nuvens.",
-    "expected_keywords": [],
-    "max_chars": 420,
-    "forbidden_keywords": [
-      "voz aiclaudia",
-      "segundo o conteúdo",
-      "esquerda, humanitarismo",
-      "brincadeira literária"
-    ]
-  },
-  {
-    "project_id": "estudosmobi",
-    "question": "Como abrir uma empresa MEI?",
-    "expected_keywords": [
-      "mei",
-      "empresa"
-    ]
-  },
-  {
     "project_id": "bikeanjoall_2026",
     "question": "Olá, Ian! Obrigado pela mensagem. São 11 anos de BA e 50 de pedal... Bora para mais e mais! Grande abraço!",
     "forbidden_keywords": [
@@ -1248,5 +1183,22 @@
     "question": "Quero me cadastrar na Bike Anjo, link de acesso inicial!\n\nOlá bom dia tudo bem ?\n\nMeu nome é Amanda sou de campo Grande MS, tenho um sonho muito grande na minha vida que é aprender andar de bicicleta, nunca tive quando era criança por conta disse nunca tive contato com ela\n\nQuando encontrei a página de você fiquei tão feliz é como achasse uma luz no fim do túnel..vocês conseguem me ajudar\n\n?",
     "max_chars": 600,
     "bucket": "org_link"
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Levo bicicleta com rodinhas?",
+    "forbidden_keywords": [
+      "telemóvel",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar",
+      "registros no sistema"
+    ],
+    "bucket": "org_factual"
   }
 ]

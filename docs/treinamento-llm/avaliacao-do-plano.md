@@ -20,7 +20,7 @@ em flag.
 | 2 | Worker em loop infinito no host | Volume real é baixo (45 a 60 msgs/semana; ~8/dia). Polling contínuo gasta CPU e bateria sem necessidade | Modelo reativo por toque de campainha: o processo no Mac fica em repouso absoluto (0% CPU) e só acorda exatamente quando chega mensagem |
 | 3 | Contrato preso ao caso da vaga (`slot_status`, `release_slot`, `campaign_kind` em lista fixa) | Outro projeto ou canal não cabe | `case_facts` e `context` são do projeto; `allowed_actions` é a lista fechada **do pedido**; `channel` e `case_kind` identificam canal e tipo; `reply_kind` genérico (`point_to_ui` no lugar de `point_to_buttons`) |
 | 4 | Resposta do professor vira exemplo `great` sozinha (passo 3 do roteiro) | A LLM aprenderia com resposta que ninguém conferiu | A opinião fica em `second_opinions`; só a nota de uma pessoa vai a `/ratings` |
-| 5 | «O Cursor consulta o banco / vê o estado real» (fases § 3) | Contradiz o resto da pasta | Vale a regra da pasta: o professor não usa ferramenta; fato fora do pacote vai em `missing` |
+| 5 | «O Cursor consulta o banco / vê o estado real» (fases § 3) | Contradiz o resto da pasta | O professor não usa ferramenta. O **worker** consulta o caso numa porta só leitura do projeto (chave 2, sem dado pessoal) e junta ao prompt ([26 § 7](../26-second-opinion.md#7-consulta-só-leitura-ao-sistema-do-projeto)); o resto vai em `missing` |
 | 6 | Teto 20 em uns documentos, 30 em outros | — | Um valor: `SECOND_OPINION_DAILY_LIMIT` (20), todos os projetos juntos; o fim de semana sobe por configuração |
 | 7 | Texto da pessoa vai cru ao modelo de mercado | E-mail e telefone escritos na mensagem saem da máquina | O serviço troca e-mail, CPF e número com cara de telefone por `[contato]` / `[documento]` antes de guardar |
 | 8 | Tom («acolhe e encerra, sem papo furado») espalhado em prompts | — | Regras gerais no prompt fixo do professor; o tom do projeto em `config_json.second_opinion.teacher_notes` |
@@ -41,7 +41,7 @@ portão mostra a conta por tipo:
 | `unsorted` | fora do portão até alguém classificar | 5 |
 
 A classificação é uma primeira passada; quem conhece os casos revê em
-`llm_api/tests/eval/eval_questions.json`. A referência do portão (`--save-baseline`)
+`llm_api/project_library/bikeanjoall_2026/casos/eval_questions.json`. A referência do portão (`--save-baseline`)
 grava-se de novo depois do deploy.
 
 ## 4. O que o lado que pede já tem (Bike Anjo) e o plano não usa
@@ -66,8 +66,8 @@ Consequências para o lado Bike Anjo, quando for a vez dele:
 
 ## 5. Ordem daqui em diante
 
-1. Deploy do ai2tcs; no mini62, `second_opinion_worker.py --dry-run` para achar o comando do
-   Cursor que responde sem tela e sem ferramenta (fase 0 do plano).
+1. Deploy do ai2tcs; no mini62, `second_opinion_worker.py --dry-run` e `--try` com a Antigravity
+   ([antigravity-no-mini62](./antigravity-no-mini62.md)), fase 0 do plano.
 2. Casos de prova (2 ou 3 do tipo AAJA9) enfileirados à mão com a chave do projeto.
 3. Lado Bike Anjo: pacote a partir do `reply-reader` e caixa da opinião no `/adm/shadow-llm`.
 4. Com um fim de semana medido (`GET /second-opinion/stats`): filtro do que não vale
@@ -75,7 +75,7 @@ Consequências para o lado Bike Anjo, quando for a vez dele:
 
 ## 6. Em aberto
 
-- Comando exato do Cursor sem tela e sem ferramentas: só se confere no mini62.
+- Comando exato da Antigravity sem tela e sem ferramentas: perguntas e prova em [antigravity-no-mini62.md](./antigravity-no-mini62.md).
 - Antigravity na fila automática: quando tiver modo sem tela; até lá, auditoria de lote.
 - Exemplo aprovado quando professor e pessoa concordam, sem a pessoa digitar a resposta:
   decisão do dono depois do primeiro fim de semana medido.

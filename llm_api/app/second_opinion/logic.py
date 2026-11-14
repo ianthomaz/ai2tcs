@@ -7,16 +7,22 @@ from pathlib import Path
 from typing import Any
 
 CHANNELS = ("whatsapp", "email", "ticket", "form", "chat", "other")
-RATINGS = ("good", "bad", "neutral")
+# Mesma escala do painel do projeto (⛔ 👎 👍 👍👍): a nota do professor e a humana se comparam.
+RATINGS = ("stop", "bad", "good", "great")
 PATHS = ("right", "wrong")
 INTENTS = ("action", "question", "chitchat", "other")
 REPLY_KINDS = ("acknowledge_done", "point_to_ui", "direct_answer", "silence", "escalate_human")
 
 _SOURCE_REF = re.compile(r"^[A-Za-z0-9:._-]{1,120}$")
+# Who wrote, as the project knows them (Bike Anjo: user_id). Never a phone or e-mail.
+_SUBJECT_REF = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 _SLUG = re.compile(r"^[a-z][a-z0-9_]{1,63}$")
 _TEXT_MAX = 4000
 _FACTS_MAX_BYTES = 4000
 _PROMPT = Path(__file__).with_name("teacher_prompt.md")
+# The projects' folders (docs/27): house rules in _shared/, each project's diretrizes/.
+LIBRARY_ROOT = Path(__file__).resolve().parents[2] / "project_library"
+_GUIDANCE_MAX = 8000
 
 _EMAIL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
 _CPF = re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b")
@@ -76,8 +82,12 @@ def normalize_case(raw: Any) -> dict[str, Any]:
     history = raw.get("history") or []
     if not isinstance(history, list):
         raise CaseError("history: lista")
+    subject = raw.get("subject_ref")
+    if subject is not None and (not isinstance(subject, str) or not _SUBJECT_REF.match(subject) or subject.isdigit()):
+        raise CaseError("subject_ref: o id da pessoa no projeto, até 64 caracteres de [A-Za-z0-9_-]; nunca telefone")
     return {
         "source_ref": ref,
+        "subject_ref": subject,
         "channel": channel,
         "case_kind": kind,
         "incoming_text": incoming,
@@ -98,12 +108,40 @@ def normalize_case(raw: Any) -> dict[str, Any]:
     }
 
 
-def build_prompt(case: dict[str, Any], teacher_notes: str | None = None) -> str:
-    """What the agent reads: the fixed rules, the project's notes (tone, limits) and the case."""
+def library_guidance(project_id: str | None, root: Path | None = None) -> str:
+    """House rules, the rules this project declines (its manifest) and its diretrizes/, as one
+    text for the teacher. The agent reads them here; it gets no folder on disk."""
+    base = root or LIBRARY_ROOT
+    parts: list[str] = []
+    house = base / "_shared" / "regras-da-casa.md"
+    if house.is_file():
+        parts.append(house.read_text(encoding="utf-8").strip())
+    folder = base / project_id if project_id and _SLUG.match(project_id) else None
+    if folder and folder.is_dir():
+        manifest = folder / "README.md"
+        if manifest.is_file():
+            text = manifest.read_text(encoding="utf-8")
+            mark = "## Regras da casa que este projeto não segue"
+            if mark in text:
+                parts.append(mark + text.split(mark, 1)[1].split("\n## ", 1)[0].rstrip())
+        for f in sorted((folder / "diretrizes").glob("*.md")):
+            parts.append(f"Diretriz do projeto ({f.name}):\n" + f.read_text(encoding="utf-8").strip())
+    out = "\n\n".join(p for p in parts if p)
+    return out[:_GUIDANCE_MAX]
+
+
+def build_prompt(case: dict[str, Any], teacher_notes: str | None = None, project_id: str | None = None) -> str:
+    """What the agent reads: the fixed rules, the house rules and the project's diretrizes
+    (project_library), the project's notes (tone, limits) and the case."""
     parts = [_PROMPT.read_text(encoding="utf-8").strip()]
+    guidance = library_guidance(project_id)
+    if guidance:
+        parts.append("REGRAS DA CASA E DIRETRIZES DO PROJETO (valem para julgar e para a resposta sugerida):\n" + guidance)
     if teacher_notes and teacher_notes.strip():
         parts.append("Notas do projeto (tom e limites):\n" + teacher_notes.strip()[:2000])
-    parts.append("CASO:\n" + json.dumps(case, ensure_ascii=False, indent=1))
+    # subject_ref is for the worker's read-only check, never for the teacher.
+    shown = {k: v for k, v in case.items() if k != "subject_ref"}
+    parts.append("CASO:\n" + json.dumps(shown, ensure_ascii=False, indent=1))
     return "\n\n".join(parts)
 
 

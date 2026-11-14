@@ -4,7 +4,7 @@ Evaluate RAG answer quality against a gold-standard question set.
 
 Usage:
   python scripts/eval_rag.py --project bikeanjoall_2026 --unique --report-only
-  python scripts/eval_rag.py --dataset tests/eval/eval_questions.json
+  python scripts/eval_rag.py                      # every project in project_library/*/casos/
   python scripts/eval_rag.py --compare tests/eval/results/a.json tests/eval/results/b.json
 
 Every run is written to tests/eval/results/ together with the project config that
@@ -34,7 +34,32 @@ import httpx
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 LLM_ROOT = SCRIPT_DIR.parent
-DEFAULT_DATASET = LLM_ROOT / "tests" / "eval" / "eval_questions.json"
+# Each installed project keeps its gold cases in project_library/{project_id}/casos/ (docs/27).
+LIBRARY_ROOT = LLM_ROOT / "project_library"
+CASES_FILE = Path("casos") / "eval_questions.json"
+
+
+def cases_path(project_id: str) -> Path:
+    return LIBRARY_ROOT / project_id / CASES_FILE
+
+
+def project_case_files() -> list[Path]:
+    """Case files of installed projects; folders starting with `_` (template, shared) hold none."""
+    return sorted(p for p in LIBRARY_ROOT.glob(f"*/{CASES_FILE}") if not p.parents[1].name.startswith("_"))
+
+
+def load_cases(project: str | None = None, dataset: Path | None = None) -> list[dict]:
+    if dataset is not None:
+        files = [dataset]
+    elif project:
+        files = [cases_path(project)]
+    else:
+        files = project_case_files()
+    rows: list[dict] = []
+    for path in files:
+        if path.is_file():
+            rows.extend(json.loads(path.read_text(encoding="utf-8")))
+    return [r for r in rows if not project or r.get("project_id") == project]
 RESULTS_DIR = LLM_ROOT / "tests" / "eval" / "results"
 
 
@@ -242,10 +267,15 @@ def load_result(path: Path) -> dict:
     return data
 
 
+def _dataset_label(args: argparse.Namespace) -> str:
+    if args.dataset is None:
+        return str(cases_path(args.project or "*").relative_to(LLM_ROOT))
+    path = Path(args.dataset)
+    return str(path.relative_to(LLM_ROOT) if path.is_relative_to(LLM_ROOT) else path)
+
+
 async def run_eval(args: argparse.Namespace) -> int:
-    rows_in = json.loads(args.dataset.read_text(encoding="utf-8"))
-    if args.project:
-        rows_in = [r for r in rows_in if r.get("project_id") == args.project]
+    rows_in = load_cases(args.project, args.dataset)
     if not rows_in:
         print("No eval rows to run", file=sys.stderr)
         return 1
@@ -296,7 +326,7 @@ async def run_eval(args: argparse.Namespace) -> int:
     payload = {
         "run": {
             "timestamp": started.isoformat(),
-            "dataset": str(args.dataset.relative_to(LLM_ROOT) if args.dataset.is_relative_to(LLM_ROOT) else args.dataset),
+            "dataset": _dataset_label(args),
             "url": args.url,
             "project_filter": args.project,
             "unique": args.unique,
@@ -328,7 +358,7 @@ async def main() -> int:
     parser.add_argument("--url", default=os.environ.get("LLM_API_URL", "http://127.0.0.1:28471"))
     parser.add_argument("--token", default=os.environ.get("LLM_API_TOKEN", ""))
     parser.add_argument("--project", help="Filter dataset to one project_id")
-    parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
+    parser.add_argument("--dataset", type=Path, help="One case file instead of project_library/*/casos/")
     parser.add_argument("--unique", action="store_true", help="Append random ref to each question (avoid stale answers)")
     parser.add_argument(
         "--report-only",

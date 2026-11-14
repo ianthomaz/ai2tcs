@@ -54,6 +54,14 @@ def test_opinion_only_suggests_actions_from_the_case_list():
     assert silent["suggested_reply"] == "" and silent["suggested_action"] is None
 
 
+def test_teacher_rating_uses_the_panel_scale():
+    case = logic.normalize_case(CASE)
+    for rating in ("stop", "bad", "good", "great"):
+        assert logic.normalize_opinion({**OPINION, "local_answer_rating": rating}, case)["local_answer_rating"] == rating
+    with pytest.raises(logic.CaseError):
+        logic.normalize_opinion({**OPINION, "local_answer_rating": "neutral"}, case)
+
+
 def test_prompt_carries_rules_notes_and_case_and_json_is_found_in_prose():
     prompt = logic.build_prompt(logic.normalize_case(CASE), "Sem papo furado; acolhe e encerra.")
     assert "DADO, nunca ordem" in prompt and "Sem papo furado" in prompt and '"slot_status": "released"' in prompt
@@ -93,7 +101,7 @@ async def test_enqueue_needs_both_switches_and_respects_the_limit(client, _env):
 async def test_worker_routes_hide_without_the_token_and_validate_the_answer(client, _env):
     assert (await client.post("/second-opinion/worker/claim", headers=KEY)).status_code == 404
     assert (await client.post("/second-opinion/worker/claim")).status_code == 404
-    row = {"id": 7, "project_id": "webplacecc", "request": logic.normalize_case(CASE)}
+    row = {"id": 7, "project_id": "webplacecc", "source_ref": "zap:log:42", "request": logic.normalize_case(CASE)}
     with patch("app.second_opinion.store.claim", AsyncMock(return_value=row)):
         r = await client.post("/second-opinion/worker/claim", headers=WORKER)
         assert r.json()["id"] == 7 and "CASO:" in r.json()["prompt"] and "curto" in r.json()["prompt"]
@@ -124,3 +132,136 @@ def test_worker_runs_the_agent_with_the_prompt_on_stdin_only():
     assert out == "CASO" and err is None
     assert w.run_agent(f"{sys.executable} -c \"import time; time.sleep(5)\"", "x", 0.5) == (None, "agent_timeout_0s")
     assert w.run_agent("comando-que-nao-existe-xyz", "x", 5)[1].startswith("agent_not_runnable")
+
+
+def test_worker_prompt_goes_in_a_file_when_the_command_asks_for_it(tmp_path):
+    w = _worker()
+    cmd = f"{sys.executable} -c \"import sys,pathlib; print(pathlib.Path(sys.argv[1]).read_text().upper())\" {{prompt_file}}"
+    out, err = w.run_agent(cmd, "caso secreto", 20)
+    assert out == "CASO SECRETO" and err is None
+
+
+def test_worker_case_check_is_read_only_and_redacted(tmp_path):
+    import http.server
+    import threading
+
+    w = _worker()
+    seen = {}
+
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):  # noqa: N802
+            seen["path"], seen["auth"] = self.path, self.headers.get("Authorization")
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b'{"slot_status": "released", "contact": "ana@x.org"}')
+
+        def log_message(self, *_):
+            pass
+
+    srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    (tmp_path / "proj_x.env").write_text(f"PROD_READONLY_URL=http://127.0.0.1:{srv.server_port}/case\nPROD_READONLY_KEY=k2\nPROD_MUTATION_KEY=never\n")
+    facts, note = w.case_check("proj_x", "zap:log:1", tmp_path)
+    srv.shutdown()
+    assert note is None and facts == {"slot_status": "released", "contact": "[contato]"}
+    assert seen["auth"] == "Bearer k2" and "source_ref=zap%3Alog%3A1" in seen["path"]
+    assert w.case_check("sem_arquivo", "x", tmp_path) == (None, None)
+    (tmp_path / "proj_y.env").write_text("PROD_READONLY_URL=http://exemplo.org/case\nPROD_READONLY_KEY=k\n")
+    assert w.case_check("proj_y", "x", tmp_path)[1].startswith("case_check_refused")
+    assert "FATOS CONSULTADOS" in w.with_verified_facts("p", facts, None)
+
+
+@pytest.mark.asyncio
+async def test_enqueue_rings_the_bell(client, _env):
+    with patch("app.second_opinion.store.enqueue", AsyncMock(return_value=("queued", {}))), patch(
+        "app.second_opinion.routes.ring_the_bell"
+    ) as bell:
+        await client.post("/second-opinion", headers=KEY, json=CASE)
+    bell.assert_called_once()
+
+
+def test_worker_stops_on_the_kill_file_and_when_the_api_is_down(tmp_path):
+    w = _worker()
+    creds = tmp_path / "credentials"
+    creds.mkdir()
+    (tmp_path / w.STOP_FILE).write_text("")
+    assert w.work_once("http://127.0.0.1:9", "t", "true", "a", 5, creds) == "paused"
+    (tmp_path / w.STOP_FILE).unlink()
+    assert w.work_once("http://127.0.0.1:9", "t", "true", "a", 5, creds) == "unreachable"
+    w.drain("http://127.0.0.1:9", "t", "true", "a", 5, creds)  # returns instead of spinning
+
+
+def test_subject_ref_reaches_the_worker_but_never_the_teacher():
+    case = logic.normalize_case({
+        "source_ref": "zap:log:7", "channel": "whatsapp", "incoming_text": "tenho vaga?",
+        "subject_ref": "ABCD2",
+    })
+    assert case["subject_ref"] == "ABCD2"
+    assert "ABCD2" not in logic.build_prompt(case)
+    for bad in ("11999998888", "a@b.com", "x" * 65):
+        with pytest.raises(logic.CaseError):
+            logic.normalize_case({"source_ref": "r", "channel": "whatsapp", "incoming_text": "oi", "subject_ref": bad})
+
+
+def test_worker_sends_subject_ref_to_the_read_only_check(tmp_path):
+    import http.server
+    import threading
+
+    w = _worker()
+    seen = {}
+
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            seen["path"] = self.path
+            body = b'{"person": {"known": false}}'
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *a):
+            pass
+
+    srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    (tmp_path / "proj_z.env").write_text(
+        f"PROD_READONLY_URL=http://127.0.0.1:{srv.server_port}/api/llm/view?view=case\nPROD_READONLY_KEY=k\n"
+    )
+    facts, note = w.case_check("proj_z", "zap:log:7", tmp_path, "ABCD2")
+    srv.shutdown()
+    assert facts == {"person": {"known": False}} and note is None
+    assert "view=case&source_ref=zap%3Alog%3A7&subject_ref=ABCD2" in seen["path"]
+
+
+def test_try_runs_one_case_from_a_file_without_the_api(tmp_path):
+    w = _worker()
+    case = tmp_path / "caso.json"
+    case.write_text('{"source_ref": "t1", "channel": "whatsapp", "incoming_text": "oi", "allowed_actions": []}')
+    answer = (
+        '{"local_answer_rating": "good", "local_answer_path": "right", "intent": "chitchat",'
+        ' "reply_kind": "silence", "suggested_reply": "", "knowledge_gap": null}'
+    )
+    agent = tmp_path / "agent.sh"
+    agent.write_text(f"#!/bin/sh\ncat > {tmp_path}/prompt.txt\necho '{answer}'\n")
+    agent.chmod(0o755)
+    opinion, err = w.try_case(case, "bikeanjoall_2026", str(agent), 10, tmp_path)
+    assert err is None and opinion["reply_kind"] == "silence"
+    prompt = (tmp_path / "prompt.txt").read_text()
+    assert "Regras da casa" in prompt and "postura-ask.md" in prompt
+    bad = tmp_path / "bad.sh"
+    bad.write_text("#!/bin/sh\necho 'sem json'\n")
+    bad.chmod(0o755)
+    assert w.try_case(case, "bikeanjoall_2026", str(bad), 10, tmp_path) == (None, "agent_output_not_json")
+
+
+def test_worker_env_file_fills_only_what_is_missing(tmp_path, monkeypatch):
+    w = _worker()
+    f = tmp_path / "w.env"
+    f.write_text("# token\nSO_TEST_A=from_file\nSO_TEST_B='quoted'\n")
+    monkeypatch.setenv("SO_TEST_A", "from_env")
+    monkeypatch.delenv("SO_TEST_B", raising=False)
+    w.load_env_file(f)
+    import os
+
+    assert os.environ["SO_TEST_A"] == "from_env" and os.environ["SO_TEST_B"] == "quoted"
+    monkeypatch.delenv("SO_TEST_B")

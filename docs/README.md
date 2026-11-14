@@ -19,6 +19,7 @@ Contribuições ao código e contratos: [../CONTRIBUTING.md](../CONTRIBUTING.md)
 - [23-ecosystem-panorama.md](23-ecosystem-panorama.md) — panorama: o ai2tcs no ecossistema ITCS, como a base é lida, o caminho para o robô conversar com mais liberdade e as frentes abertas.
 - [24-ops-observe.md](24-ops-observe.md) — observação remota de operações (`GET /api/ops/observe`): stealth 404, cauda de logs limpos e visões SQL fixas com escopo por projeto.
 - [26-second-opinion.md](26-second-opinion.md) — fila de segunda opinião: um agente maior avalia a resposta da LLM local a um caso de qualquer projeto e canal; só leitura.
+- [27-projetos-e-aprendizado.md](27-projetos-e-aprendizado.md) — uma pasta por projeto (`llm_api/project_library/`), regras da casa em `_shared/` e o que um projeto ensina ao outro.
 - [25-autonomia-mercado-e-estudos.md](25-autonomia-mercado-e-estudos.md) — autonomia de LLM local, aproveitamento de 70% de RAM (M4 32GB), novos modelos de mercado (Qwen 2.5 / Gemma 3), trilha de estudos no YouTube e backlog para Bike Anjo, Chinês e Claudia.
 
 - [treinamento-llm/](treinamento-llm/README.md) — Treinamento e inteligência LLM (segunda opinião, higiene eval, agentes seguros no mini62).

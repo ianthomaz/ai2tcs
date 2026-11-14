@@ -13,9 +13,11 @@ Fase atual: **só consulta**. Sem Meta, sem liberar vaga, sem bridge de chat.
 | Antigravity.app | instalado; fluxo humano BA em `BikeAnjo_Sistema2026/antigravity/ida` ↔ `retornos` |
 | zapCursorAgent | outro repo, bridge GChat `:28472` · **fora** deste desenho |
 
-## Cursor (caminho da fila automática)
+## Antigravity (o professor da fila automática, dono 13/nov/2026)
 
-1. One-shot por caso: `second_opinion_worker.py` roda isolado com prompt via stdin → JSON validado pela API.
+1. One-shot por caso: `second_opinion_worker.py` chama a Antigravity numa pasta temporária vazia,
+   com o caso pela entrada padrão → JSON validado pela API. Ponte, comando e o que perguntar a
+   ela: [antigravity-no-mini62.md](./antigravity-no-mini62.md).
 2. Sem sessão de chat, sem `:28472`, sem WhatsApp.
 3. Clone **só leitura** + usuário OS sem deploy/Meta/escrita no repo de trabalho.
 4. Modo ask / sem auto-run (ou allowlist mínima de leitura); timeout; kill.
@@ -24,14 +26,9 @@ Fase atual: **só consulta**. Sem Meta, sem liberar vaga, sem bridge de chat.
    `security unlock-keychain` remoto.
 6. Teto diário (ex. 20) + kill switch na fila + log (`source_ref`, duração, ok/fail).
 
-## Antigravity
+## Cursor
 
-| Modo | Quando |
-|---|---|
-| Ida/retorno (humano) | Auditar desenho, rotular lote, comparar com Cursor |
-| CLI headless | Só se existir estável; mesmo contrato do `second-opinion.sh` |
-
-Sem CLI confiável: **não** entra na fila automática da fase 1.
+Fica para o trabalho de código e auditoria à mão; não é o professor da fila.
 
 ## Gemini (API)
 
@@ -47,8 +44,9 @@ Bridge GChat → Cursor com sessão contínua. Porta larga. Segunda opinião do 
 
 `GET /api/ops/observe` ([24](../24-ops-observe.md)) não devolve «esta pessoa liberou a
 vaga». Na fase 1 o Zap/sistemaBA coloca no pacote `slot_status`,
-`button_already_used`, `identity_ok_for_slot`. Porta estreita de estado do caso só se
-o pacote não bastar — nunca SQL livre.
+`button_already_used`, `identity_ok_for_slot`. O estado de agora vem da porta estreita do
+projeto, que o **worker** chama com a chave só leitura ([26 § 7](../26-second-opinion.md#7-consulta-só-leitura-ao-sistema-do-projeto));
+o agente não consulta nada e nunca roda SQL livre.
 
 ## Horizonte
 

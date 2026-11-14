@@ -10,9 +10,11 @@ Worker side (SECOND_OPINION_WORKER_TOKEN; 404 when unset or wrong):
 """
 from __future__ import annotations
 
+import asyncio
 import hmac
 from typing import Any
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
 
@@ -60,6 +62,8 @@ async def enqueue(request: Request, _: None = Depends(require_token)) -> dict[st
     except logic.CaseError as e:
         raise HTTPException(status_code=400, detail=str(e))
     outcome, row = await store.enqueue(pid, case, max(0, settings.second_opinion_daily_limit))
+    if outcome == "queued":
+        ring_the_bell()
     if outcome == "limit":
         return {"status": "skipped", "reason": "daily_limit"}
     return {"status": outcome, **_public(row)} if outcome == "exists" else {"status": "queued", "source_ref": case["source_ref"]}
@@ -81,6 +85,25 @@ async def get_one(source_ref: str, request: Request, project_id: str | None = No
     return _public(row)
 
 
+def ring_the_bell() -> None:
+    """Wake the host worker (SECOND_OPINION_NOTIFY_URL, e.g. http://host.docker.internal:9191/notify).
+
+    Fire and forget: a worker that is off finds the case when it starts (it drains the queue first).
+    """
+    url = (settings.second_opinion_notify_url or "").strip()
+    if not url:
+        return
+
+    async def _ring() -> None:
+        try:
+            async with httpx.AsyncClient(timeout=2.0) as client:
+                await client.post(url)
+        except httpx.HTTPError:
+            pass
+
+    asyncio.get_running_loop().create_task(_ring())
+
+
 def _require_worker(request: Request) -> None:
     expected = settings.second_opinion_worker_token
     got = (request.headers.get("authorization") or "").removeprefix("Bearer ").strip()
@@ -98,7 +121,13 @@ async def worker_claim(request: Request) -> Any:
         return Response(status_code=204)
     project = await get_project(row["project_id"])
     notes = logic.project_settings(project)["teacher_notes"]
-    return {"id": row["id"], "prompt": logic.build_prompt(row["request"], notes)}
+    return {
+        "id": row["id"],
+        "project_id": row["project_id"],
+        "source_ref": row["source_ref"],
+        "subject_ref": (row["request"] or {}).get("subject_ref"),
+        "prompt": logic.build_prompt(row["request"], notes, row["project_id"]),
+    }
 
 
 @router.post("/worker/{case_id}/result")
@@ -117,6 +146,8 @@ async def worker_result(case_id: int, request: Request) -> dict[str, Any]:
             raw = logic.extract_json(body["output"])
         try:
             opinion = logic.normalize_opinion(raw, row["request"])
+            # The worker consulted the project's system (read only) before asking the agent.
+            opinion["case_check"] = "ok" if body.get("case_check") == "ok" else None
         except logic.CaseError as e:
             error = f"invalid_opinion: {e}"
     await store.finish(case_id, agent, opinion, (error or "")[:500] or None)

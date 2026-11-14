@@ -104,8 +104,8 @@ def test_load_rows_reports_the_bad_line(tmp_path):
 
 def test_dataset_on_disk_matches_the_intake_contract():
     """The committed dataset must stay loadable by the importer and the runner."""
-    dataset = Path(__file__).resolve().parent / "eval" / "eval_questions.json"
-    rows = json.loads(dataset.read_text(encoding="utf-8"))
+    rows = eval_rag.load_cases()
+    assert rows, "no project case files under project_library/*/casos/"
     for i, raw in enumerate(rows, start=1):
         row, problems = import_eval_set.normalize_row(raw, index=i)
         assert problems == [], problems
@@ -209,7 +209,40 @@ def test_summary_by_bucket_and_dataset_buckets_are_known():
         {"pass": True, "latency_s": 1.0, "bucket": None},
     ]
     assert eval_rag.summarize(rows)["by_bucket"] == {"silence": {"total": 2, "passed": 1}}
-    import json as _json
-
-    data = _json.loads(eval_rag.DEFAULT_DATASET.read_text(encoding="utf-8"))
+    data = eval_rag.load_cases()
     assert {r.get("bucket") for r in data} <= set(eval_rag.BUCKETS) | {None}
+
+
+def test_cases_live_in_each_project_folder(tmp_path, monkeypatch):
+    import sys
+
+    monkeypatch.setattr(import_eval_set, "LIBRARY_ROOT", tmp_path)
+    monkeypatch.setattr(eval_rag, "LIBRARY_ROOT", tmp_path)
+    src = tmp_path / "in.jsonl"
+    src.write_text(
+        '{"project_id":"a","question":"q1"}\n{"project_id":"b","question":"q2"}\n', encoding="utf-8"
+    )
+    monkeypatch.setattr(sys, "argv", ["import_eval_set", "--input", str(src)])
+    assert import_eval_set.main() == 0
+    assert json.loads((tmp_path / "a" / "casos" / "eval_questions.json").read_text())[0]["question"] == "q1"
+    (tmp_path / "_template" / "casos").mkdir(parents=True)
+    (tmp_path / "_template" / "casos" / "eval_questions.json").write_text('[{"project_id":"x","question":"t"}]')
+    assert {r["project_id"] for r in eval_rag.load_cases()} == {"a", "b"}
+    assert [r["question"] for r in eval_rag.load_cases("b")] == ["q2"]
+
+
+def test_new_project_gets_its_folder_from_the_template(tmp_path, monkeypatch):
+    cp = _load("create_project")
+    monkeypatch.setattr(cp, "LLM_ROOT", tmp_path)
+    (tmp_path / "project_library").mkdir()
+    import shutil
+
+    shutil.copytree(cp.TEMPLATE_ROOT, tmp_path / "project_library" / "_template")
+    monkeypatch.setattr(cp, "TEMPLATE_ROOT", tmp_path / "project_library" / "_template")
+    assert cp.materialize_library("novo", None) == [str(tmp_path / "project_library" / "novo" / "rag")]
+    folder = tmp_path / "project_library" / "novo"
+    assert (folder / "casos" / "eval_questions.json").read_text().strip() == "[]"
+    assert "# novo" in (folder / "README.md").read_text()
+    own = tmp_path / "repo" / "LLM"
+    assert cp.materialize_library("outro", own) == [str(own / "rag")]
+    assert (own / "diretrizes").is_dir()

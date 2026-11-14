@@ -131,6 +131,10 @@ apontam para cá; o que eles marcam como feito está no código.
 | | lista dos projetos ativos para o hub | 17 | pequeno |
 | | fila para quando o serviço cai (nasce no cliente) | § 5 | médio |
 | | tutor que lembra dos erros e exercício sem LLM (`/edu`) | § 5 | pequeno cada |
+| Projetos e aprendizado ([27](./27-projetos-e-aprendizado.md)) | prompt do `/ask` monta regras da casa + postura do projeto (hoje cada postura repete a casa), com o portão em cada projeto | dono, 13/nov | médio |
+| | limite por sessão na conversa com a LLM local (laboratórios `aiclaudia` e `chinese_learning`) | dono, 13/nov | pequeno |
+| | casos de ruído do WhatsApp (saudação, emoji, resposta automática) num arquivo comum, rodados em todo projeto do canal | dono, 13/nov | pequeno |
+| | `webplace` na pasta do projeto: instrução em `diretrizes/`, fora da busca | 27 § 6 | pequeno, com casos novos |
 | Decisões do dono | `nf_number` recusar o que não parece número de nota (troca recall por segurança) | 16 § 1.6 | — |
 
 ---
