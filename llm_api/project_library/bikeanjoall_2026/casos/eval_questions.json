@@ -1200,5 +1200,24 @@
       "registros no sistema"
     ],
     "bucket": "org_factual"
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Olá, bom dia!\nTudo bem?\nEu tentei confirmar a presença e, não sei se foi realizado. Não apresenta nenhuma outra opção após clicar no confirmar."
+  },
+  {
+    "project_id": "bikeanjoall_2026",
+    "question": "Bom dia ! Vou precisar libertar a vaga . Larissa não vai conseguir comparecer 😢",
+    "forbidden_keywords": [
+      "celular",
+      "telemovel",
+      "De nada",
+      "posso ajudar em mais",
+      "algo mais",
+      "estou à disposição",
+      "Estou a disposicao",
+      "Posso ajudar em mais",
+      "Como posso ajudar"
+    ]
   }
 ]

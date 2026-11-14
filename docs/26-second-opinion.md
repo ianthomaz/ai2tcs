@@ -26,7 +26,7 @@ A arquitetura é **100% reativa (event-driven por toque de campainha)**:
 1. A API recebe o caso no `POST /second-opinion`, valida e grava na tabela `second_opinions`.
 2. A API dispara um ping leve para o host: `POST http://host.docker.internal:9191/notify`.
 3. O worker em `--listen` (escuta só em `127.0.0.1:9191`) acorda, esvazia a fila um caso por
-   vez (prompt num arquivo `caso.md` dentro de uma pasta temporária vazia, timeout de 45 s),
+   vez (prompt num arquivo `caso.md` dentro de uma pasta temporária vazia, timeout de 180 s),
    devolve cada resposta e volta a esperar parado, com **0% de CPU**.
 
 A campainha é só um aviso: sem ela (`SECOND_OPINION_NOTIFY_URL` vazio) o caso espera na fila
@@ -133,11 +133,16 @@ python3 scripts/second_opinion_worker.py --once      # um caso da fila, à mão
 ```
 
 `{prompt_file}` e `{workdir}` o worker troca pelo arquivo do caso e pela pasta temporária; sem
-eles, o prompt vai pela entrada padrão. O agente recebe só `PATH`, `HOME`, `USER`, `LANG`,
-`TMPDIR`, `CURSOR_API_KEY` e `CURSOR_CONFIG_DIR`; nunca chave de projeto. O prompt já traz as regras da casa e as
-diretrizes do projeto (`project_library/`, [27](./27-projetos-e-aprendizado.md)): o professor não abre pasta. Na API, `SECOND_OPINION_NOTIFY_URL=http://host.docker.internal:9191/notify`.
+eles, o prompt vai pela entrada padrão. O ambiente mínimo do processo-filho inclui `PATH`,
+`HOME`, `USER`, `LANG`, `TMPDIR` e, quando existirem, variáveis do professor
+(`ANTIGRAVITY_*` / `GEMINI_*`); nunca chave de projeto nem `PROD_*`. O prompt já traz as regras
+da casa e as diretrizes do projeto (`project_library/`, [27](./27-projetos-e-aprendizado.md)):
+o professor não abre a pasta do ai2tcs. Na API,
+`SECOND_OPINION_NOTIFY_URL=http://host.docker.internal:9191/notify`.
 
-Comando da Antigravity, arquivos de credencial e ordem de subida:
+Professor oficial = Antigravity local via
+`scripts/antigravity_agent_runner.py {prompt_file}` — credenciais, discovery do
+`language_server` e ordem de subida:
 [antigravity-no-mini62.md](./treinamento-llm/antigravity-no-mini62.md). Recorte de
 sistema (usuário, pasta, keychain): [agentes-seguros-mini62.md](./treinamento-llm/agentes-seguros-mini62.md).
 

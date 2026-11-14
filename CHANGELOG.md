@@ -52,7 +52,8 @@ deploy ela ganha a data e começa outra vazia.
   o prompt traz as regras da casa e as diretrizes do projeto (`project_library/`); worker com `--try caso.json`
   (um caso de arquivo, sem API), variáveis em `local-only/second_opinion_worker.env`, launchd de exemplo.
 - **Worker da segunda opinião:** arquivo `local-only/DISABLE_SECOND_OPINION` pausa no host; API fora do ar
-  para a drenagem; timeout padrão 45 s.
+  para a drenagem; timeout padrão 180 s. Professor via
+  `scripts/antigravity_agent_runner.py` (HTTP local + transcript JSONL; sem `agy` CLI).
 - **`/health` sem chave** responde só `status` e `uptime_seconds`; com chave, também `checks`.
   **`/metrics`** exige o token do operador.
 - **Áudio de formato desconhecido é recusado** (400); MP3 reconhecido em todas as variantes de quadro.

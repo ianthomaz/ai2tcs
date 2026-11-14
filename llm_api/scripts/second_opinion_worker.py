@@ -14,12 +14,10 @@ verified facts. The agent only reads one file in an empty folder.
   SECOND_OPINION_AGENT_CMD     the agent command. Placeholders: {prompt_file} (the case, written
                                in an empty folder), {workdir} (that folder). Without placeholders
                                the prompt goes on stdin.
-                               Antigravity (stdin, empty workspace; never the ai2tcs folder, which
-                               holds local-only/credentials):
-                                 agy --mode headless --workspace {workdir} --system-prompt
-                                 "Responda só com o objeto JSON pedido no texto recebido."
+                               Antigravity local (mini62, reads {prompt_file}, never puts case in argv/ps):
+                                 python3 /Users/ianthomaz/Documents/projects/ai2tcs/llm_api/scripts/antigravity_agent_runner.py {prompt_file}
   SECOND_OPINION_AGENT_NAME    label stored with the answer (default: first word of the command)
-  SECOND_OPINION_TIMEOUT_S     default 45
+  SECOND_OPINION_TIMEOUT_S     default 180
   SECOND_OPINION_CREDENTIALS_DIR  default ../local-only/credentials (one <project_id>.env per project)
   SECOND_OPINION_LISTEN_PORT   default 9191 (the bell)
 
@@ -64,7 +62,13 @@ def redact(text: str) -> str:
 def run_agent(cmd: str, prompt: str, timeout_s: float) -> tuple[str | None, str | None]:
     """(output, error). Empty working folder, minimal environment, the prompt in a file there
     ({prompt_file}) or on stdin. The prompt never goes on the command line (visible in `ps`)."""
-    env = {k: os.environ[k] for k in ("PATH", "HOME", "USER", "LANG", "TMPDIR", "CURSOR_API_KEY", "CURSOR_CONFIG_DIR") if k in os.environ}
+    allowed_env_keys = (
+        "PATH", "HOME", "USER", "LANG", "TMPDIR",
+        "CURSOR_API_KEY", "CURSOR_CONFIG_DIR",
+        "GEMINI_API_KEY", "GOOGLE_API_KEY", "GEMINI_MODEL",
+        "ANTIGRAVITY_LS_ADDRESS", "ANTIGRAVITY_CSRF_TOKEN", "ANTIGRAVITY_MODEL",
+    )
+    env = {k: os.environ[k] for k in allowed_env_keys if k in os.environ}
     with tempfile.TemporaryDirectory(prefix="second-opinion-") as cwd:
         prompt_file = Path(cwd) / PROMPT_NAME
         prompt_file.write_text(prompt, encoding="utf-8")
@@ -272,7 +276,7 @@ def main() -> int:
     if not cmd:
         print("SECOND_OPINION_AGENT_CMD não definido", file=sys.stderr)
         return 2
-    timeout_s = float(os.environ.get("SECOND_OPINION_TIMEOUT_S", "45"))
+    timeout_s = float(os.environ.get("SECOND_OPINION_TIMEOUT_S", "180"))
     agent = os.environ.get("SECOND_OPINION_AGENT_NAME") or os.path.basename(shlex.split(cmd)[0])
     creds_dir = Path(os.environ.get("SECOND_OPINION_CREDENTIALS_DIR") or Path(__file__).resolve().parents[2] / "local-only" / "credentials")
     if args.try_file:
