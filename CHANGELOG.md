@@ -36,6 +36,11 @@ deploy ela ganha a data e começa outra vazia.
 
 ### Muda
 
+- **Segunda opinião, uma conversa por pessoa:** o worker passa o `subject_ref` ao agente só no ambiente
+  (`SECOND_OPINION_SUBJECT_REF`); o runner da Antigravity guarda uma conversa do professor por `user_id`
+  (sem conta, uma geral) em `second_opinion_teacher_state.json`. O arquivo de estado de conversa única é
+  ignorado: as conversas renascem por pessoa.
+
 - **Segunda opinião:** `local_answer_rating` usa a escala do painel do projeto: `stop` · `bad` ·
   `good` · `great` (sai `neutral`). `/second-opinion/stats` soma `good` + `great` em `local_good` e
   `bad` + `stop` em `local_bad`.

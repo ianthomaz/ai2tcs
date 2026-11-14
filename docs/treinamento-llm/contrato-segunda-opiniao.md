@@ -190,7 +190,7 @@ O agente professor (`Cursor Agent` ou `Antigravity`) é instruído a responder *
   "source_ref": "zap:msg:AAJA9-20261112",
   "project_id": "bikeanjoall_2026",
   "timestamp": "2026-11-12T11:00:00Z",
-  "incoming_text": "Bom dia ! Vou precisar libertar a vaga . Larissa não vai conseguir comparecer 😢",
+  "incoming_text": "Bom dia ! Vou precisar libertar a vaga . Ana não vai conseguir comparecer 😢",
   "campaign_context": {
     "active_campaign": true,
     "campaign_kind": "event_confirmation",
@@ -227,7 +227,7 @@ O agente professor (`Cursor Agent` ou `Antigravity`) é instruído a responder *
     "already_applied": true,
     "why": "Vaga já foi liberada via clique no botão registrado em case_facts."
   },
-  "suggested_reply": "Bom dia! Tudo bem, a vaga da Larissa já foi liberada com sucesso. Obrigado por avisar!",
+  "suggested_reply": "Bom dia! Tudo bem, a vaga da Ana já foi liberada com sucesso. Obrigado por avisar!",
   "checked": ["slot_status=released", "button_already_used=true", "identity_ok_for_slot=true"],
   "confidence": 0.98
 }

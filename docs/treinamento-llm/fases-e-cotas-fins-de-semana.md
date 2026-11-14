@@ -79,7 +79,7 @@ flowchart LR
 
 ### O Papel do Cursor Agent (O Inspetor de Campo no `mini62`):
 - **Onde ele brilha:** Ele está instalado direto no macOS do `mini62` (`cursor-agent`). Ele tem acesso seguro e local às ferramentas de inspeção.
-- **O que ele faz na segunda opinião:** Ele recebe o pacote, pode consultar os fatos do caso (ou checar o estado da inscrição) e cravar: *"A Larissa já não está mais no evento porque o botão de liberação foi registrado há 1 minuto. A resposta local está errada."*
+- **O que ele faz na segunda opinião:** Ele recebe o pacote, pode consultar os fatos do caso (ou checar o estado da inscrição) e cravar: *"A Ana já não está mais no evento porque o botão de liberação foi registrado há 1 minuto. A resposta local está errada."*
 - **Saída:** Devolve o JSON estrito conforme o `contrato-segunda-opiniao.md`.
 
 ### O Papel do Antigravity (O Engenheiro / Arquiteto):

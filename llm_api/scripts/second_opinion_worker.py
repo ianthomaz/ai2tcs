@@ -15,7 +15,7 @@ verified facts. The agent only reads one file in an empty folder.
                                in an empty folder), {workdir} (that folder). Without placeholders
                                the prompt goes on stdin.
                                Antigravity local (mini62, reads {prompt_file}, never puts case in argv/ps):
-                                 python3 /Users/ianthomaz/Documents/projects/ai2tcs/llm_api/scripts/antigravity_agent_runner.py {prompt_file}
+                                 python3 /caminho/para/ai2tcs/llm_api/scripts/antigravity_agent_runner.py {prompt_file}
   SECOND_OPINION_AGENT_NAME    label stored with the answer (default: first word of the command)
   SECOND_OPINION_TIMEOUT_S     default 180
   SECOND_OPINION_CREDENTIALS_DIR  default ../local-only/credentials (one <project_id>.env per project)
@@ -59,9 +59,11 @@ def redact(text: str) -> str:
     return _PHONE.sub("[contato]", _CPF.sub("[documento]", _EMAIL.sub("[contato]", text)))
 
 
-def run_agent(cmd: str, prompt: str, timeout_s: float) -> tuple[str | None, str | None]:
+def run_agent(cmd: str, prompt: str, timeout_s: float, subject_ref: str | None = None) -> tuple[str | None, str | None]:
     """(output, error). Empty working folder, minimal environment, the prompt in a file there
-    ({prompt_file}) or on stdin. The prompt never goes on the command line (visible in `ps`)."""
+    ({prompt_file}) or on stdin. The prompt never goes on the command line (visible in `ps`).
+    `subject_ref` goes to the agent only as `SECOND_OPINION_SUBJECT_REF` in its environment, so
+    the runner keeps one conversation per person; it never enters the prompt."""
     allowed_env_keys = (
         "PATH", "HOME", "USER", "LANG", "TMPDIR",
         "CURSOR_API_KEY", "CURSOR_CONFIG_DIR",
@@ -69,6 +71,8 @@ def run_agent(cmd: str, prompt: str, timeout_s: float) -> tuple[str | None, str 
         "ANTIGRAVITY_LS_ADDRESS", "ANTIGRAVITY_CSRF_TOKEN", "ANTIGRAVITY_MODEL",
     )
     env = {k: os.environ[k] for k in allowed_env_keys if k in os.environ}
+    if subject_ref:
+        env["SECOND_OPINION_SUBJECT_REF"] = subject_ref
     with tempfile.TemporaryDirectory(prefix="second-opinion-") as cwd:
         prompt_file = Path(cwd) / PROMPT_NAME
         prompt_file.write_text(prompt, encoding="utf-8")
@@ -174,7 +178,7 @@ def work_once(api: str, token: str, cmd: str, agent: str, timeout_s: float, cred
     if status != 200 or not case:
         return "unauthorized" if status in (401, 403, 404) else "unreachable"
     facts, note = case_check(case.get("project_id") or "", case.get("source_ref") or "", creds_dir, case.get("subject_ref"))
-    output, error = run_agent(cmd, with_verified_facts(case["prompt"], facts, note), timeout_s)
+    output, error = run_agent(cmd, with_verified_facts(case["prompt"], facts, note), timeout_s, case.get("subject_ref"))
     body = {"agent": agent, "output": output} if output is not None else {"agent": agent, "error": error}
     if facts is not None:
         body["case_check"] = "ok"
@@ -237,7 +241,7 @@ def try_case(path: Path, project_id: str, cmd: str, timeout_s: float, creds_dir:
         return None, f"case_invalid: {e}"
     prompt = logic.build_prompt(case, None, project_id)
     facts, note = case_check(project_id, case["source_ref"], creds_dir, case.get("subject_ref"))
-    output, error = run_agent(cmd, with_verified_facts(prompt, facts, note), timeout_s)
+    output, error = run_agent(cmd, with_verified_facts(prompt, facts, note), timeout_s, case.get("subject_ref"))
     if output is None:
         return None, error
     parsed = logic.extract_json(output)

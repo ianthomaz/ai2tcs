@@ -176,27 +176,62 @@ def read_planner_responses(conv_id: str) -> list[tuple[int, str]]:
     return results
 
 
+NO_ACCOUNT_KEY = "_sem_conta"
+
+
+def subject_key() -> str:
+    """De quem é o caso: o `user_id` que o worker passa no ambiente; sem conta, uma conversa geral."""
+    ref = os.environ.get("SECOND_OPINION_SUBJECT_REF", "").strip()
+    return ref if re.fullmatch(r"[A-Za-z0-9_-]{1,64}", ref) else NO_ACCOUNT_KEY
+
+
+def load_state() -> dict:
+    """`{"conversations": {chave: {conversation_id, turns, created_at}}}`; arquivo ilegível = vazio."""
+    try:
+        state = json.loads(STATE_FILE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {"conversations": {}}
+    convs = state.get("conversations") if isinstance(state, dict) else None
+    return {"conversations": convs if isinstance(convs, dict) else {}}
+
+
+def reusable_conversation(state: dict, key: str, max_turns: int) -> str | None:
+    """A conversa desta pessoa, se ainda cabe mais um caso nela."""
+    entry = state["conversations"].get(key) or {}
+    cid = entry.get("conversation_id") or ""
+    return cid if cid and int(entry.get("turns", 0)) < max_turns else None
+
+
+def remember(state: dict, key: str, cid: str, new: bool) -> None:
+    """Conta o caso na conversa da pessoa e grava o arquivo (fica só no Mac)."""
+    entry = state["conversations"].get(key) or {}
+    if new or entry.get("conversation_id") != cid:
+        entry = {"conversation_id": cid, "turns": 0, "created_at": time.time()}
+    entry["turns"] = int(entry.get("turns", 0)) + 1
+    state["conversations"][key] = entry
+    try:
+        STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        STATE_FILE.write_text(json.dumps(state, indent=2), encoding="utf-8")
+    except OSError:
+        pass
+
+
 def get_or_create_teacher_conversation(addr: str, token: str) -> str:
-    """Retorna um conversationId ativo para o professor, criando se necessário."""
+    """Uma conversa do professor por pessoa (`user_id`), criada na primeira vez. O título e a
+    mensagem inicial não levam o id: a ligação id → conversa mora só no arquivo de estado."""
     forced_id = os.environ.get("ANTIGRAVITY_CONVERSATION_ID", "").strip()
     if forced_id:
         return forced_id
 
     max_turns = int(os.environ.get("ANTIGRAVITY_MAX_TURNS_PER_CONVERSATION", "40"))
-
-    if STATE_FILE.is_file():
-        try:
-            state = json.loads(STATE_FILE.read_text(encoding="utf-8"))
-            cid = state.get("conversation_id", "")
-            turns = int(state.get("turns", 0))
-            if cid and turns < max_turns:
-                meta = rpc_post(addr, token, "GetConversationMetadata", {"conversationId": cid}, timeout=5.0)
-                if meta and "metadata" in meta:
-                    state["turns"] = turns + 1
-                    STATE_FILE.write_text(json.dumps(state, indent=2), encoding="utf-8")
-                    return cid
-        except Exception:
-            pass
+    key = subject_key()
+    state = load_state()
+    cid = reusable_conversation(state, key, max_turns)
+    if cid:
+        meta = rpc_post(addr, token, "GetConversationMetadata", {"conversationId": cid}, timeout=5.0)
+        if meta and "metadata" in meta:
+            remember(state, key, cid, new=False)
+            return cid
 
     # Precisa criar uma nova conversa (o prompt inicial é fixo, sem dados sensíveis no ps)
     model = os.environ.get("ANTIGRAVITY_MODEL", "flash_lite")
@@ -228,13 +263,7 @@ def get_or_create_teacher_conversation(addr: str, token: str) -> str:
             break
         time.sleep(0.5)
 
-    try:
-        STATE_FILE.write_text(
-            json.dumps({"conversation_id": cid, "turns": 1, "created_at": time.time()}, indent=2),
-            encoding="utf-8",
-        )
-    except OSError:
-        pass
+    remember(state, key, cid, new=True)
     return cid
 
 

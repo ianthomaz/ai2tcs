@@ -40,7 +40,7 @@ caso e os fatos consultados agora. Ela não precisa abrir pasta do ai2tcs.
 | `agy run` / `agy --mode headless` | **não existe** neste build | usar `antigravity_agent_runner.py` |
 | Caso no argv / stdin do CLI | caso no **body HTTP** `SendAgentMessage` | fora do `ps` |
 | Poll no SQLite `conversations/<id>.db` | poll em `brain/<id>/.system_generated/logs/transcript_full.jsonl` | texto JSONL (`PLANNER_RESPONSE`), sem protobuf |
-| Uma conversa nova por caso | uma conversa de professor reutilizada (`second_opinion_teacher_state.json`, até 40 turnos) | menos lixo no hub |
+| Uma conversa nova por caso | uma conversa de professor por pessoa (`user_id` em `SECOND_OPINION_SUBJECT_REF`; sem conta, uma conversa geral), até 40 casos cada, em `second_opinion_teacher_state.json` | cada pessoa com o seu histórico; o id não entra no prompt nem no título |
 | Diretrizes no disco do agente | vão no prompt, de `project_library/` | o runner não aponta workspace no repo ai2tcs |
 | Consulta produção pelo agente | quem faz é o **worker** (chave 2); fatos entram no prompt | agente sem chave de projeto |
 | Porta `…/case-check?userId=…` | `GET /api/llm/view?view=case&source_ref=…&subject_ref=…` | visão LLM do Bike Anjo |
@@ -92,7 +92,7 @@ Pausa sem mexer em nada: `touch local-only/DISABLE_SECOND_OPINION`.
 
 1. Lê `{prompt_file}` (o worker nunca coloca o caso na linha de comando).
 2. Autodiscovery do `language_server` (porta + `--csrf_token`) se o env estiver vazio.
-3. Reusa ou cria a conversa do professor (`~/.gemini/antigravity/second_opinion_teacher_state.json`).
+3. Reusa ou cria a conversa do professor daquela pessoa (`~/.gemini/antigravity/second_opinion_teacher_state.json`, uma entrada por `user_id`).
    A criação usa `agentapi new-conversation` só com um prompt **genérico** (sem dados de caso).
 4. Envia o caso com `POST …/SendAgentMessage` (body JSON).
 5. Lê `~/.gemini/antigravity/brain/<id>/.system_generated/logs/transcript_full.jsonl` até um

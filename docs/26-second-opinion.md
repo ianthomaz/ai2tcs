@@ -51,7 +51,7 @@ Caso fora das travas não é erro: `{"status": "skipped", "reason": "disabled" |
   "subject_ref": "ABCD2",
   "channel": "whatsapp",
   "case_kind": "campaign_reply",
-  "incoming_text": "Vou precisar liberar a vaga. Larissa não vai conseguir comparecer",
+  "incoming_text": "Vou precisar liberar a vaga. Ana não vai conseguir comparecer",
   "history": [{"role": "assistant", "content": "Confirma sua presença no sábado?"}],
   "local_answer": {"text": "Ainda não confirmamos sua inscrição.", "confidence": 0.65, "signals": {}},
   "case_facts": {"slot_status": "released", "button_already_used": true, "identity_ok_for_slot": true},
@@ -62,7 +62,9 @@ Caso fora das travas não é erro: `{"status": "skipped", "reason": "disabled" |
 
 - `source_ref` identifica o caso no cliente; mandar de novo devolve o que já existe (`exists`).
 - `subject_ref` (opcional): o id da pessoa no projeto (no Bike Anjo, o `user_id`), nunca telefone
-  nem e-mail. Vai só para a consulta do worker (§ 7); o professor não o vê.
+  nem e-mail. Vai para a consulta do worker (§ 7) e, no ambiente do agente
+  (`SECOND_OPINION_SUBJECT_REF`), para o professor ter **uma conversa por pessoa**: ele vê o
+  histórico daquela pessoa, nunca o id (que não entra no prompt nem no título da conversa).
 - `case_kind`: nome do tipo de caso no projeto (slug). É por ele que a conta do § 6 agrupa.
 - `case_facts`, `context`: objetos do projeto (até 4 KB cada). O professor só sabe o que está aí.
 - `allowed_actions`: lista fechada do projeto. O professor só pode sugerir uma delas (ou nenhuma).

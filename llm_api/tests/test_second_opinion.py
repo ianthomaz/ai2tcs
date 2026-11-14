@@ -265,3 +265,37 @@ def test_worker_env_file_fills_only_what_is_missing(tmp_path, monkeypatch):
 
     assert os.environ["SO_TEST_A"] == "from_env" and os.environ["SO_TEST_B"] == "quoted"
     monkeypatch.delenv("SO_TEST_B")
+
+
+def test_worker_gives_the_agent_the_subject_only_through_its_environment():
+    w = _worker()
+    cmd = f"{sys.executable} -c \"import os, sys; sys.stdin.read(); print(os.environ.get('SECOND_OPINION_SUBJECT_REF', '-'))\""
+    assert w.run_agent(cmd, "caso", 20, "AB12C") == ("AB12C", None)
+    assert w.run_agent(cmd, "caso", 20) == ("-", None)
+
+
+def test_runner_keeps_one_teacher_conversation_per_person(tmp_path, monkeypatch):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "antigravity_agent_runner", Path(__file__).resolve().parents[1] / "scripts" / "antigravity_agent_runner.py"
+    )
+    r = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(r)
+    monkeypatch.setattr(r, "STATE_FILE", tmp_path / "state.json")
+
+    monkeypatch.setenv("SECOND_OPINION_SUBJECT_REF", "AB12C")
+    assert r.subject_key() == "AB12C"
+    monkeypatch.setenv("SECOND_OPINION_SUBJECT_REF", "../x")
+    assert r.subject_key() == r.NO_ACCOUNT_KEY
+    monkeypatch.delenv("SECOND_OPINION_SUBJECT_REF")
+    assert r.subject_key() == r.NO_ACCOUNT_KEY
+
+    state = r.load_state()
+    r.remember(state, "AB12C", "conv-a", new=True)
+    r.remember(state, "ZZ99Z", "conv-b", new=True)
+    state = r.load_state()
+    assert r.reusable_conversation(state, "AB12C", 40) == "conv-a"
+    assert r.reusable_conversation(state, "ZZ99Z", 40) == "conv-b"
+    assert r.reusable_conversation(state, "AB12C", 1) is None
+    r.remember(state, "AB12C", "conv-a", new=False)
+    assert r.load_state()["conversations"]["AB12C"]["turns"] == 2

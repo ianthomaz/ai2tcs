@@ -37,7 +37,7 @@ ocorreram; telefone não precisa viajar no pacote do agente.
 
 **Texto da pessoa (depois da campanha):**
 
-> Bom dia ! Vou precisar libertar a vaga . Larissa não vai conseguir comparecer 😢
+> Bom dia ! Vou precisar libertar a vaga . Ana não vai conseguir comparecer 😢
 
 **Hipótese do shadow (errada):** algo na linha de «há registro de interesse na EBA Lagoa;
 ainda não confirmamos a inscrição; aguarde».

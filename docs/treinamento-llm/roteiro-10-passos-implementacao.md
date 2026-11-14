@@ -10,7 +10,7 @@
 O objetivo da segunda opinião com o Cursor não é apenas lidar com confirmação de eventos, mas **educar o agente para compreender profundamente o ecossistema da Bike Anjo e dos sistemas vinculados** (institucional, voluntariado, acolhimento, regras de negócio e triagem):
 
 - **Mineração Histórica do Shadow (Janela de Créditos):** Assim que a cota/janela de créditos for renovada em 5 a 6 dias, o foco inicial será analisar o banco histórico de shadow do `ai2tcs`, categorizando os cenários reais mais recorrentes (dúvidas de iniciantes, relatos de imprevistos, pedidos de rotas, etc.) para alimentar o repertório do agente.
-- **Não ser robótico frio:** Em situações humanas reais (ex: Larissa doente), ignorar a dor e responder um texto mecânico de sistema passa sensação de desprezo. Dizer *"Sinto muito, estimo melhoras para ela!"* antes de confirmar a informação humaniza o atendimento com mínimo consumo de tokens.
+- **Não ser robótico frio:** Em situações humanas reais (ex: Ana doente), ignorar a dor e responder um texto mecânico de sistema passa sensação de desprezo. Dizer *"Sinto muito, estimo melhoras para ela!"* antes de confirmar a informação humaniza o atendimento com mínimo consumo de tokens.
 - **Não virar chatbot de papo furado (Sem conversational maintenance):** O bot **nunca** deve fazer perguntas abertas que convidem à réplica (*"Como posso te ajudar em mais alguma coisa hoje?", "O que ela teve?", "Me conte mais"*). Ele responde o fato, deseja melhoras / dá a informação, e **encerra o turno**.
 - **Onde mora a regra:**
   - No `BikeAnjo_Sistema2026`: nos contratos de prompt (`contracts/ai2tcs/prompts/` e `zapzap/flows.js`).
