@@ -303,6 +303,46 @@ def test_teacher_label_encode_and_allocate(tmp_path, monkeypatch):
     assert r.allocate_teacher_label(state) == "pso_llm_0010"
 
 
+def test_reset_pool_deletes_ready_and_bound(tmp_path, monkeypatch):
+    r = _load_antigravity_runner(tmp_path, monkeypatch)
+    state = r.load_state()
+    state["ready"] = [
+        {"conversation_id": "ready-1", "label": "pso_llm_0000", "status": "ready", "created_at": 1.0, "expires_at": 9e9}
+    ]
+    state["conversations"] = {
+        "U1": {
+            "conversation_id": "bound-1",
+            "label": "pso_llm_0001",
+            "status": "bound",
+            "turns": 1,
+            "created_at": 1.0,
+            "bound_at": 1.0,
+            "last_used_at": 1.0,
+            "expires_at": 9e9,
+        }
+    }
+    r.save_state(state)
+
+    deleted_ids: list[str] = []
+
+    def fake_delete(addr, token, cid):
+        deleted_ids.append(cid)
+        return True
+
+    monkeypatch.setattr(r, "delete_conversation_everywhere", fake_delete)
+    monkeypatch.setattr(
+        r,
+        "ensure_pool",
+        lambda addr, token, n: {"ready_count": n, "created": [], "ready": []},
+    )
+    out = r.reset_ready_pool("127.0.0.1:1", "tok", 0)
+    assert deleted_ids == ["ready-1", "bound-1"]
+    assert out["deleted_ready"][0]["conversation_id"] == "ready-1"
+    assert out["deleted_bound"][0]["conversation_id"] == "bound-1"
+    assert r.load_state()["conversations"] == {}
+    assert r.load_state()["ready"] == []
+
+
 def test_runner_keeps_one_teacher_conversation_per_person(tmp_path, monkeypatch):
     r = _load_antigravity_runner(tmp_path, monkeypatch)
 

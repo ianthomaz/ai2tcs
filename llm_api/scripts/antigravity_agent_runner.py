@@ -21,7 +21,7 @@ Implementa o plano completo (docs/treinamento-llm/plano-conversas-professor-por-
 Subcomandos de operação e auditoria:
   python3 antigravity_agent_runner.py --status         # lista pool ready e vínculos ativos/expirados
   python3 antigravity_agent_runner.py --ensure-pool 10 # pré-cria até 10 conversas no pool ready
-  python3 antigravity_agent_runner.py --reset-pool 10  # apaga o pool ready no hub e recria com títulos pso_llm_xxxx
+  python3 antigravity_agent_runner.py --reset-pool 10  # apaga ready + vínculos bound no hub e recria com pso_llm_xxxx
   python3 antigravity_agent_runner.py --expire         # expira e apaga no hub conversas > 30 dias
   python3 antigravity_agent_runner.py <prompt_file>    # julga 1 caso (chamado pelo worker)
 
@@ -594,27 +594,58 @@ def ensure_pool(addr: str, token: str, target_size: int = DEFAULT_POOL_SIZE) -> 
 
 
 def reset_ready_pool(addr: str, token: str, target_size: int = DEFAULT_POOL_SIZE) -> dict:
-    """Apaga todas as conversas `ready` no hub e recria o pool com títulos pso_llm_xxxx novos."""
+    """Apaga ready + vínculos bound no hub e recria o pool com títulos pso_llm_xxxx novos."""
     state = load_state()
-    deleted: list[dict] = []
+    deleted_ready: list[dict] = []
+    deleted_bound: list[dict] = []
     failed: list[str] = []
     now = time.time()
+
     for item in list(state["ready"]):
         cid = item.get("conversation_id", "")
         label = item.get("label")
         if not cid:
             continue
         if delete_conversation_everywhere(addr, token, cid):
-            deleted.append({"conversation_id": cid, "label": label})
+            deleted_ready.append({"conversation_id": cid, "label": label})
             state["deleted_log"].append(
                 {"conversation_id": cid, "label": label, "kind": "ready_pool_reset", "deleted_at": now}
             )
         else:
             failed.append(cid)
     state["ready"] = []
+
+    # Also wipe person bindings so reset does not leave old unlabeled teacher threads behind.
+    for key, entry in list(state["conversations"].items()):
+        if not isinstance(entry, dict):
+            continue
+        cid = entry.get("conversation_id", "")
+        label = entry.get("label")
+        if not cid:
+            del state["conversations"][key]
+            continue
+        if delete_conversation_everywhere(addr, token, cid):
+            row = {
+                "key": key,
+                "conversation_id": cid,
+                "label": label,
+                "kind": "bound_pool_reset",
+                "deleted_at": now,
+            }
+            deleted_bound.append(row)
+            state["deleted_log"].append(row)
+            del state["conversations"][key]
+        else:
+            failed.append(cid)
+
     save_state(state)
     pool = ensure_pool(addr, token, max(0, target_size))
-    return {"deleted_ready": deleted, "failed_delete": failed, "pool": pool}
+    return {
+        "deleted_ready": deleted_ready,
+        "deleted_bound": deleted_bound,
+        "failed_delete": failed,
+        "pool": pool,
+    }
 
 
 def pop_from_ready_pool(state: dict, addr: str, token: str) -> tuple[str | None, str | None]:
