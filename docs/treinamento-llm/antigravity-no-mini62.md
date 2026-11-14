@@ -52,7 +52,7 @@ caso e os fatos consultados agora. Ela não precisa abrir pasta do ai2tcs.
 
 ```bash
 SECOND_OPINION_WORKER_TOKEN=…            # o mesmo do .env da API
-SECOND_OPINION_AGENT_CMD=python3 /Users/ianthomaz/Documents/projects/ai2tcs/llm_api/scripts/antigravity_agent_runner.py {prompt_file}
+SECOND_OPINION_AGENT_CMD=python3 /caminho/para/ai2tcs/llm_api/scripts/antigravity_agent_runner.py {prompt_file}
 SECOND_OPINION_AGENT_NAME=antigravity
 SECOND_OPINION_TIMEOUT_S=180
 ```
@@ -117,29 +117,14 @@ decidir:
 O Antigravity.app precisa estar aberto na sessão; o runner não sobe um `language_server`
 standalone sozinho.
 
-## 7. Reflexão: conversas prontas à espera (dono, 14/nov/2026)
+## 7. Plano seguinte: pool, vínculo por pessoa, expiração 30 dias
 
-Não é tarefa ainda; é o desenho para pensar.
+A reflexão virou plano único (lista de vínculos, pool pronto, apagar conversas vencidas, e
+perguntas só do universo Antigravity):
 
-**O problema.** Com uma conversa por pessoa, o primeiro caso de cada pessoa paga a criação da
-conversa (até 30 s), a mensagem de boas-vindas (até 30 s) e a resposta (até 160 s). Somados,
-passam dos 180 s em que o worker corta o agente, e o caso falha.
+→ **[plano-conversas-professor-por-pessoa.md](./plano-conversas-professor-por-pessoa.md)**
 
-**A ideia.** Manter uma fila de conversas prontas, cada uma já com o contexto do professor
-(o universo do projeto, as regras da casa, o formato da resposta), esperando chamada:
-
-| Peça | Como |
-|---|---|
-| Tamanho da fila | 10 conversas prontas; 20 se quiser cobrir o teto do dia (20 casos) |
-| Chega um caso | pessoa com conversa ligada nos últimos 30 dias → a mesma conversa; senão, a primeira pronta da fila é ligada àquela pessoa |
-| Repor | em segundo plano, fora do tempo do caso, abre uma conversa nova e passa o contexto; não precisa repor todo dia |
-| Validade | a ligação pessoa → conversa vale 30 dias; depois a conversa é apagada |
-| Estado | o mesmo arquivo do Mac (`second_opinion_teacher_state.json`): `ready` (fila) e `conversations` (pessoa → conversa, com data do último uso) |
-
-Assim a criação sai do caminho do caso, e o tempo do caso fica só na resposta.
-
-**Ponto a confirmar antes de tudo: apagar a conversa.** O runner usa
-`agentapi new-conversation`, `GetConversationMetadata` e `SendAgentMessage`; nenhum deles
-apaga. Falta confirmar no mini62 se o `agentapi` (ou o `language_server`) tem como apagar ou
-arquivar uma conversa, ou se apagar a pasta `~/.gemini/antigravity/brain/<conversa>` basta e
-não deixa lixo no hub. Sem isso, a validade de 30 dias vira acúmulo.
+Resumo: o primeiro caso por pessoa ainda pode estourar os 180 s; a saída é conversas
+**prontas** + bind por `user_id` (ou hash de contato sem cadastro) + job que **expira em 30
+dias** e apaga vínculo, pasta `brain/` e — se o Antigravity permitir — a conversa no hub.
+O § 8 desse plano é o briefing para a própria Antigravity responder sobre delete/arquivar.

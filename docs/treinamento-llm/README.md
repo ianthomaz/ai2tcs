@@ -17,7 +17,8 @@ espelho Bike Anjo `docs/contracts/ai2tcs/`).
 | [higiene-eval-ask.md](./higiene-eval-ask.md) | Buckets A/B/C/D do `/ask`, o que o 5/85 mistura, ordem de flags, o que não fazer |
 | [agentes-seguros-mini62.md](./agentes-seguros-mini62.md) | Como rodar Cursor e Antigravity com recorte duro; o que **não** reutilizar (`zapCursorAgent`); Gemini como fallback depois |
 | [passagem-13nov2026.md](./passagem-13nov2026.md) | Passagem de sessão: ramos, o que está feito, o desenho fechado e o que ficou em aberto |
-| [antigravity-no-mini62.md](./antigravity-no-mini62.md) | A ponte Docker → Antigravity no Mac: caminho do caso, o manual dela item a item, arquivos fora do Git, ordem de subida e perguntas para ela |
+| [antigravity-no-mini62.md](./antigravity-no-mini62.md) | A ponte Docker → Antigravity no Mac: caminho do caso, o manual dela item a item, arquivos fora do Git, ordem de subida |
+| [plano-conversas-professor-por-pessoa.md](./plano-conversas-professor-por-pessoa.md) | Plano: pool de conversas prontas, tabela de vínculos (user_id / hash contato), expiração 30 dias e briefing § 8 para o Antigravity (delete no hub) |
 | [avaliacao-do-plano.md](./avaliacao-do-plano.md) | Leitura do plano contra o código: o que mudar (fila no banco + worker no host, professor não aprova exemplo sozinho) e ordem no ai2tcs |
 
 ## Já existe noutros docs do ai2tcs (não duplicar)

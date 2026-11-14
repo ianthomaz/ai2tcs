@@ -1,26 +1,38 @@
 #!/usr/bin/env python3
 """Runner de Segunda Opinião usando o Antigravity Local (IDE/language_server no macOS).
 
-Como funciona (100% verificado contra o build 2.31.2 no mini62):
+Implementa o plano completo (docs/treinamento-llm/plano-conversas-professor-por-pessoa.md):
 1. Autodescobre `ANTIGRAVITY_LS_ADDRESS` e `ANTIGRAVITY_CSRF_TOKEN` do processo
    `language_server` ativo na sessão do usuário (se não estiverem no env).
-2. Reaproveita uma conversa contínua de professor (evita poluir o hub com dezenas
-   de chats e garante que o caso NUNCA passe pelo argv/`ps`).
-   - Se a conversa ainda não existir, cria apenas 1 vez via `agentapi new-conversation`
-     com um prompt genérico sem dados de caso.
-3. Envia o caso via POST HTTP local (`SendAgentMessage`) direto para o `language_server`.
-4. Lê o arquivo `transcript.jsonl` / `transcript_full.jsonl` oficial em
-   `~/.gemini/antigravity/brain/<conv_id>/.system_generated/logs/` (JSON Lines limpo,
-   sem precisar decodificar BLOB Protobuf do SQLite) até surgir o novo `PLANNER_RESPONSE`
-   com `status == "DONE"`.
-5. Extrai o primeiro objeto JSON válido da resposta do modelo e imprime estritamente no stdout.
+2. Gerencia:
+   - **Pool pronto (`ready`)**: conversas pré-criadas e aquecidas (default 10) sem vínculo,
+     para que o 1º caso de uma pessoa não pague o custo de `new-conversation` no caminho quente.
+   - **Vínculo (`conversations`)**: relação auditável `(project_id, subject_key) <-> conversation_id`,
+     com `subject_kind` (`user_id` | `email_hash` | `phone_hash` | `none`), `turns`, `bound_at`,
+     `last_used_at` e `expires_at` (`last_used_at + 30 dias`).
+   - **Expiração e Delete Real (30 dias)**: chama `DeleteCascadeTrajectory` no `language_server`
+     (que apaga a conversa do hub da IDE + `conversations/<id>.db` + `brain/<id>/`) e atualiza
+     o estado apenas quando o delete no hub confirma sucesso.
+3. Envia o caso via POST HTTP local (`SendAgentMessage`) direto para o `language_server`
+   (o caso NUNCA passa pelo argv/`ps` e o `user_id`/contato nunca vai no título nem no prompt).
+4. Lê `transcript_full.jsonl` até surgir o novo `PLANNER_RESPONSE` (`status == "DONE"`),
+   extrai o JSON e imprime no stdout.
+
+Subcomandos de operação e auditoria:
+  python3 antigravity_agent_runner.py --status         # lista pool ready e vínculos ativos/expirados
+  python3 antigravity_agent_runner.py --ensure-pool 10 # pré-cria até 10 conversas no pool ready
+  python3 antigravity_agent_runner.py --expire         # expira e apaga no hub conversas > 30 dias
+  python3 antigravity_agent_runner.py <prompt_file>    # julga 1 caso (chamado pelo worker)
 """
 
 from __future__ import annotations
 
+import argparse
+import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -30,7 +42,13 @@ from pathlib import Path
 
 AGENTAPI_BIN = Path.home() / ".gemini" / "antigravity" / "bin" / "agentapi"
 BRAIN_DIR = Path.home() / ".gemini" / "antigravity" / "brain"
+CONVERSATIONS_DB_DIR = Path.home() / ".gemini" / "antigravity" / "conversations"
 STATE_FILE = Path.home() / ".gemini" / "antigravity" / "second_opinion_teacher_state.json"
+
+NO_ACCOUNT_KEY = "_sem_conta"
+DEFAULT_POOL_SIZE = 10
+DEFAULT_TTL_DAYS = 30
+SECONDS_PER_DAY = 86400
 
 INIT_TEACHER_PROMPT = (
     "Você é o professor silencioso da fila de segunda opinião (ai2tcs). "
@@ -176,64 +194,160 @@ def read_planner_responses(conv_id: str) -> list[tuple[int, str]]:
     return results
 
 
-NO_ACCOUNT_KEY = "_sem_conta"
+def _short_sha256(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
+
+
+def resolve_identity() -> tuple[str, str, str]:
+    """Retorna (binding_key, subject_key, subject_kind) conforme § 3 do plano:
+    1. user_id (SECOND_OPINION_SUBJECT_REF) -> user:<id> (kind=user_id)
+    2. email (SECOND_OPINION_EMAIL_HASH ou SECOND_OPINION_EMAIL) -> email_hash:<sha>
+    3. phone (SECOND_OPINION_PHONE_HASH ou SECOND_OPINION_PHONE) -> phone_hash:<sha>
+    4. fallback -> _sem_conta (kind=none)
+    Isolado por project_id quando presente (`<project_id>:<subject_key>`), mantendo compatibilidade.
+    """
+    project_id = os.environ.get("SECOND_OPINION_PROJECT_ID", "").strip()
+    ref = os.environ.get("SECOND_OPINION_SUBJECT_REF", "").strip()
+    email_hash = os.environ.get("SECOND_OPINION_EMAIL_HASH", "").strip()
+    email_raw = os.environ.get("SECOND_OPINION_EMAIL", "").strip().lower()
+    phone_hash = os.environ.get("SECOND_OPINION_PHONE_HASH", "").strip()
+    phone_raw = re.sub(r"\D+", "", os.environ.get("SECOND_OPINION_PHONE", ""))
+
+    if ref and re.fullmatch(r"[A-Za-z0-9:_-]{1,64}", ref):
+        if ref.startswith(("user:", "email_hash:", "phone_hash:")):
+            kind = ref.split(":", 1)[0]
+            kind = "user_id" if kind == "user" else kind
+            subj_key = ref
+        else:
+            subj_key = ref
+            kind = "user_id"
+    elif email_hash and re.fullmatch(r"[a-f0-9]{8,64}", email_hash):
+        subj_key = f"email_hash:{email_hash[:16]}"
+        kind = "email_hash"
+    elif email_raw and "@" in email_raw:
+        subj_key = f"email_hash:{_short_sha256(email_raw)}"
+        kind = "email_hash"
+    elif phone_hash and re.fullmatch(r"[a-f0-9]{8,64}", phone_hash):
+        subj_key = f"phone_hash:{phone_hash[:16]}"
+        kind = "phone_hash"
+    elif len(phone_raw) >= 10:
+        subj_key = f"phone_hash:{_short_sha256(phone_raw)}"
+        kind = "phone_hash"
+    else:
+        subj_key = NO_ACCOUNT_KEY
+        kind = "none"
+
+    binding_key = f"{project_id}:{subj_key}" if project_id else subj_key
+    return binding_key, subj_key, kind
 
 
 def subject_key() -> str:
-    """De quem é o caso: o `user_id` que o worker passa no ambiente; sem conta, uma conversa geral."""
+    """Compatibilidade direta com testes: devolve a chave do sujeito."""
     ref = os.environ.get("SECOND_OPINION_SUBJECT_REF", "").strip()
     return ref if re.fullmatch(r"[A-Za-z0-9_-]{1,64}", ref) else NO_ACCOUNT_KEY
 
 
+def ttl_seconds() -> float:
+    days = float(os.environ.get("ANTIGRAVITY_TTL_DAYS", str(DEFAULT_TTL_DAYS)))
+    return max(1.0, days) * SECONDS_PER_DAY
+
+
 def load_state() -> dict:
-    """`{"conversations": {chave: {conversation_id, turns, created_at}}}`; arquivo ilegível = vazio."""
+    """Carrega `~/.gemini/antigravity/second_opinion_teacher_state.json`:
+    {
+      "ready": [ {"conversation_id", "created_at", "expires_at", "status": "ready"} ],
+      "conversations": {
+        "<key>": {
+          "project_id", "subject_key", "subject_kind", "conversation_id",
+          "status": "bound" | "expired", "turns", "bound_at", "last_used_at",
+          "expires_at", "created_at"
+        }
+      },
+      "deleted_log": [ ... ]
+    }
+    """
     try:
-        state = json.loads(STATE_FILE.read_text(encoding="utf-8"))
+        raw = json.loads(STATE_FILE.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
-        return {"conversations": {}}
-    convs = state.get("conversations") if isinstance(state, dict) else None
-    return {"conversations": convs if isinstance(convs, dict) else {}}
+        raw = {}
+    if not isinstance(raw, dict):
+        raw = {}
+    ready = raw.get("ready") if isinstance(raw.get("ready"), list) else []
+    convs = raw.get("conversations") if isinstance(raw.get("conversations"), dict) else {}
+    deleted_log = raw.get("deleted_log") if isinstance(raw.get("deleted_log"), list) else []
+    return {
+        "ready": [r for r in ready if isinstance(r, dict) and r.get("conversation_id")],
+        "conversations": convs,
+        "deleted_log": deleted_log[-100:],
+    }
 
 
-def reusable_conversation(state: dict, key: str, max_turns: int) -> str | None:
-    """A conversa desta pessoa, se ainda cabe mais um caso nela."""
-    entry = state["conversations"].get(key) or {}
+def save_state(state: dict) -> None:
+    try:
+        STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        STATE_FILE.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def is_expired(entry: dict, now: float | None = None) -> bool:
+    """Verifica se um vínculo ou item do pool passou de `expires_at` (ou 30 dias sem uso)."""
+    now = time.time() if now is None else now
+    exp = entry.get("expires_at")
+    if isinstance(exp, (int, float)) and exp > 0:
+        return now > float(exp)
+    ref_ts = entry.get("last_used_at") or entry.get("bound_at") or entry.get("created_at") or 0
+    if not ref_ts:
+        return False
+    return now > (float(ref_ts) + ttl_seconds())
+
+
+def reusable_conversation(state: dict, key: str, max_turns: int, now: float | None = None) -> str | None:
+    """A conversa desta pessoa, se ainda cabe mais um caso nela e não expirou (30 dias)."""
+    project_id = os.environ.get("SECOND_OPINION_PROJECT_ID", "").strip()
+    scoped_key = f"{project_id}:{key}" if project_id and not key.startswith(f"{project_id}:") else key
+    entry = state["conversations"].get(scoped_key) or state["conversations"].get(key) or {}
+    if entry.get("status") in ("expired", "deleted"):
+        return None
+    if is_expired(entry, now=now):
+        return None
     cid = entry.get("conversation_id") or ""
     return cid if cid and int(entry.get("turns", 0)) < max_turns else None
 
 
 def remember(state: dict, key: str, cid: str, new: bool) -> None:
-    """Conta o caso na conversa da pessoa e grava o arquivo (fica só no Mac)."""
+    """Atualiza vínculo pessoa <-> conversa com timestamps de auditoria e TTL de 30 dias."""
+    now = time.time()
+    ttl = ttl_seconds()
+    project_id = os.environ.get("SECOND_OPINION_PROJECT_ID", "").strip() or "default"
+    _, subj_key, subj_kind = resolve_identity()
+    if key != NO_ACCOUNT_KEY and subj_key == NO_ACCOUNT_KEY:
+        subj_key = key
+        subj_kind = "user_id"
+
     entry = state["conversations"].get(key) or {}
     if new or entry.get("conversation_id") != cid:
-        entry = {"conversation_id": cid, "turns": 0, "created_at": time.time()}
+        created_at = entry.get("created_at") or now
+        entry = {
+            "project_id": project_id,
+            "subject_key": subj_key,
+            "subject_kind": subj_kind,
+            "conversation_id": cid,
+            "status": "bound",
+            "turns": 0,
+            "created_at": created_at,
+            "bound_at": now,
+        }
+    entry["status"] = "bound"
     entry["turns"] = int(entry.get("turns", 0)) + 1
+    entry["last_used_at"] = now
+    entry["expires_at"] = now + ttl
     state["conversations"][key] = entry
-    try:
-        STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-        STATE_FILE.write_text(json.dumps(state, indent=2), encoding="utf-8")
-    except OSError:
-        pass
+    save_state(state)
 
 
-def get_or_create_teacher_conversation(addr: str, token: str) -> str:
-    """Uma conversa do professor por pessoa (`user_id`), criada na primeira vez. O título e a
-    mensagem inicial não levam o id: a ligação id → conversa mora só no arquivo de estado."""
-    forced_id = os.environ.get("ANTIGRAVITY_CONVERSATION_ID", "").strip()
-    if forced_id:
-        return forced_id
-
-    max_turns = int(os.environ.get("ANTIGRAVITY_MAX_TURNS_PER_CONVERSATION", "40"))
-    key = subject_key()
-    state = load_state()
-    cid = reusable_conversation(state, key, max_turns)
-    if cid:
-        meta = rpc_post(addr, token, "GetConversationMetadata", {"conversationId": cid}, timeout=5.0)
-        if meta and "metadata" in meta:
-            remember(state, key, cid, new=False)
-            return cid
-
-    # Precisa criar uma nova conversa (o prompt inicial é fixo, sem dados sensíveis no ps)
+def spawn_raw_conversation(addr: str, token: str) -> str:
+    """Cria 1 conversa limpa no Antigravity com o prompt fixo do professor e aguarda ficar pronta."""
     model = os.environ.get("ANTIGRAVITY_MODEL", "flash_lite")
     title = os.environ.get("ANTIGRAVITY_TITLE", "Professor Segunda Opinião (ai2tcs)")
     env = os.environ.copy()
@@ -256,22 +370,268 @@ def get_or_create_teacher_conversation(addr: str, token: str) -> str:
     if not cid:
         raise RuntimeError(f"conversationId ausente na resposta do agentapi: {proc.stdout[:200]}")
 
-    # Aguarda o turno de boas-vindas terminar antes de enviar o primeiro caso real
     deadline = time.time() + 30.0
     while time.time() < deadline:
         if read_planner_responses(cid):
             break
         time.sleep(0.5)
-
-    remember(state, key, cid, new=True)
     return cid
 
 
-def main() -> None:
-    # 1. Lê o prompt do arquivo ({prompt_file}) ou da stdin
-    if len(sys.argv) > 1 and sys.argv[1] != "-":
+def delete_conversation_everywhere(addr: str, token: str, conv_id: str) -> bool:
+    """Apaga a conversa nas 3 camadas:
+    C. Hub Antigravity via RPC `DeleteCascadeTrajectory`
+    B. Disco Mac (`brain/<id>/` e `conversations/<id>.db`)
+    Retorna True somente se o delete no hub teve sucesso.
+    """
+    if not conv_id:
+        return False
+    res = rpc_post(addr, token, "DeleteCascadeTrajectory", {"cascadeId": conv_id}, timeout=10.0)
+    if res is None:
+        return False
+
+    # Confirma e limpa eventuais resíduos em disco
+    brain_path = BRAIN_DIR / conv_id
+    db_path = CONVERSATIONS_DB_DIR / f"{conv_id}.db"
+    if brain_path.exists():
+        shutil.rmtree(brain_path, ignore_errors=True)
+    if db_path.exists():
         try:
-            prompt_text = Path(sys.argv[1]).read_text(encoding="utf-8")
+            db_path.unlink()
+        except OSError:
+            pass
+    return True
+
+
+def expire_and_cleanup(addr: str, token: str, now: float | None = None) -> dict:
+    """Varre pool `ready` e `conversations` procurando itens com `now > expires_at` (ou > 30 dias).
+    Apaga no hub via `DeleteCascadeTrajectory` e atualiza o estado.
+    Se o delete no hub falhar, marca `status = "expired"` sem mentir `deleted`.
+    """
+    now = time.time() if now is None else now
+    state = load_state()
+    deleted_ids: list[str] = []
+    failed_ids: list[str] = []
+
+    # 1. Limpa itens velhos do pool ready
+    still_ready: list[dict] = []
+    for item in state["ready"]:
+        cid = item.get("conversation_id", "")
+        if is_expired(item, now=now):
+            if delete_conversation_everywhere(addr, token, cid):
+                deleted_ids.append(cid)
+                state["deleted_log"].append({"conversation_id": cid, "kind": "ready_pool", "deleted_at": now})
+            else:
+                item["status"] = "expired"
+                failed_ids.append(cid)
+                still_ready.append(item)
+        else:
+            still_ready.append(item)
+    state["ready"] = still_ready
+
+    # 2. Limpa vínculos de pessoas expirados (> 30 dias sem uso)
+    for key, entry in list(state["conversations"].items()):
+        if not isinstance(entry, dict):
+            continue
+        cid = entry.get("conversation_id", "")
+        if entry.get("status") == "expired" or is_expired(entry, now=now):
+            if delete_conversation_everywhere(addr, token, cid):
+                deleted_ids.append(cid)
+                state["deleted_log"].append(
+                    {
+                        "key": key,
+                        "subject_key": entry.get("subject_key", key),
+                        "project_id": entry.get("project_id", ""),
+                        "conversation_id": cid,
+                        "turns": entry.get("turns", 0),
+                        "deleted_at": now,
+                    }
+                )
+                del state["conversations"][key]
+            else:
+                entry["status"] = "expired"
+                failed_ids.append(cid)
+
+    save_state(state)
+    return {"deleted": deleted_ids, "failed_retry": failed_ids}
+
+
+def ensure_pool(addr: str, token: str, target_size: int = DEFAULT_POOL_SIZE) -> dict:
+    """Garante que o pool `ready` tenha pelo menos `target_size` conversas vivas e prontas."""
+    state = load_state()
+    now = time.time()
+    ttl = ttl_seconds()
+
+    # Verifica se as conversas listadas em ready continuam vivas no hub
+    valid_ready: list[dict] = []
+    for item in state["ready"]:
+        cid = item.get("conversation_id", "")
+        if not cid or is_expired(item, now=now):
+            continue
+        meta = rpc_post(addr, token, "GetConversationMetadata", {"conversationId": cid}, timeout=5.0)
+        if meta and "metadata" in meta:
+            valid_ready.append(item)
+
+    state["ready"] = valid_ready
+    save_state(state)
+
+    created: list[str] = []
+    while len(state["ready"]) < target_size:
+        cid = spawn_raw_conversation(addr, token)
+        now = time.time()
+        state["ready"].append(
+            {
+                "conversation_id": cid,
+                "status": "ready",
+                "created_at": now,
+                "expires_at": now + ttl,
+            }
+        )
+        save_state(state)
+        created.append(cid)
+        if len(state["ready"]) < target_size:
+            time.sleep(0.5)
+
+    return {"ready_count": len(state["ready"]), "created": created, "ready": state["ready"]}
+
+
+def pop_from_ready_pool(state: dict, addr: str, token: str) -> str | None:
+    """Consome 1 conversa já pronta do pool `ready` (caminho rápido, zero `new-conversation`)."""
+    now = time.time()
+    while state["ready"]:
+        item = state["ready"].pop(0)
+        cid = item.get("conversation_id", "")
+        if not cid or is_expired(item, now=now):
+            continue
+        meta = rpc_post(addr, token, "GetConversationMetadata", {"conversationId": cid}, timeout=5.0)
+        if meta and "metadata" in meta:
+            save_state(state)
+            return cid
+    save_state(state)
+    return None
+
+
+def trigger_background_pool_refill(min_ready: int) -> None:
+    """Se o pool baixou, dispara um processo em background desacoplado para repor sem atrasar o caso."""
+    try:
+        subprocess.Popen(
+            [sys.executable, str(Path(__file__).resolve()), "--ensure-pool", str(min_ready)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            stdin=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except Exception:
+        pass
+
+
+def get_or_create_teacher_conversation(addr: str, token: str) -> str:
+    """Fluxo do caminho quente (§ 5 do plano):
+    1. Existe vínculo `bound` válido (< 30 dias e < max_turns) para a pessoa? Usa-o.
+    2. Se não: consome 1 conversa pronta do pool `ready` e faz bind imediato.
+    3. Só cria na hora (`spawn_raw_conversation`) se o pool `ready` estiver vazio.
+    """
+    forced_id = os.environ.get("SECOND_OPINION_CONVERSATION_ID", "").strip()
+    if forced_id:
+        return forced_id
+
+    max_turns = int(os.environ.get("ANTIGRAVITY_MAX_TURNS_PER_CONVERSATION", "40"))
+    pool_target = int(os.environ.get("ANTIGRAVITY_POOL_SIZE", str(DEFAULT_POOL_SIZE)))
+
+    key = subject_key()
+    state = load_state()
+
+    # Se o vínculo existente daquela pessoa expirou (> 30 dias), apaga no hub antes de vincular nova
+    existing = state["conversations"].get(key)
+    if isinstance(existing, dict) and existing.get("conversation_id") and is_expired(existing):
+        old_cid = existing["conversation_id"]
+        if delete_conversation_everywhere(addr, token, old_cid):
+            state["deleted_log"].append(
+                {"key": key, "conversation_id": old_cid, "reason": "expired_on_bind", "deleted_at": time.time()}
+            )
+            del state["conversations"][key]
+            save_state(state)
+
+    cid = reusable_conversation(state, key, max_turns)
+    if cid:
+        meta = rpc_post(addr, token, "GetConversationMetadata", {"conversationId": cid}, timeout=5.0)
+        if meta and "metadata" in meta:
+            remember(state, key, cid, new=False)
+            return cid
+
+    # Tenta pegar conversa instantânea do pool ready
+    cid = pop_from_ready_pool(state, addr, token)
+    if cid:
+        remember(state, key, cid, new=True)
+        if len(state["ready"]) < pool_target:
+            trigger_background_pool_refill(pool_target)
+        return cid
+
+    # Fallback se o pool estiver zerado: cria na hora e agenda reposição do pool
+    cid = spawn_raw_conversation(addr, token)
+    remember(state, key, cid, new=True)
+    if pool_target > 0:
+        trigger_background_pool_refill(pool_target)
+    return cid
+
+
+def print_status() -> int:
+    state = load_state()
+    now = time.time()
+    out = {
+        "state_file": str(STATE_FILE),
+        "ready_pool_count": len(state["ready"]),
+        "bound_conversations_count": len(state["conversations"]),
+        "ready": state["ready"],
+        "conversations": {
+            k: {
+                **v,
+                "days_until_expiry": round((float(v.get("expires_at", 0)) - now) / SECONDS_PER_DAY, 1)
+                if v.get("expires_at")
+                else None,
+                "expired": is_expired(v, now=now),
+            }
+            for k, v in state["conversations"].items()
+        },
+        "recent_deleted_count": len(state["deleted_log"]),
+    }
+    print(json.dumps(out, indent=2, ensure_ascii=False))
+    return 0
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(add_help=False)
+    ap.add_argument("--status", action="store_true")
+    ap.add_argument("--ensure-pool", type=int, metavar="N")
+    ap.add_argument("--expire", action="store_true")
+    ap.add_argument("-h", "--help", action="store_true")
+    ap.add_argument("prompt_file", nargs="?")
+    args = ap.parse_args()
+
+    if args.help:
+        print(__doc__.strip())
+        sys.exit(0)
+
+    if args.status:
+        sys.exit(print_status())
+
+    if args.ensure_pool is not None or args.expire:
+        addr, token = discover_language_server()
+        if not addr or not token:
+            sys.stderr.write("Erro: Language Server do Antigravity não encontrado.\n")
+            sys.exit(1)
+        result: dict = {}
+        if args.expire:
+            result["expire"] = expire_and_cleanup(addr, token)
+        if args.ensure_pool is not None:
+            result["pool"] = ensure_pool(addr, token, max(0, args.ensure_pool))
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        sys.exit(0)
+
+    # Modo padrão: julgar 1 caso (lendo {prompt_file} ou stdin)
+    if args.prompt_file and args.prompt_file != "-":
+        try:
+            prompt_text = Path(args.prompt_file).read_text(encoding="utf-8")
         except OSError as e:
             sys.stderr.write(f"Erro ao ler arquivo de prompt: {e}\n")
             sys.exit(1)
@@ -282,7 +642,6 @@ def main() -> None:
         sys.stderr.write("Erro: prompt vazio.\n")
         sys.exit(1)
 
-    # 2. Descobre o Language Server do Antigravity
     addr, token = discover_language_server()
     if not addr or not token:
         sys.stderr.write(
@@ -290,18 +649,15 @@ def main() -> None:
         )
         sys.exit(1)
 
-    # 3. Obtém ou cria a conversa do professor
     try:
         conv_id = get_or_create_teacher_conversation(addr, token)
     except Exception as e:
         sys.stderr.write(f"Erro ao preparar conversa no Antigravity: {e}\n")
         sys.exit(1)
 
-    # Registra o último step_index antes de enviar a mensagem
     before = read_planner_responses(conv_id)
     last_step_idx = before[-1][0] if before else -1
 
-    # 4. Envia o caso via POST HTTP local (NUNCA passa pelo argv / ps!)
     instruction = (
         "AVALIE O CASO ABAIXO E RESPONDA APENAS COM O OBJETO JSON PURO (SEM MARKDOWN, SEM TOOLS):\n\n"
         + prompt_text
@@ -317,7 +673,6 @@ def main() -> None:
         sys.stderr.write(f"Erro ao enviar mensagem HTTP para a conversa {conv_id}\n")
         sys.exit(1)
 
-    # 5. Aguarda o novo PLANNER_RESPONSE no transcript_full.jsonl
     timeout_wait = float(os.environ.get("ANTIGRAVITY_TIMEOUT", "160"))
     deadline = time.time() + timeout_wait
 

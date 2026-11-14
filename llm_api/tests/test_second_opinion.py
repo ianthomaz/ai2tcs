@@ -299,3 +299,24 @@ def test_runner_keeps_one_teacher_conversation_per_person(tmp_path, monkeypatch)
     assert r.reusable_conversation(state, "AB12C", 1) is None
     r.remember(state, "AB12C", "conv-a", new=False)
     assert r.load_state()["conversations"]["AB12C"]["turns"] == 2
+
+    # Pool ready + bind instantâneo + expiração aos 30 dias (DeleteCascadeTrajectory)
+    state = r.load_state()
+    state["ready"] = [{"conversation_id": "pool-1", "status": "ready", "created_at": 1000.0, "expires_at": 9999999999.0}]
+    r.save_state(state)
+    monkeypatch.setattr(r, "rpc_post", lambda addr, tok, method, payload, timeout=15.0: {"metadata": {}})
+    monkeypatch.setattr(r, "trigger_background_pool_refill", lambda n: None)
+    monkeypatch.setenv("SECOND_OPINION_SUBJECT_REF", "NEWUSER1")
+    cid = r.get_or_create_teacher_conversation("127.0.0.1:1", "tok")
+    assert cid == "pool-1"
+    state = r.load_state()
+    assert len(state["ready"]) == 0
+    assert state["conversations"]["NEWUSER1"]["conversation_id"] == "pool-1"
+
+    # Simula expiração (> 30 dias) e delete real nas 3 camadas
+    state["conversations"]["NEWUSER1"]["expires_at"] = 10.0
+    r.save_state(state)
+    assert r.reusable_conversation(r.load_state(), "NEWUSER1", 40, now=100.0) is None
+    res = r.expire_and_cleanup("127.0.0.1:1", "tok", now=100.0)
+    assert "pool-1" in res["deleted"]
+    assert "NEWUSER1" not in r.load_state()["conversations"]
